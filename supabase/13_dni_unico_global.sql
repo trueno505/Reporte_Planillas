@@ -18,7 +18,10 @@
 --     borrar/corregir las filas duplicadas antes de seguir con el backfill).
 
 -- ─── Vista auxiliar: todos los DNIs de las 19 planillas ─────────────────────
-CREATE OR REPLACE VIEW public.vw_dni_todos AS
+-- security_invoker = on  → la vista respeta el RLS del usuario que la consulta
+-- (no la del creador). Sin esto, Supabase la marca como SECURITY DEFINER crítico.
+CREATE OR REPLACE VIEW public.vw_dni_todos
+WITH (security_invoker = on) AS
   SELECT dni, id AS registro_id, 'obreros_permanentes'::text          AS tabla FROM public.obreros_permanentes
   UNION ALL SELECT dni, id, 'obreros_plazo_indeterminado'      FROM public.obreros_plazo_indeterminado
   UNION ALL SELECT dni, id, 'obreros_mandato_judicial'         FROM public.obreros_mandato_judicial
