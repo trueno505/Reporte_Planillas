@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ChevronDown, ChevronRight, Search, Clock, UserCog } from 'lucide-react'
+import { LayoutDashboard, ChevronDown, ChevronRight, Search, Clock, UserCog, FilePlus } from 'lucide-react'
 import { useState } from 'react'
 import { PLANILLAS, GRUPOS } from '../config/planillas'
 import { useAuth } from '../context/auth-context'
@@ -44,6 +44,10 @@ export default function Sidebar({ open, onClose }) {
           {/* Admin-only */}
           {isAdmin && (
             <>
+              <NavLink to="/nuevo-registro" onClick={onClose} className={navLinkClass}>
+                <FilePlus size={16} />
+                Nuevo registro
+              </NavLink>
               <NavLink to="/auditoria" onClick={onClose} className={navLinkClass}>
                 <Clock size={16} />
                 Historial

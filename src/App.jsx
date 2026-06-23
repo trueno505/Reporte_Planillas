@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import PlanillaPage from './pages/PlanillaPage'
+import NuevoRegistro from './pages/NuevoRegistro'
 import BusquedaGlobal from './pages/BusquedaGlobal'
 import Auditoria from './pages/Auditoria'
 import Usuarios from './pages/Usuarios'
@@ -17,6 +18,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/nuevo-registro" element={<ProtectedRoute><NuevoRegistro /></ProtectedRoute>} />
           <Route path="/planilla/:slug" element={<ProtectedRoute><PlanillaPage /></ProtectedRoute>} />
           <Route path="/buscar" element={<ProtectedRoute><BusquedaGlobal /></ProtectedRoute>} />
           <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
