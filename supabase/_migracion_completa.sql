@@ -30,9 +30,12 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TABLE IF NOT EXISTS public.perfiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   nombre TEXT,
+  celular TEXT,
   rol TEXT NOT NULL DEFAULT 'consultor' CHECK (rol IN ('consultor', 'editor', 'administrador')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Por si la tabla ya existía sin la columna (instalaciones previas):
+ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS celular TEXT;
 
 -- Trigger: crear perfil automáticamente al registrar un nuevo usuario
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -1079,6 +1082,27 @@ CREATE POLICY "perfiles_select" ON public.perfiles
 CREATE POLICY "perfiles_update" ON public.perfiles
   FOR UPDATE TO authenticated
   USING (id = (select auth.uid()));
+
+-- ─── Protección anti-escalada de privilegios ────────────────────────────────
+-- La política de arriba deja que un usuario edite su propia fila (nombre,
+-- celular). Este trigger impide que un NO-administrador cambie su propio `rol`:
+-- si lo intenta, el cambio se revierte silenciosamente. Solo un administrador
+-- puede modificar roles (su propio rol o el de otros).
+CREATE OR REPLACE FUNCTION public.proteger_rol_perfil()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.rol IS DISTINCT FROM OLD.rol
+     AND (SELECT public.get_my_rol()) <> 'administrador' THEN
+    NEW.rol := OLD.rol;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS proteger_rol ON public.perfiles;
+CREATE TRIGGER proteger_rol
+  BEFORE UPDATE ON public.perfiles
+  FOR EACH ROW EXECUTE FUNCTION public.proteger_rol_perfil();
 
 -- ─── Macro para aplicar políticas estándar en cada tabla de planilla ────────
 -- SELECT → consultor, editor o administrador

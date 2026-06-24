@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { AuthContext } from './auth-context'
 
@@ -15,18 +15,29 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Carga el perfil del usuario autenticado. Reutilizable para refrescar tras
+  // editar el propio perfil (nombre/celular) y que el Header se actualice.
+  const cargarPerfil = useCallback(async (userId) => {
+    const { data } = await supabase
+      .from('perfiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+    setPerfil(data)
+    return data
+  }, [])
+
+  const refreshPerfil = useCallback(() => {
+    if (session?.user) return cargarPerfil(session.user.id)
+  }, [session, cargarPerfil])
+
   useEffect(() => {
     if (!session?.user) {
       setPerfil(null)
       return
     }
-    supabase
-      .from('perfiles')
-      .select('*')
-      .eq('id', session.user.id)
-      .single()
-      .then(({ data }) => setPerfil(data))
-  }, [session])
+    cargarPerfil(session.user.id)
+  }, [session, cargarPerfil])
 
   const isAdmin = perfil?.rol === 'administrador'
   const isEditor = perfil?.rol === 'editor'
@@ -40,7 +51,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut }}
+      value={{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut, refreshPerfil }}
     >
       {children}
     </AuthContext.Provider>

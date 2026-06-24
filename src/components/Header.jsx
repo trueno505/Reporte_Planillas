@@ -1,4 +1,5 @@
 import { Menu, LogOut, User } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/auth-context'
 
 const ROL_BADGE = {
@@ -26,7 +27,11 @@ export default function Header({ onMenuClick }) {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+        <Link
+          to="/perfil"
+          title="Ver mi perfil"
+          className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-primary transition"
+        >
           <User size={15} />
           <span>{perfil?.nombre ?? '—'}</span>
           <span
@@ -36,7 +41,7 @@ export default function Header({ onMenuClick }) {
           >
             {perfil?.rol ?? ''}
           </span>
-        </div>
+        </Link>
         <button
           onClick={signOut}
           title="Cerrar sesión"

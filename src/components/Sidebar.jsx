@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ChevronDown, ChevronRight, Search, Clock, UserCog, FilePlus } from 'lucide-react'
+import { LayoutDashboard, ChevronDown, ChevronRight, Search, Clock, UserCog, FilePlus, UserCircle } from 'lucide-react'
 import { useState } from 'react'
 import { PLANILLAS, GRUPOS } from '../config/planillas'
 import { useAuth } from '../context/auth-context'
@@ -39,6 +39,10 @@ export default function Sidebar({ open, onClose }) {
           <NavLink to="/buscar" onClick={onClose} className={navLinkClass}>
             <Search size={16} />
             Búsqueda global
+          </NavLink>
+          <NavLink to="/perfil" onClick={onClose} className={navLinkClass}>
+            <UserCircle size={16} />
+            Mi perfil
           </NavLink>
 
           {/* Edición de datos: admin o editor */}

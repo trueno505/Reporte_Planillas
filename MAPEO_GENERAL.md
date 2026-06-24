@@ -209,6 +209,7 @@ Reporte_Planillas/
 │       ├── Dashboard.jsx      KPIs, gráfico, resumen, tarjetas por grupo
 │       ├── PlanillaPage.jsx   Página de una planilla (orquesta todo)
 │       ├── BusquedaGlobal.jsx Búsqueda en las 19 planillas
+│       ├── MiPerfil.jsx       Perfil propio: nombre/celular + cambiar contraseña
 │       ├── Auditoria.jsx      Historial de cambios (admin)
 │       └── Usuarios.jsx       Gestión de roles (admin)
 │
@@ -231,6 +232,7 @@ Reporte_Planillas/
 | `Dashboard` | `/dashboard` | Cualquier usuario autenticado |
 | `PlanillaPage` | `/planilla/:slug` | Cualquier usuario autenticado |
 | `BusquedaGlobal` | `/buscar` | Cualquier usuario autenticado |
+| `MiPerfil` | `/perfil` | Cualquier usuario autenticado |
 | `Auditoria` | `/auditoria` | **Solo administrador** |
 | `Usuarios` | `/usuarios` | **Solo administrador** |
 | (cualquier otra) | `*` | Redirige a `/dashboard` |
@@ -335,7 +337,7 @@ El archivo contiene, en orden:
 | Bloque | Contenido |
 |---|---|
 | Extensiones | `moddatetime` (auto `updated_at`) y `pg_trgm` (búsqueda). |
-| `perfiles` | Tabla `perfiles` (`rol` con `CHECK IN ('consultor','editor','administrador')`) + trigger `handle_new_user` (crea el perfil al registrarse con rol por defecto `consultor`). |
+| `perfiles` | Tabla `perfiles` (`id`, `nombre`, `celular`, `rol` con `CHECK IN ('consultor','editor','administrador')`, `created_at`) + trigger `handle_new_user` (crea el perfil al registrarse con rol por defecto `consultor`) + trigger `proteger_rol` (impide que un no-admin cambie su propio `rol`). |
 | 19 planillas | Las 19 tablas (**generadas** — cada una con `id`, `dni INTEGER UNIQUE`, `created_at`, `updated_at` y trigger de `updated_at`). |
 | RLS | Función `get_my_rol()` (SECURITY DEFINER) + políticas. SELECT → los 3 roles; INSERT/UPDATE/DELETE → `editor`/`administrador`. Envueltas en `(select …)` por rendimiento. |
 | Realtime | `REPLICA IDENTITY FULL` y publicación Realtime en las 19 tablas. |
@@ -380,6 +382,11 @@ leerla (RLS).
   - Desde la página `/usuarios` (selector con los 3 roles; un admin no puede cambiar su
     propio rol, para evitar quedar bloqueado), o
   - `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'`.
+- **Autogestión de perfil (`/perfil`):** cualquier usuario puede editar su `nombre` y
+  `celular` y cambiar su contraseña (`supabase.auth.updateUser`). La política RLS
+  `perfiles_update` permite editar la propia fila, pero el trigger `proteger_rol`
+  revierte cualquier intento de un no-admin de cambiarse el `rol` (anti-escalada de
+  privilegios).
 - Crear nuevos usuarios se hace desde **Supabase → Authentication → Invite user**; la
   cuenta aparece en `/usuarios` como `consultor` y el admin le asigna el rol deseado.
   (Crear cuentas desde el frontend requeriría una Edge Function con `service_role`.)

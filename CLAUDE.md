@@ -75,6 +75,7 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 | `Dashboard.jsx` | `/dashboard` | All |
 | `PlanillaPage.jsx` | `/planilla/:slug` | All |
 | `BusquedaGlobal.jsx` | `/buscar` | All |
+| `MiPerfil.jsx` | `/perfil` | All |
 | `Auditoria.jsx` | `/auditoria` | Admin only |
 | `Usuarios.jsx` | `/usuarios` | Admin only |
 
@@ -85,6 +86,8 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 **Auditoria** shows the change log from `public.auditoria` with filters by table and action (INSERT/UPDATE/DELETE), joined with `perfiles`.
 
 **Usuarios** allows admins to assign each user one of the three roles (`consultor`, `editor`, `administrador`) via a dropdown. Admins cannot change their own role (guards against lock-out). Account creation is done by inviting from the Supabase panel (Authentication → Invite); the new profile appears here as `consultor` and the admin reassigns it.
+
+**MiPerfil** is each user's self-service page (any role): shows email + role (read-only), lets them edit their own `nombre` and `celular` (`perfiles` row), and change their own password via `supabase.auth.updateUser({ password })`. Users **cannot** change their own `rol` — the DB trigger `proteger_rol` reverts any role change made by a non-admin (defense against privilege escalation, since the `perfiles_update` RLS policy allows self-update of the row).
 
 ### Components
 
@@ -111,7 +114,7 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 
 ### Context
 
-`AuthContext.jsx` — provides `{ session, perfil, isAdmin, isConsultor, loading, signOut }` via `useAuth()`.
+`AuthContext.jsx` — provides `{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut, refreshPerfil }` via `useAuth()`. `refreshPerfil()` re-fetches the `perfiles` row (used after MiPerfil edits so the Header reflects the new name).
 
 ### Utility libraries (`src/lib/`)
 
@@ -133,6 +136,7 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 - `AuthContext` exposes `isAdmin`, `isEditor`, `isConsultor` and the derived **`puedeEditar`** (= admin || editor). Use `puedeEditar` to gate data-editing UI and `isAdmin` to gate user/auditoría UI.
 - Planilla RLS: SELECT → all three roles; INSERT/UPDATE/DELETE → `('editor','administrador')`. The bulk RPCs (`importar_planilla`, `recalcular_totales`, `actualizar_columna_planilla`) check `get_my_rol() IN ('editor','administrador')`.
 - `perfiles` row is auto-created on signup via the `handle_new_user` trigger with default role `consultor`. Admin reassigns roles from the `/usuarios` page, or via `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'`.
+- `perfiles` columns: `id`, `nombre`, `celular`, `rol`, `created_at`. Users self-edit `nombre`/`celular` from `/perfil`; the `proteger_rol` BEFORE UPDATE trigger blocks non-admins from changing `rol`.
 - The whole schema (including the `editor` role) lives in the single file `supabase/_migracion_completa.sql`. There are no standalone patch files; any schema change is folded into this consolidated file.
 
 ### Database setup — un solo archivo

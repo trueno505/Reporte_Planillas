@@ -9,6 +9,7 @@ import NuevoRegistro from './pages/NuevoRegistro'
 import BusquedaGlobal from './pages/BusquedaGlobal'
 import Auditoria from './pages/Auditoria'
 import Usuarios from './pages/Usuarios'
+import MiPerfil from './pages/MiPerfil'
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/nuevo-registro" element={<ProtectedRoute><NuevoRegistro /></ProtectedRoute>} />
           <Route path="/planilla/:slug" element={<ProtectedRoute><PlanillaPage /></ProtectedRoute>} />
           <Route path="/buscar" element={<ProtectedRoute><BusquedaGlobal /></ProtectedRoute>} />
+          <Route path="/perfil" element={<ProtectedRoute><MiPerfil /></ProtectedRoute>} />
           <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
           <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
