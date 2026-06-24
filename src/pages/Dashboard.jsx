@@ -29,7 +29,7 @@ function fmt(n) {
 }
 
 export default function Dashboard() {
-  const { perfil, isAdmin } = useAuth()
+  const { perfil, puedeEditar } = useAuth()
   const [resumen, setResumen] = useState([])
   const [loadingResumen, setLoadingResumen] = useState(true)
   const [exportando, setExportando] = useState(false)
@@ -75,7 +75,7 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-primary">Panel de Planillas</h1>
             <p className="text-gray-500 text-sm mt-1">
               Bienvenido/a, <strong>{perfil?.nombre}</strong>. Rol:{' '}
-              <span className={`font-semibold ${isAdmin ? 'text-primary' : 'text-gray-600'}`}>
+              <span className={`font-semibold ${puedeEditar ? 'text-primary' : 'text-gray-600'}`}>
                 {perfil?.rol}
               </span>
             </p>

@@ -11,7 +11,7 @@ const navLinkClass = ({ isActive }) =>
 
 export default function Sidebar({ open, onClose }) {
   const [expanded, setExpanded] = useState({})
-  const { isAdmin } = useAuth()
+  const { isAdmin, puedeEditar } = useAuth()
 
   const toggle = (g) => setExpanded((prev) => ({ ...prev, [g]: !prev[g] }))
 
@@ -41,13 +41,17 @@ export default function Sidebar({ open, onClose }) {
             Búsqueda global
           </NavLink>
 
-          {/* Admin-only */}
+          {/* Edición de datos: admin o editor */}
+          {puedeEditar && (
+            <NavLink to="/nuevo-registro" onClick={onClose} className={navLinkClass}>
+              <FilePlus size={16} />
+              Nuevo registro
+            </NavLink>
+          )}
+
+          {/* Solo admin: historial y gestión de usuarios */}
           {isAdmin && (
             <>
-              <NavLink to="/nuevo-registro" onClick={onClose} className={navLinkClass}>
-                <FilePlus size={16} />
-                Nuevo registro
-              </NavLink>
               <NavLink to="/auditoria" onClick={onClose} className={navLinkClass}>
                 <Clock size={16} />
                 Historial

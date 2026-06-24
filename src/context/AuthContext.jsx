@@ -29,13 +29,19 @@ export function AuthProvider({ children }) {
   }, [session])
 
   const isAdmin = perfil?.rol === 'administrador'
+  const isEditor = perfil?.rol === 'editor'
   const isConsultor = perfil?.rol === 'consultor'
+  // Puede modificar datos de las planillas (CRUD + Excel). Admin y editor; el
+  // consultor no. La seguridad real la impone RLS; esto solo controla la UI.
+  const puedeEditar = isAdmin || isEditor
   const loading = session === undefined
 
   const signOut = () => supabase.auth.signOut()
 
   return (
-    <AuthContext.Provider value={{ session, perfil, isAdmin, isConsultor, loading, signOut }}>
+    <AuthContext.Provider
+      value={{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   )

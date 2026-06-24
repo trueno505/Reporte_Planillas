@@ -30,7 +30,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TABLE IF NOT EXISTS public.perfiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   nombre TEXT,
-  rol TEXT NOT NULL DEFAULT 'consultor' CHECK (rol IN ('consultor', 'administrador')),
+  rol TEXT NOT NULL DEFAULT 'consultor' CHECK (rol IN ('consultor', 'editor', 'administrador')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -1081,8 +1081,8 @@ CREATE POLICY "perfiles_update" ON public.perfiles
   USING (id = (select auth.uid()));
 
 -- ─── Macro para aplicar políticas estándar en cada tabla de planilla ────────
--- SELECT → consultor o administrador
--- INSERT / UPDATE / DELETE → solo administrador
+-- SELECT → consultor, editor o administrador
+-- INSERT / UPDATE / DELETE → editor o administrador
 
 DO $$
 DECLARE
@@ -1115,29 +1115,29 @@ BEGIN
     EXECUTE format(
       'CREATE POLICY "%s_select" ON public.%I
        FOR SELECT TO authenticated
-       USING ((select get_my_rol()) IN (''consultor'', ''administrador''))',
+       USING ((select get_my_rol()) IN (''consultor'', ''editor'', ''administrador''))',
       t, t
     );
 
     EXECUTE format(
       'CREATE POLICY "%s_insert" ON public.%I
        FOR INSERT TO authenticated
-       WITH CHECK ((select get_my_rol()) = ''administrador'')',
+       WITH CHECK ((select get_my_rol()) IN (''editor'', ''administrador''))',
       t, t
     );
 
     EXECUTE format(
       'CREATE POLICY "%s_update" ON public.%I
        FOR UPDATE TO authenticated
-       USING ((select get_my_rol()) = ''administrador'')
-       WITH CHECK ((select get_my_rol()) = ''administrador'')',
+       USING ((select get_my_rol()) IN (''editor'', ''administrador''))
+       WITH CHECK ((select get_my_rol()) IN (''editor'', ''administrador''))',
       t, t
     );
 
     EXECUTE format(
       'CREATE POLICY "%s_delete" ON public.%I
        FOR DELETE TO authenticated
-       USING ((select get_my_rol()) = ''administrador'')',
+       USING ((select get_my_rol()) IN (''editor'', ''administrador''))',
       t, t
     );
   END LOOP;
@@ -1835,7 +1835,7 @@ DECLARE
   set_clause  TEXT;
   n           INTEGER;
 BEGIN
-  IF (SELECT public.get_my_rol()) <> 'administrador' THEN
+  IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN
     RAISE EXCEPTION 'No autorizado';
   END IF;
   IF NOT public._es_tabla_planilla(p_tabla) THEN
@@ -1877,7 +1877,7 @@ LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
   n INTEGER;
 BEGIN
-  IF (SELECT public.get_my_rol()) <> 'administrador' THEN
+  IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN
     RAISE EXCEPTION 'No autorizado';
   END IF;
   IF NOT public._es_tabla_planilla(p_tabla) THEN
@@ -1885,6 +1885,54 @@ BEGIN
   END IF;
 
   EXECUTE format('UPDATE public.%I SET updated_at = now()', p_tabla);
+  GET DIAGNOSTICS n = ROW_COUNT;
+  RETURN n;
+END;
+$$;
+
+-- ─── actualizar_columna_planilla ────────────────────────────────────────────
+-- Actualiza UNA sola columna de una planilla, emparejando por DNI, a partir de
+-- una lista JSONB [{dni, valor}, ...] en una sola transacción atómica.
+-- Los DNI que no existan en la tabla simplemente no se tocan (sin error).
+-- El BEFORE UPDATE de totales se dispara, así que t_ingreso/t_dsctos/t_liquido
+-- quedan recalculados si la columna afectada participa en el cálculo.
+CREATE OR REPLACE FUNCTION public.actualizar_columna_planilla(
+  p_tabla TEXT, p_columna TEXT, p_valores JSONB
+)
+RETURNS INTEGER
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  col_type TEXT;
+  n        INTEGER;
+BEGIN
+  IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+  IF NOT public._es_tabla_planilla(p_tabla) THEN
+    RAISE EXCEPTION 'Tabla no permitida: %', p_tabla;
+  END IF;
+
+  -- La columna debe existir y no ser una columna gestionada/clave.
+  SELECT data_type INTO col_type
+    FROM information_schema.columns
+   WHERE table_schema = 'public' AND table_name = p_tabla AND column_name = p_columna;
+  IF col_type IS NULL THEN
+    RAISE EXCEPTION 'Columna no existe: %', p_columna;
+  END IF;
+  IF p_columna IN ('id', 'dni', 'created_at', 'updated_at') THEN
+    RAISE EXCEPTION 'Columna protegida: %', p_columna;
+  END IF;
+
+  -- UPDATE atómico desde la lista {dni, valor}; el valor se castea al tipo real
+  -- de la columna destino. Las filas cuyo DNI no exista no se actualizan.
+  EXECUTE format(
+    'UPDATE public.%I AS t
+        SET %I = (v.valor)::%s
+       FROM jsonb_to_recordset($1) AS v(dni INTEGER, valor TEXT)
+      WHERE t.dni = v.dni',
+    p_tabla, p_columna, col_type
+  ) USING p_valores;
+
   GET DIAGNOSTICS n = ROW_COUNT;
   RETURN n;
 END;

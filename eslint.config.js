@@ -18,4 +18,16 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  // Archivos que corren en Node (config de build/test, e2e de Playwright).
+  {
+    files: [
+      '*.config.js',
+      'e2e/**/*.js',
+      'scripts/**/*.{js,mjs}',
+      'src/test/**/*.js',
+    ],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
 ])

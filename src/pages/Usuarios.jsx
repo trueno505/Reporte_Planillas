@@ -1,10 +1,38 @@
 import { useState, useEffect } from 'react'
-import { UserCog, ShieldCheck, Eye } from 'lucide-react'
+import { UserCog, ShieldCheck, Pencil, Eye } from 'lucide-react'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabaseClient'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
+
+// Los tres roles del sistema. La seguridad real la impone RLS en la BD; aquí
+// solo se asigna el valor de perfiles.rol.
+const ROLES = [
+  {
+    id: 'administrador',
+    label: 'Administrador',
+    desc: 'Control total: edita datos y gestiona usuarios.',
+    Icon: ShieldCheck,
+    badge: 'bg-primary text-white',
+  },
+  {
+    id: 'editor',
+    label: 'Editor',
+    desc: 'Edita los datos de las planillas, pero no gestiona usuarios.',
+    Icon: Pencil,
+    badge: 'bg-amber-500 text-white',
+  },
+  {
+    id: 'consultor',
+    label: 'Consultor',
+    desc: 'Solo consulta y exporta; no modifica datos.',
+    Icon: Eye,
+    badge: 'bg-gray-100 text-gray-600',
+  },
+]
+
+const ROL_INFO = Object.fromEntries(ROLES.map((r) => [r.id, r]))
 
 function fmtFecha(s) {
   if (!s) return '—'
@@ -12,7 +40,7 @@ function fmtFecha(s) {
 }
 
 export default function Usuarios() {
-  const { isAdmin, loading: authLoading } = useAuth()
+  const { isAdmin, perfil, loading: authLoading } = useAuth()
   const [perfiles, setPerfiles] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -55,10 +83,22 @@ export default function Usuarios() {
           <UserCog size={20} className="text-primary" />
           <h1 className="text-2xl font-bold text-primary">Gestión de usuarios</h1>
         </div>
-        <p className="text-gray-500 text-sm mb-6">
-          Visualiza y cambia el rol de los usuarios registrados. Para crear nuevos usuarios,
-          usa <strong>Authentication → Invite user</strong> en el panel de Supabase.
+        <p className="text-gray-500 text-sm mb-4">
+          Asigna a cada usuario uno de los tres roles.
         </p>
+
+        {/* Leyenda de roles */}
+        <div className="grid sm:grid-cols-3 gap-2 mb-6">
+          {ROLES.map(({ id, label, desc, Icon, badge }) => (
+            <div key={id} className="rounded-lg border border-gray-200 bg-white p-3">
+              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${badge}`}>
+                <Icon size={12} />
+                {label}
+              </span>
+              <p className="text-xs text-gray-500 mt-2">{desc}</p>
+            </div>
+          ))}
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-16">
@@ -78,41 +118,41 @@ export default function Usuarios() {
                 </tr>
               </thead>
               <tbody>
-                {perfiles.map((p, i) => (
-                  <tr key={p.id} className={i % 2 === 0 ? 'bg-white' : 'bg-surface'}>
-                    <td className="px-4 py-3 font-medium text-gray-800">{p.nombre ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{fmtFecha(p.created_at)}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${
-                          p.rol === 'administrador'
-                            ? 'bg-primary text-white'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {p.rol === 'administrador' ? <ShieldCheck size={12} /> : <Eye size={12} />}
-                        {p.rol}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.rol === 'administrador' ? (
-                        <button
-                          onClick={() => cambiarRol(p.id, 'consultor')}
-                          className="px-3 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+                {perfiles.map((p, i) => {
+                  const info = ROL_INFO[p.rol] ?? ROL_INFO.consultor
+                  const esMiPerfil = p.id === perfil?.id
+                  const Icon = info.Icon
+                  return (
+                    <tr key={p.id} className={i % 2 === 0 ? 'bg-white' : 'bg-surface'}>
+                      <td className="px-4 py-3 font-medium text-gray-800">
+                        {p.nombre ?? '—'}
+                        {esMiPerfil && <span className="text-gray-400 font-normal"> (tú)</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">{fmtFecha(p.created_at)}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${info.badge}`}
                         >
-                          Rebajar a consultor
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => cambiarRol(p.id, 'administrador')}
-                          className="px-3 py-1 text-xs rounded border border-primary text-primary hover:bg-primary hover:text-white transition"
+                          <Icon size={12} />
+                          {info.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={p.rol}
+                          disabled={esMiPerfil}
+                          onChange={(e) => cambiarRol(p.id, e.target.value)}
+                          title={esMiPerfil ? 'No puedes cambiar tu propio rol' : 'Cambiar rol del usuario'}
+                          className="border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Promover a admin
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          {ROLES.map((r) => (
+                            <option key={r.id} value={r.id}>{r.label}</option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

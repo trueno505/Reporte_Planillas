@@ -1,8 +1,14 @@
 import { Menu, LogOut, User } from 'lucide-react'
 import { useAuth } from '../context/auth-context'
 
+const ROL_BADGE = {
+  administrador: 'bg-primary text-white',
+  editor: 'bg-amber-500 text-white',
+  consultor: 'bg-gray-100 text-gray-600',
+}
+
 export default function Header({ onMenuClick }) {
-  const { perfil, signOut, isAdmin } = useAuth()
+  const { perfil, signOut } = useAuth()
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b border-gray-200 flex items-center justify-between px-4 py-3 shadow-sm">
@@ -25,7 +31,7 @@ export default function Header({ onMenuClick }) {
           <span>{perfil?.nombre ?? '—'}</span>
           <span
             className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-              isAdmin ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+              ROL_BADGE[perfil?.rol] ?? 'bg-gray-100 text-gray-600'
             }`}
           >
             {perfil?.rol ?? ''}

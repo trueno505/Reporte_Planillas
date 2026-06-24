@@ -1,0 +1,98 @@
+# Tecnologías del proyecto — Reporte de Planillas
+
+Aplicación web para la gestión y reporte de planillas de la **Municipalidad
+Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
+
+---
+
+## Resumen rápido
+
+| Capa | Tecnología principal |
+|---|---|
+| Frontend | React 19 + Vite |
+| Estilos | Tailwind CSS |
+| Backend / Base de datos | Supabase (PostgreSQL + Auth + Realtime + RLS) |
+| Lenguaje | JavaScript (ES Modules, JSX) |
+| Despliegue | Build estático generado por Vite |
+
+---
+
+## Frontend
+
+| Tecnología | Versión | Para qué se usa |
+|---|---|---|
+| **React** | ^19.2.6 | Librería de interfaz de usuario (componentes, hooks) |
+| **React DOM** | ^19.2.6 | Renderizado de React en el navegador |
+| **React Router DOM** | ^7.18.0 | Enrutamiento entre páginas (Dashboard, Planillas, Auditoría, etc.) |
+| **Vite** | ^8.0.12 | Servidor de desarrollo y empaquetador (build) |
+| **@vitejs/plugin-react** | ^6.0.1 | Soporte de React (Fast Refresh / JSX) en Vite |
+
+## Estilos / UI
+
+| Tecnología | Versión | Para qué se usa |
+|---|---|---|
+| **Tailwind CSS** | ^3.4.19 | Framework de estilos utilitarios (color primario `#003366`) |
+| **PostCSS** | ^8.5.15 | Procesamiento de CSS (requerido por Tailwind) |
+| **Autoprefixer** | ^10.5.0 | Prefijos CSS automáticos para compatibilidad entre navegadores |
+| **lucide-react** | ^1.21.0 | Íconos SVG |
+| **react-hot-toast** | ^2.6.0 | Notificaciones / mensajes emergentes (toasts) |
+
+## Datos, tablas y reportes
+
+| Tecnología | Versión | Para qué se usa |
+|---|---|---|
+| **@tanstack/react-table** | ^8.21.3 | Renderizado de tablas (orden, filtros, edición en línea, alertas) |
+| **xlsx** (SheetJS) | ^0.18.5 | Importar y exportar archivos Excel (`.xlsx`) |
+| **jspdf** | ^4.2.1 | Generación de PDF (boletas de pago individuales) |
+| **jspdf-autotable** | ^5.0.8 | Tablas dentro de los PDF |
+| **recharts** | ^3.8.1 | Gráficos del Dashboard (barras de líquido total por grupo) |
+
+## Backend / Base de datos
+
+| Tecnología | Versión | Para qué se usa |
+|---|---|---|
+| **Supabase** | — | Plataforma backend (BaaS) |
+| **@supabase/supabase-js** | ^2.108.2 | Cliente JavaScript para conectarse a Supabase |
+| **PostgreSQL** | (gestionado por Supabase) | Base de datos relacional |
+| **Supabase Auth** | — | Autenticación de usuarios (login por email) |
+| **Supabase Realtime** | — | Actualización en vivo de las tablas (postgres_changes) |
+| **PostgREST** | — | API REST automática sobre PostgreSQL (consultas del cliente) |
+
+### Características de PostgreSQL utilizadas
+
+- **Row Level Security (RLS)** — control de acceso por rol (`consultor` / `administrador`).
+- **Funciones (PL/pgSQL y SQL)** — `get_my_rol()`, `importar_planilla()`,
+  `recalcular_totales()`, `buscar_trabajador()`, `resumen_planillas()`,
+  `sync_dni_registro()`, etc.
+- **Triggers** — totales calculados en la BD, auditoría automática, DNI único global.
+- **Vistas** — `vw_dni_todos` (con `security_invoker`).
+- **Extensiones** — `moddatetime` (timestamps) y `pg_trgm` (búsqueda por nombre con índices GIN).
+
+## Herramientas de desarrollo (tooling)
+
+| Tecnología | Versión | Para qué se usa |
+|---|---|---|
+| **ESLint** | ^10.3.0 | Análisis estático / linting del código |
+| **@eslint/js** | ^10.0.1 | Reglas base de ESLint |
+| **eslint-plugin-react-hooks** | ^7.1.1 | Reglas para los hooks de React |
+| **eslint-plugin-react-refresh** | ^0.5.2 | Reglas para Fast Refresh |
+| **globals** | ^17.6.0 | Definición de variables globales para ESLint |
+| **@types/react**, **@types/react-dom** | ^19.x | Tipados de React (autocompletado) |
+| **Git** | — | Control de versiones |
+| **npm** | — | Gestor de paquetes |
+
+## Lenguajes
+
+- **JavaScript** (ES Modules, `type: "module"`) — lógica de la aplicación.
+- **JSX** — componentes de React.
+- **SQL (PostgreSQL / PL-pgSQL)** — esquema, funciones y triggers (carpeta `supabase/`).
+- **HTML / CSS** — estructura y estilos base.
+
+---
+
+## Arquitectura en una frase
+
+> SPA en **React + Vite** estilizada con **Tailwind**, que consume **Supabase**
+> (PostgreSQL con RLS, Auth, Realtime y funciones/triggers en SQL) como backend,
+> con importación/exportación **Excel**, generación de **PDF** y gráficos con
+> **Recharts**.

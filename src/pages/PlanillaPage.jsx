@@ -6,6 +6,7 @@ import PlanillaTable from '../components/PlanillaTable'
 import RecordForm from '../components/RecordForm'
 import ExcelExport from '../components/ExcelExport'
 import ExcelImport from '../components/ExcelImport'
+import ExcelActualizarColumna from '../components/ExcelActualizarColumna'
 import ExcelDelete from '../components/ExcelDelete'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { getPlanillaBySlug, getSeccionesCalculo } from '../config/planillas'
@@ -18,7 +19,7 @@ import toast from 'react-hot-toast'
 export default function PlanillaPage() {
   const { slug } = useParams()
   const planilla = getPlanillaBySlug(slug)
-  const { isAdmin } = useAuth()
+  const { puedeEditar } = useAuth()
 
   const { filas, loading, error, refetch, applyChange } = usePlanilla(planilla?.tabla)
 
@@ -84,7 +85,7 @@ export default function PlanillaPage() {
 
             <ExcelExport planilla={planilla} filas={filas} />
 
-            {isAdmin && (
+            {puedeEditar && (
               <>
                 <button
                   onClick={() => setFormRecord({})}
@@ -94,6 +95,7 @@ export default function PlanillaPage() {
                   Nuevo registro
                 </button>
                 <ExcelImport planilla={planilla} onDone={refetch} onBusy={setBulkBusy} />
+                <ExcelActualizarColumna planilla={planilla} filas={filas} onDone={refetch} onBusy={setBulkBusy} />
                 <ExcelDelete planilla={planilla} onDone={refetch} onBusy={setBulkBusy} />
                 {getSeccionesCalculo(planilla) && (
                   <button
@@ -124,7 +126,7 @@ export default function PlanillaPage() {
             planilla={planilla}
             columnas={planilla.columnas}
             filas={filas}
-            isAdmin={isAdmin}
+            puedeEditar={puedeEditar}
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
           />

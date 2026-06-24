@@ -28,13 +28,13 @@ function Paso({ n, titulo, activo, hecho }) {
 }
 
 export default function NuevoRegistro() {
-  const { isAdmin, loading } = useAuth()
+  const { puedeEditar, loading } = useAuth()
   const [grupo, setGrupo] = useState(null)
   const [slug, setSlug] = useState(null)
 
   if (loading) return null
-  // Crear registros es una acción de administrador (RLS lo exige igualmente).
-  if (!isAdmin) return <Navigate to="/dashboard" replace />
+  // Crear registros es una acción de edición (admin o editor); RLS lo exige igualmente.
+  if (!puedeEditar) return <Navigate to="/dashboard" replace />
 
   const planilla = slug ? getPlanillaBySlug(slug) : null
   const subplanillas = grupo ? PLANILLAS.filter((p) => p.grupo === grupo) : []

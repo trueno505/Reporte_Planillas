@@ -16,7 +16,7 @@ import toast from 'react-hot-toast'
 const TOTAL_KEYS = new Set(['t_ingreso', 't_dsctos', 't_liquido'])
 const MONEY_FMT = (v) => Number(v).toLocaleString('es-PE', { minimumFractionDigits: 2 })
 
-function InlineCell({ value: initialValue, col, rowId, planilla, isAdmin }) {
+function InlineCell({ value: initialValue, col, rowId, planilla, puedeEditar }) {
   const [editing, setEditing] = useState(false)
   const [val, setVal] = useState(initialValue)
 
@@ -50,7 +50,7 @@ function InlineCell({ value: initialValue, col, rowId, planilla, isAdmin }) {
       String(initialValue)
     )
 
-  if (!isAdmin || !['money', 'int', 'text'].includes(col.type) || TOTAL_KEYS.has(col.key)) {
+  if (!puedeEditar || !['money', 'int', 'text'].includes(col.type) || TOTAL_KEYS.has(col.key)) {
     return displayValue
   }
 
@@ -84,7 +84,7 @@ function InlineCell({ value: initialValue, col, rowId, planilla, isAdmin }) {
   )
 }
 
-export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDelete, isAdmin }) {
+export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDelete, puedeEditar }) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState([])
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 })
@@ -103,7 +103,7 @@ export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDel
             col={col}
             rowId={row.original.id}
             planilla={planilla}
-            isAdmin={isAdmin}
+            puedeEditar={puedeEditar}
           />
         ),
         size: TOTAL_KEYS.has(col.key) ? 120 : col.type === 'money' ? 110 : col.type === 'text' ? 180 : 90,
@@ -128,7 +128,7 @@ export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDel
               >
                 <Printer size={13} />
               </button>
-              {isAdmin && (
+              {puedeEditar && (
                 <>
                   <button
                     onClick={() => onEdit(row.original)}
@@ -147,10 +147,10 @@ export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDel
             </div>
           )
         },
-        size: isAdmin ? 160 : 70,
+        size: puedeEditar ? 160 : 70,
       },
     ],
-    [columnas, isAdmin, onEdit, onDelete, alertasMap, planilla]
+    [columnas, puedeEditar, onEdit, onDelete, alertasMap, planilla]
   )
 
   const table = useReactTable({
@@ -189,7 +189,7 @@ export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDel
         />
         <span className="text-sm text-gray-500 ml-auto">
           {table.getFilteredRowModel().rows.length} registros
-          {isAdmin && <span className="text-gray-400 ml-1 text-xs">(doble clic en celda para editar)</span>}
+          {puedeEditar && <span className="text-gray-400 ml-1 text-xs">(doble clic en celda para editar)</span>}
         </span>
       </div>
 
