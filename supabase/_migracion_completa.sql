@@ -2103,3 +2103,11 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+
+-- =====================================================================
+-- Recarga del esquema de PostgREST
+-- Tras ejecutar todo el archivo, PostgREST recarga su caché para exponer
+-- de inmediato las funciones/columnas nuevas en la API REST.
+-- =====================================================================
+NOTIFY pgrst, 'reload schema';

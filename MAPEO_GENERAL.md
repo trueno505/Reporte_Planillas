@@ -2,7 +2,7 @@
 
 > Documento de referencia que explica **todo lo que está creado e implementado** en el
 > proyecto. Generado a partir de una revisión completa del código fuente.
-> **Última revisión:** 2026-06-22
+> **Última revisión:** 2026-06-24
 
 ---
 
@@ -19,6 +19,7 @@ Permite:
 - Generar **boletas de pago en PDF** por trabajador y un **reporte consolidado** en Excel.
 - Buscar a un trabajador por DNI o nombre en **las 19 planillas a la vez**.
 - Un **dashboard** con KPIs y gráficos.
+- **Edición de datos** disponible para administradores y **editores**; los **consultores** solo leen/exportan.
 - **Auditoría** de cambios y **gestión de usuarios/roles** (solo administradores).
 - Actualizaciones en **tiempo real** (Supabase Realtime) entre usuarios conectados.
 
@@ -46,7 +47,8 @@ npm run build      # Build de producción → dist/
 npm run lint       # ESLint
 npm run preview    # Sirve el build de producción
 
-node scripts/genSql.mjs   # Regenera supabase/03_tablas.sql desde la config
+node scripts/genSql.mjs   # Regenera el SQL de tablas/totales/índices desde la config
+                          # (su salida se integra en supabase/_migracion_completa.sql)
 ```
 
 ### Variables de entorno (`.env`)
@@ -163,7 +165,8 @@ Reporte_Planillas/
 ├── .env                       Credenciales Supabase (no versionar)
 │
 ├── scripts/
-│   └── genSql.mjs             Genera supabase/03_tablas.sql desde planillas.js
+│   └── genSql.mjs             Genera el SQL de tablas/totales/índices desde planillas.js
+│                              (su salida se integra a mano en _migracion_completa.sql)
 │
 ├── public/                    favicon.svg, icons.svg
 │
@@ -209,15 +212,11 @@ Reporte_Planillas/
 │       ├── Auditoria.jsx      Historial de cambios (admin)
 │       └── Usuarios.jsx       Gestión de roles (admin)
 │
-├── supabase/                  Scripts SQL (correr en orden 01 → 08)
-│   ├── 01_extensions.sql
-│   ├── 02_perfiles.sql
-│   ├── 03_tablas.sql          (generado por genSql.mjs — no editar a mano)
-│   ├── 04_rls.sql
-│   ├── 05_realtime.sql
-│   ├── 06_auditoria.sql
-│   ├── 07_funciones.sql
-│   └── 08_admin.sql
+├── supabase/                  Esquema SQL — UN SOLO ARCHIVO
+│   └── _migracion_completa.sql  Todo el esquema (tablas, RLS, realtime,
+│                                auditoría, funciones, totales, índices,
+│                                operaciones, 3 roles). Correr una vez en
+│                                el SQL Editor de Supabase.
 │
 └── dist/                      Build de producción (generado)
 ```
@@ -238,6 +237,11 @@ Reporte_Planillas/
 
 Todas las rutas (salvo `/login`) están envueltas en `<ProtectedRoute>`, que muestra un
 spinner mientras carga la sesión y redirige a `/login` si no hay sesión.
+
+> **Acceso a la edición de datos** (botones de crear/editar/eliminar, Excel masivo,
+> recálculo, edición en línea) está reservado a **administrador y editor** —
+> se controla con el derivado `puedeEditar` de `AuthContext` (= `isAdmin || isEditor`).
+> La página **Nuevo registro** (`/nuevo-registro`) también exige `puedeEditar`.
 
 ---
 
@@ -262,12 +266,12 @@ después de operaciones masivas de Excel o tras el recálculo global.
 
 ### 8.1 Tabla de planilla (`PlanillaTable.jsx`)
 - Orden por columna, búsqueda global y paginación (10/25/50/100 por página).
-- **Edición en línea** con doble clic (solo admin; campos `money`/`int`/`text`).
+- **Edición en línea** con doble clic (admin/editor; campos `money`/`int`/`text`).
   Al guardar una celda se **recalculan los totales** de toda la fila y se actualiza.
 - Las columnas de total (`t_ingreso`, `t_dsctos`, `t_liquido`) son de solo lectura.
 - **Panel de alertas** y resaltado de filas con problemas.
 - Acciones por fila: descargar **boleta PDF**, **Editar**, **Eliminar** (las dos
-  últimas, solo admin).
+  últimas, admin/editor — se reciben vía el prop `puedeEditar`).
 
 ### 8.2 Formulario crear/editar (`RecordForm.jsx`)
 - Modal con todos los campos según el tipo de columna.
@@ -309,39 +313,45 @@ Busca por DNI (exacto) o nombre (ILIKE) en las 19 tablas vía el RPC
 `buscar_trabajador(termino)`, agrupando resultados por planilla.
 
 ### 8.8 Recálculo global (`PlanillaPage.jsx`)
-Botón "Recalcular totales" (admin) que recalcula todas las filas de la planilla y las
-guarda con UPSERT en lotes de 100.
+Botón "Recalcular totales" (admin/editor) que recalcula todas las filas de la planilla
+mediante el RPC atómico `recalcular_totales` (un UPDATE que dispara el trigger de totales).
 
 ---
 
 ## 9. Backend Supabase
 
-### Orden de ejecución de los scripts SQL
-`01_extensions` → `02_perfiles` → `03_tablas` → `04_rls` → `05_realtime` →
-`06_auditoria` → `07_funciones` → `08_admin` → `09_totales` → `10_indices` →
-`11_operaciones`
+### Un solo archivo SQL
+Todo el esquema vive en **`supabase/_migracion_completa.sql`**. Para instalar (o
+reinstalar) la base de datos, pega ese archivo completo en el **SQL Editor de
+Supabase** y ejecútalo una sola vez. Es la **única fuente de SQL** del proyecto; ya no
+se mantienen archivos sueltos por número.
 
-> `03_tablas.sql`, `09_totales.sql` y `10_indices.sql` son **generados** por
-> `scripts/genSql.mjs` — no editarlos a mano.
+> El SQL de tablas, totales e índices se **genera** con `scripts/genSql.mjs` desde
+> `planillas.js`; su salida se **integra a mano** dentro de `_migracion_completa.sql`
+> (no se versiona como archivos separados).
 
-| Archivo | Contenido |
+El archivo contiene, en orden:
+
+| Bloque | Contenido |
 |---|---|
-| `01_extensions.sql` | Habilita `moddatetime` (auto `updated_at`) y `pg_trgm` (búsqueda). |
-| `02_perfiles.sql` | Tabla `perfiles` + trigger `handle_new_user` (crea perfil al registrarse, rol por defecto `consultor`). |
-| `03_tablas.sql` | Las 19 tablas de planillas (**generado** — cada tabla tiene `id` UUID, `created_at`, `updated_at` y trigger de `updated_at`). |
-| `04_rls.sql` | Función `get_my_rol()` (SECURITY DEFINER) + políticas RLS (envueltas en `(select …)` para rendimiento). |
-| `05_realtime.sql` | `REPLICA IDENTITY FULL` y publicación Realtime en las 19 tablas. |
-| `06_auditoria.sql` | Tabla `auditoria` (con índices) + función/trigger `registrar_auditoria` en las 19 tablas. |
-| `07_funciones.sql` | RPCs `resumen_planillas()` y `buscar_trabajador(termino)` (ILIKE con comodines escapados y guard de DNI). |
-| `08_admin.sql` | Políticas extra para que un admin gestione todos los `perfiles`. |
-| `09_totales.sql` | Triggers `BEFORE INSERT/UPDATE` que calculan `t_ingreso/t_dsctos/t_liquido` en la BD (**generado**; 18 planillas — no `obreros_necesidad_mercado`). |
-| `10_indices.sql` | Índices GIN trigram sobre `apellidos_y_nombres` para acelerar la búsqueda (**generado**). |
-| `11_operaciones.sql` | RPCs atómicas `importar_planilla(p_tabla, p_filas)` y `recalcular_totales(p_tabla)` (solo admin, con whitelist de tablas). |
+| Extensiones | `moddatetime` (auto `updated_at`) y `pg_trgm` (búsqueda). |
+| `perfiles` | Tabla `perfiles` (`rol` con `CHECK IN ('consultor','editor','administrador')`) + trigger `handle_new_user` (crea el perfil al registrarse con rol por defecto `consultor`). |
+| 19 planillas | Las 19 tablas (**generadas** — cada una con `id`, `dni INTEGER UNIQUE`, `created_at`, `updated_at` y trigger de `updated_at`). |
+| RLS | Función `get_my_rol()` (SECURITY DEFINER) + políticas. SELECT → los 3 roles; INSERT/UPDATE/DELETE → `editor`/`administrador`. Envueltas en `(select …)` por rendimiento. |
+| Realtime | `REPLICA IDENTITY FULL` y publicación Realtime en las 19 tablas. |
+| `auditoria` | Tabla `auditoria` (FK `usuario_id` → `public.perfiles.id`) + trigger genérico en las 19 tablas. SELECT solo `administrador`. |
+| Funciones | RPCs `resumen_planillas()` y `buscar_trabajador(termino)`. |
+| Admin | Políticas extra para que un `administrador` gestione todos los `perfiles`. |
+| Totales | Triggers `BEFORE INSERT/UPDATE` que calculan `t_ingreso/t_dsctos/t_liquido` (**generados**; 18 planillas — no `obreros_necesidad_mercado`). |
+| Índices | GIN trigram sobre `apellidos_y_nombres` (**generados**). |
+| Operaciones | RPCs atómicas `importar_planilla(p_tabla, p_filas)`, `recalcular_totales(p_tabla)` y `actualizar_columna_planilla(p_tabla, p_columna, p_valores)` (autorizan a `editor`/`administrador`, con whitelist de tablas). |
+| DNI único global | `dni_registro` + vista `vw_dni_todos` (`security_invoker`) + trigger `sync_dni_registro` en las 19 tablas. |
+| Recarga | `NOTIFY pgrst, 'reload schema';` final para refrescar la caché de PostgREST. |
 
-> **Los totales se calculan en la base de datos.** Los triggers de `09_totales.sql`
-> son la fuente de verdad de `t_ingreso/t_dsctos/t_liquido`. El cálculo en
-> `calculos.js` (cliente) es solo para la vista previa en vivo del formulario e
-> importación; lo que envíe el cliente lo sobrescribe el trigger al guardar.
+> **Los totales se calculan en la base de datos.** Los triggers de totales son la
+> fuente de verdad de `t_ingreso/t_dsctos/t_liquido`. El cálculo en `calculos.js`
+> (cliente) es solo para la vista previa en vivo del formulario e importación; lo que
+> envíe el cliente lo sobrescribe el trigger al guardar.
 
 ### Auditoría
 La tabla `auditoria` guarda `tabla`, `registro_id`, `accion` (INSERT/UPDATE/DELETE),
@@ -353,18 +363,26 @@ leerla (RLS).
 
 ## 10. Roles y seguridad
 
-- **Dos roles**, almacenados en `public.perfiles.rol`:
+- **Tres roles**, almacenados en `public.perfiles.rol` (`CHECK IN
+  ('consultor','editor','administrador')`):
   - **`consultor`** — SELECT (ver), exportar a Excel, descargar boleta PDF.
-  - **`administrador`** — todo lo anterior + crear/editar/eliminar, Excel masivo,
-    recálculo, auditoría y gestión de usuarios.
-- El **frontend oculta** las acciones de admin según `isAdmin` (de `AuthContext`), pero
-  la seguridad real la impone **RLS** en Supabase a través de `get_my_rol()` — nunca
-  confiar solo en la UI.
-- El perfil se crea automáticamente al registrarse (`consultor`). Para promover a admin:
-  - Desde la página `/usuarios`, o
-  - `UPDATE perfiles SET rol = 'administrador' WHERE id = '<uuid>'`.
-- Crear nuevos usuarios se hace desde **Supabase → Authentication → Invite user**
-  (la creación desde el frontend requeriría una Edge Function con `service_role`).
+  - **`editor`** — todo lo del consultor **+ editar datos** de las planillas (crear/
+    editar/eliminar, Excel masivo importar/actualizar/borrar, recálculo). **No** gestiona
+    usuarios ni ve la auditoría.
+  - **`administrador`** — control total: datos + **gestión de usuarios** + **auditoría**.
+- `AuthContext` expone `isAdmin`, `isEditor`, `isConsultor` y el derivado
+  **`puedeEditar`** (= `isAdmin || isEditor`). La UI usa `puedeEditar` para mostrar las
+  acciones de edición y `isAdmin` para las de usuarios/auditoría.
+- El **frontend solo oculta** controles; la seguridad real la impone **RLS** en Supabase
+  vía `get_my_rol()` — nunca confiar solo en la UI. Las RPCs masivas también validan
+  `get_my_rol() IN ('editor','administrador')` (defensa en profundidad).
+- El perfil se crea automáticamente al registrarse (`consultor`). Para cambiar de rol:
+  - Desde la página `/usuarios` (selector con los 3 roles; un admin no puede cambiar su
+    propio rol, para evitar quedar bloqueado), o
+  - `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'`.
+- Crear nuevos usuarios se hace desde **Supabase → Authentication → Invite user**; la
+  cuenta aparece en `/usuarios` como `consultor` y el admin le asigna el rol deseado.
+  (Crear cuentas desde el frontend requeriría una Edge Function con `service_role`.)
 
 ---
 
@@ -372,14 +390,15 @@ leerla (RLS).
 
 | Quiero… | Hago… |
 |---|---|
-| Agregar/renombrar una columna | Editar `src/config/planillas.js` → `node scripts/genSql.mjs` → correr el SQL en Supabase. |
-| Agregar una planilla nueva | Añadir su objeto a `PLANILLAS`, regenerar SQL, y agregar la tabla a `04_rls`, `05_realtime`, `06_auditoria` y los dos RPCs de `07_funciones`. |
+| Agregar/renombrar una columna | Editar `src/config/planillas.js` → `node scripts/genSql.mjs` → integrar la salida en `supabase/_migracion_completa.sql` → correr ese SQL en Supabase. |
+| Agregar una planilla nueva | Añadir su objeto a `PLANILLAS`, regenerar el SQL, e integrar la tabla en `_migracion_completa.sql` (bloques de RLS, realtime, auditoría, listas de tablas de los RPCs y trigger de DNI único). |
 | Cambiar reglas de alertas | Editar `src/lib/alertas.js`. |
 | Cambiar diseño de la boleta | Editar `src/lib/boletaPdf.js`. |
 | Cambiar el tema/colores | Editar `tailwind.config.js`. |
+| Cambiar permisos de un rol | Editar las políticas RLS / RPCs en `_migracion_completa.sql` y el gating de la UI (`puedeEditar` / `isAdmin`). |
 
 > Recordatorio: al añadir una planilla nueva no basta con `planillas.js` y el SQL de
-> tablas; las tablas también deben listarse manualmente en `04_rls.sql`,
-> `05_realtime.sql`, `06_auditoria.sql` y en **ambos** RPCs de `07_funciones.sql`
-> (que tienen las 19 tablas escritas explícitamente con `UNION ALL`).
+> tablas; la tabla también debe aparecer en **todas** las listas de tablas dentro de
+> `_migracion_completa.sql` (bloque RLS, publicación Realtime, trigger de auditoría, los
+> arreglos de tablas de los RPCs y el trigger `sync_dni_registro`).
 ```

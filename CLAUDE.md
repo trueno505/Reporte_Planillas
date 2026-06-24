@@ -133,7 +133,7 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 - `AuthContext` exposes `isAdmin`, `isEditor`, `isConsultor` and the derived **`puedeEditar`** (= admin || editor). Use `puedeEditar` to gate data-editing UI and `isAdmin` to gate user/auditoría UI.
 - Planilla RLS: SELECT → all three roles; INSERT/UPDATE/DELETE → `('editor','administrador')`. The bulk RPCs (`importar_planilla`, `recalcular_totales`, `actualizar_columna_planilla`) check `get_my_rol() IN ('editor','administrador')`.
 - `perfiles` row is auto-created on signup via the `handle_new_user` trigger with default role `consultor`. Admin reassigns roles from the `/usuarios` page, or via `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'`.
-- **Applying the change to an existing database:** run `supabase/_migracion_3roles.sql` once in the SQL Editor (idempotent). Fresh installs already include it via `_migracion_completa.sql`.
+- The whole schema (including the `editor` role) lives in the single file `supabase/_migracion_completa.sql`. There are no standalone patch files; any schema change is folded into this consolidated file.
 
 ### Database setup — un solo archivo
 

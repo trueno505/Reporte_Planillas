@@ -60,7 +60,7 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 
 ### Características de PostgreSQL utilizadas
 
-- **Row Level Security (RLS)** — control de acceso por rol (`consultor` / `administrador`).
+- **Row Level Security (RLS)** — control de acceso por rol (`consultor` / `editor` / `administrador`).
 - **Funciones (PL/pgSQL y SQL)** — `get_my_rol()`, `importar_planilla()`,
   `recalcular_totales()`, `buscar_trabajador()`, `resumen_planillas()`,
   `sync_dni_registro()`, etc.

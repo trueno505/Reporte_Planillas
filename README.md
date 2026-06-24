@@ -1,16 +1,75 @@
-# React + Vite
+# Reporte de Planillas — Municipalidad Provincial de Ica
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema web para centralizar, consultar y gestionar **19 planillas de pago**
+(remuneraciones) de distintos regímenes laborales (Obreros, Empleados, CAS,
+Pensionistas y Autoridades).
 
-Currently, two official plugins are available:
+Permite ver cada planilla en tabla con búsqueda/orden/paginación y edición en línea,
+crear/editar/eliminar registros con **cálculo automático de totales**, importar y
+exportar **Excel**, generar **boletas PDF** y un **reporte consolidado**, buscar a un
+trabajador por DNI o nombre en las 19 planillas a la vez, un **dashboard** con KPIs y
+gráficos, **auditoría** de cambios, **gestión de usuarios/roles** y actualizaciones en
+**tiempo real** (Supabase Realtime).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- **React 19** + **Vite 8** + **react-router-dom 7**
+- **Tailwind CSS 3** (color institucional `primary #003366`)
+- **@tanstack/react-table** · **xlsx** · **jspdf** + **jspdf-autotable** · **recharts** · **lucide-react** · **react-hot-toast**
+- **Supabase** (PostgreSQL + Auth + Realtime + RLS + RPC) como backend
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Puesta en marcha
 
-## Expanding the ESLint configuration
+```bash
+npm install
+npm run dev        # Servidor de desarrollo → http://localhost:5173
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Crea un archivo `.env` (ver `.env.example`) con:
+
+```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+### Base de datos
+
+Todo el esquema vive en **un solo archivo**: `supabase/_migracion_completa.sql`.
+Para instalar (o reinstalar) la base de datos, pega ese archivo completo en el
+**SQL Editor de Supabase** y ejecútalo una vez.
+
+## Scripts
+
+```bash
+npm run dev        # Servidor de desarrollo (localhost:5173)
+npm run build      # Build de producción → dist/
+npm run lint       # ESLint
+npm run preview    # Sirve el build de producción
+
+node scripts/genSql.mjs   # Regenera el SQL de tablas/totales/índices desde
+                          # src/config/planillas.js (su salida se integra a mano
+                          # en supabase/_migracion_completa.sql)
+```
+
+## Roles
+
+Tres roles, almacenados en `public.perfiles.rol` (la seguridad real la impone RLS):
+
+| Rol | Permite |
+|---|---|
+| **consultor** | Consultar, exportar a Excel y descargar boletas PDF (solo lectura). |
+| **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, Excel masivo, recálculo). **No** gestiona usuarios ni ve la auditoría. |
+| **administrador** | Control total: datos + **gestión de usuarios** + **auditoría**. |
+
+Los usuarios se dan de alta invitándolos desde **Supabase → Authentication → Invite
+user**; aparecen como `consultor` y un administrador les asigna el rol desde la página
+**Usuarios** de la app.
+
+## Documentación
+
+- **`CLAUDE.md`** — guía de arquitectura (fuente única `planillas.js`, flujo de datos, roles, BD).
+- **`MAPEO_GENERAL.md`** — referencia completa de todo lo implementado.
+- **`TECNOLOGIAS.md`** — listado detallado de tecnologías y versiones.
+
+> ⚠️ El proyecto vive en el subdirectorio anidado `…/Reporte_Planillas/Reporte_Planillas/`
+> (la carpeta interna contiene `package.json`, `src/`, `supabase/`, etc.).
