@@ -63,7 +63,7 @@ Tres roles, almacenados en `public.perfiles.rol` (la seguridad real la impone RL
 
 Los usuarios se dan de alta invitándolos desde **Supabase → Authentication → Invite
 user**; aparecen como `consultor` y un administrador les asigna el rol desde la página
-**Usuarios** de la app..
+**Usuarios** de la app.
 
 ## Documentación
 
