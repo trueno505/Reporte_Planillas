@@ -15,7 +15,8 @@ y gestiona **19 planillas de pago** (remuneraciones) de distintos regímenes lab
 Permite:
 - Ver cada planilla en una tabla con búsqueda, orden, paginación y edición en línea.
 - Crear / editar / eliminar registros con **cálculo automático de totales**.
-- Importar y exportar datos en **Excel**, y eliminar masivamente por Excel.
+- **Alta rápida** desde *Nuevo registro* (solo DNI, Apellidos y Nombres, Fecha de Ingreso y S.N.P.).
+- Exportar datos en **Excel** y **actualizar una columna** masivamente por Excel.
 - Generar **boletas de pago en PDF** por trabajador y un **reporte consolidado** en Excel.
 - Buscar a un trabajador por DNI o nombre en **las 19 planillas a la vez**.
 - Un **dashboard** con KPIs y gráficos.
@@ -96,7 +97,7 @@ Cada columna tiene un **tipo** que determina su comportamiento en toda la app:
 - El renderizado, formato y alertas de la tabla (`PlanillaTable`).
 - Los tipos de input, validación y auto-cálculo del formulario (`RecordForm`).
 - El orden de cabeceras al exportar a Excel (`ExcelExport`).
-- El mapeo cabecera→clave al importar Excel (`ExcelImport`).
+- El selector de columnas y la plantilla de actualización por Excel (`ExcelActualizarColumna`).
 - El diseño de la boleta PDF (`boletaPdf.js`).
 - El cálculo de totales (`calculos.js`).
 
@@ -198,16 +199,16 @@ Reporte_Planillas/
 │   │   ├── Sidebar.jsx        Navegación agrupada por grupo
 │   │   ├── ProtectedRoute.jsx Redirige a /login si no hay sesión
 │   │   ├── PlanillaTable.jsx  Tabla de datos (orden/filtro/edición/PDF)
-│   │   ├── RecordForm.jsx     Modal crear/editar con auto-cálculo
-│   │   ├── ExcelImport.jsx    Importar Excel (preview + UPSERT) + plantilla
-│   │   ├── ExcelExport.jsx    Exportar filas actuales a .xlsx
-│   │   ├── ExcelDelete.jsx    Eliminar masivamente por DNI desde Excel
-│   │   └── ConfirmDialog.jsx  Modal de confirmación reutilizable
+│   │   ├── RecordForm.jsx           Modal crear/editar con auto-cálculo (+ modo alta rápida)
+│   │   ├── ExcelActualizarColumna.jsx  Actualizar una columna por DNI desde Excel + plantilla
+│   │   ├── ExcelExport.jsx          Exportar filas actuales a .xlsx
+│   │   └── ConfirmDialog.jsx        Modal de confirmación reutilizable
 │   │
 │   └── pages/
 │       ├── Login.jsx          Inicio de sesión (email/contraseña)
 │       ├── Dashboard.jsx      KPIs, gráfico, resumen, tarjetas por grupo
 │       ├── PlanillaPage.jsx   Página de una planilla (orquesta todo)
+│       ├── NuevoRegistro.jsx  Alta rápida: elegir grupo → planilla → datos básicos
 │       ├── BusquedaGlobal.jsx Búsqueda en las 19 planillas
 │       ├── MiPerfil.jsx       Perfil propio: nombre/celular + cambiar contraseña
 │       ├── Auditoria.jsx      Historial de cambios (admin)
@@ -238,10 +239,14 @@ Reporte_Planillas/
 | (cualquier otra) | `*` | Redirige a `/dashboard` |
 
 Todas las rutas (salvo `/login`) están envueltas en `<ProtectedRoute>`, que muestra un
-spinner mientras carga la sesión y redirige a `/login` si no hay sesión.
+spinner mientras carga la sesión y redirige a `/login` si no hay sesión. El estado
+`loading` de `AuthContext` permanece activo **hasta que el perfil (rol) del usuario se
+resuelve**, de modo que las páginas que dependen del rol (p. ej. `/nuevo-registro`) no
+redirigen por error al cargarse por URL directa o al refrescar.
 
-> **Acceso a la edición de datos** (botones de crear/editar/eliminar, Excel masivo,
-> recálculo, edición en línea) está reservado a **administrador y editor** —
+> **Acceso a la edición de datos** (botones de crear/editar/eliminar, alta rápida,
+> actualizar columna por Excel, recálculo, edición en línea) está reservado a
+> **administrador y editor** —
 > se controla con el derivado `puedeEditar` de `AuthContext` (= `isAdmin || isEditor`).
 > La página **Nuevo registro** (`/nuevo-registro`) también exige `puedeEditar`.
 
@@ -255,7 +260,7 @@ PlanillaPage (lee :slug de la URL)
   → usePlanilla(tabla)           carga inicial desde Supabase → { filas, applyChange, refetch }
   → useRealtime(tabla, applyChange)   se suscribe a cambios postgres y aplica al estado local
   → PlanillaTable                renderiza con @tanstack/react-table + alertas
-  → RecordForm / ExcelImport / ExcelDelete / ExcelExport   mutan o leen Supabase
+  → RecordForm / ExcelActualizarColumna / ExcelExport   mutan o leen Supabase
 ```
 
 **Detalle importante de rendimiento:** los cambios en tiempo real mutan el estado local
@@ -280,6 +285,17 @@ después de operaciones masivas de Excel o tras el recálculo global.
 - **Auto-cálculo en vivo:** al cambiar cualquier ingreso o descuento se recalculan
   `t_ingreso`, `t_dsctos` y `t_liquido` (campos de total en solo lectura).
 - Maneja error de DNI duplicado (código `23505`).
+- **Modo alta rápida (`soloBasicos`):** lo usa *Nuevo registro* (`NuevoRegistro.jsx`).
+  Muestra solo **DNI**, **Apellidos y Nombres**, **Fecha de Ingreso** y **S.N.P.**, los
+  cuatro **obligatorios** (validados al guardar). El campo **S.N.P.** es un selector
+  **ONP / AFP**; si se elige *AFP* aparece un segundo selector con las cuatro AFP
+  (*AFP Integra, Prima AFP, AFP Habitat, Profuturo AFP*) y se guarda el **nombre completo**
+  de la AFP en la columna `snp` (o `"ONP"`). El resto de columnas quedan en blanco y los
+  totales los calcula el trigger.
+
+### 8.2.1 Alta rápida (`NuevoRegistro.jsx`, ruta `/nuevo-registro`)
+Asistente en 3 pasos (grupo → planilla → datos) que reutiliza `RecordForm` con
+`soloBasicos`. Solo accesible a `editor`/`administrador`.
 
 ### 8.3 Alertas (`alertas.js`)
 Se detectan tres tipos por fila:
@@ -287,14 +303,12 @@ Se detectan tres tipos por fila:
 - **`TOTAL_DESCUADRADO`** (ámbar): el `t_liquido` guardado difiere del recalculado en > S/ 0.05.
 - **`FALTAS_EXCESIVAS`** (naranja): `faltas > 10` días.
 
-### 8.4 Importar / Exportar Excel
+### 8.4 Exportar / Actualizar por Excel
 - **Exportar** (`ExcelExport`): descarga las filas actuales como `.xlsx` con cabeceras = labels.
-- **Importar** (`ExcelImport`): lee el archivo, mapea cabeceras→claves, **coacciona tipos**
-  (incluye conversión de fechas serial de Excel), recalcula totales, muestra una
-  **vista previa** (nuevos / actualizados / con error) y hace **UPSERT por DNI**
-  en lotes de 100. Incluye botón para descargar una **plantilla vacía**.
-- **Eliminar por Excel** (`ExcelDelete`): lee los DNIs de un archivo y los borra en masa
-  tras confirmación.
+- **Actualizar columna** (`ExcelActualizarColumna`): se elige **una** columna, se sube un
+  Excel con `DNI + valor`, muestra una **vista previa** (emparejados / no encontrados /
+  inválidos) y hace un **UPDATE atómico por DNI** vía el RPC `actualizar_columna_planilla`.
+  Incluye botón para descargar una **plantilla** para rellenar.
 
 ### 8.5 Boleta PDF (`boletaPdf.js`)
 Genera una boleta A4 por trabajador con encabezado institucional, datos del trabajador,
@@ -346,14 +360,14 @@ El archivo contiene, en orden:
 | Admin | Políticas extra para que un `administrador` gestione todos los `perfiles`. |
 | Totales | Triggers `BEFORE INSERT/UPDATE` que calculan `t_ingreso/t_dsctos/t_liquido` (**generados**; 18 planillas — no `obreros_necesidad_mercado`). |
 | Índices | GIN trigram sobre `apellidos_y_nombres` (**generados**). |
-| Operaciones | RPCs atómicas `importar_planilla(p_tabla, p_filas)`, `recalcular_totales(p_tabla)` y `actualizar_columna_planilla(p_tabla, p_columna, p_valores)` (autorizan a `editor`/`administrador`, con whitelist de tablas). |
+| Operaciones | RPCs atómicas `recalcular_totales(p_tabla)` y `actualizar_columna_planilla(p_tabla, p_columna, p_valores)` (autorizan a `editor`/`administrador`, con whitelist de tablas). |
 | DNI único global | `dni_registro` + vista `vw_dni_todos` (`security_invoker`) + trigger `sync_dni_registro` en las 19 tablas. |
 | Recarga | `NOTIFY pgrst, 'reload schema';` final para refrescar la caché de PostgREST. |
 
 > **Los totales se calculan en la base de datos.** Los triggers de totales son la
 > fuente de verdad de `t_ingreso/t_dsctos/t_liquido`. El cálculo en `calculos.js`
-> (cliente) es solo para la vista previa en vivo del formulario e importación; lo que
-> envíe el cliente lo sobrescribe el trigger al guardar.
+> (cliente) es solo para la vista previa en vivo del formulario; lo que envíe el
+> cliente lo sobrescribe el trigger al guardar.
 
 ### Auditoría
 La tabla `auditoria` guarda `tabla`, `registro_id`, `accion` (INSERT/UPDATE/DELETE),
@@ -369,7 +383,7 @@ leerla (RLS).
   ('consultor','editor','administrador')`):
   - **`consultor`** — SELECT (ver), exportar a Excel, descargar boleta PDF.
   - **`editor`** — todo lo del consultor **+ editar datos** de las planillas (crear/
-    editar/eliminar, Excel masivo importar/actualizar/borrar, recálculo). **No** gestiona
+    editar/eliminar, alta rápida, actualizar columnas por Excel, recálculo). **No** gestiona
     usuarios ni ve la auditoría.
   - **`administrador`** — control total: datos + **gestión de usuarios** + **auditoría**.
 - `AuthContext` expone `isAdmin`, `isEditor`, `isConsultor` y el derivado

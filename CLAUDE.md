@@ -73,12 +73,15 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 | `Login.jsx` | `/login` | Public |
 | `Dashboard.jsx` | `/dashboard` | All |
 | `PlanillaPage.jsx` | `/planilla/:slug` | All |
+| `NuevoRegistro.jsx` | `/nuevo-registro` | editor/admin (`puedeEditar`) |
 | `BusquedaGlobal.jsx` | `/buscar` | All |
 | `MiPerfil.jsx` | `/perfil` | All |
 | `Auditoria.jsx` | `/auditoria` | Admin only |
 | `Usuarios.jsx` | `/usuarios` | Admin only |
 
 **Dashboard** shows KPIs, a bar chart (Recharts) of total líquido by group, a summary table per planilla, and a button to generate a consolidated Excel report (`reporteConsolidado.js`).
+
+**NuevoRegistro** is a 3-step wizard (grupo → planilla → datos) that reuses `RecordForm` in `soloBasicos` mode — only **DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P.** are shown, all required. S.N.P. is an ONP/AFP selector (AFP reveals a second select with the 4 AFPs; the full AFP name is stored in `snp`). Gated by `puedeEditar`; relies on `AuthContext.loading` staying true until the profile/role resolves (otherwise a direct URL load would bounce to `/dashboard`).
 
 **BusquedaGlobal** searches all 19 planillas by DNI (exact) or name (ILIKE) via the `buscar_trabajador(termino)` RPC.
 
@@ -97,7 +100,7 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 | `Sidebar.jsx` | Collapsible navigation grouped by `grupo` |
 | `ProtectedRoute.jsx` | Redirects unauthenticated users to `/login` |
 | `PlanillaTable.jsx` | Data table with sort, filter, inline edit, row alerts, PDF boleta download, edit/delete actions |
-| `RecordForm.jsx` | Modal to create/edit a record; live auto-calculates totals |
+| `RecordForm.jsx` | Modal to create/edit a record; live auto-calculates totals. `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI/Apellidos/Fecha/S.N.P., makes them required, and renders S.N.P. as an ONP/AFP selector |
 | `ExcelActualizarColumna.jsx` | Pick one column → upload Excel (DNI + value) → preview (matched/not-found/invalid) → atomic single-column UPDATE by DNI via `actualizar_columna_planilla` RPC; also downloads a fill-in template |
 | `ExcelExport.jsx` | Download current rows as `.xlsx` |
 | `ConfirmDialog.jsx` | Reusable confirm modal; `danger` prop for red styling |
@@ -111,7 +114,7 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 
 ### Context
 
-`AuthContext.jsx` — provides `{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut, refreshPerfil }` via `useAuth()`. `refreshPerfil()` re-fetches the `perfiles` row (used after MiPerfil edits so the Header reflects the new name).
+`AuthContext.jsx` — provides `{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut, refreshPerfil }` via `useAuth()`. `refreshPerfil()` re-fetches the `perfiles` row (used after MiPerfil edits so the Header reflects the new name). **`loading` stays true until the current user's profile (role) has resolved**, not just the session — it tracks `perfilUserId` (the user whose `perfiles` fetch finished) so role-gated pages (e.g. `/nuevo-registro`) don't redirect before the role is known, even on direct URL load or refresh.
 
 ### Utility libraries (`src/lib/`)
 

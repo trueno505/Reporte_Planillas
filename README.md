@@ -5,11 +5,12 @@ Sistema web para centralizar, consultar y gestionar **19 planillas de pago**
 Pensionistas y Autoridades).
 
 Permite ver cada planilla en tabla con búsqueda/orden/paginación y edición en línea,
-crear/editar/eliminar registros con **cálculo automático de totales**, importar y
-exportar **Excel**, generar **boletas PDF** y un **reporte consolidado**, buscar a un
-trabajador por DNI o nombre en las 19 planillas a la vez, un **dashboard** con KPIs y
-gráficos, **auditoría** de cambios, **gestión de usuarios/roles** y actualizaciones en
-**tiempo real** (Supabase Realtime).
+crear/editar/eliminar registros con **cálculo automático de totales**, un **alta rápida**
+(solo datos básicos + S.N.P.), **exportar** y **actualizar columnas** por **Excel**,
+generar **boletas PDF** y un **reporte consolidado**, buscar a un trabajador por DNI o
+nombre en las 19 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
+de cambios, **gestión de usuarios/roles** y actualizaciones en **tiempo real**
+(Supabase Realtime).
 
 ## Stack
 
@@ -58,7 +59,7 @@ Tres roles, almacenados en `public.perfiles.rol` (la seguridad real la impone RL
 | Rol | Permite |
 |---|---|
 | **consultor** | Consultar, exportar a Excel y descargar boletas PDF (solo lectura). |
-| **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, Excel masivo, recálculo). **No** gestiona usuarios ni ve la auditoría. |
+| **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, alta rápida, actualizar columnas por Excel, recálculo). **No** gestiona usuarios ni ve la auditoría. |
 | **administrador** | Control total: datos + **gestión de usuarios** + **auditoría**. |
 
 Los usuarios se dan de alta invitándolos desde **Supabase → Authentication → Invite

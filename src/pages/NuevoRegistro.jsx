@@ -138,6 +138,7 @@ export default function NuevoRegistro() {
         <RecordForm
           planilla={planilla}
           record={null}
+          soloBasicos
           onClose={() => setSlug(null)}
           onSaved={() => {}}
         />

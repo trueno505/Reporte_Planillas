@@ -16,16 +16,39 @@ function castValue(val, type) {
   return val
 }
 
-export default function RecordForm({ planilla, record, onClose, onSaved }) {
+// Sistema de pensiones para el campo S.N.P. en el alta rápida (soloBasicos)
+const AFP_OPCIONES = ['AFP Integra', 'Prima AFP', 'AFP Habitat', 'Profuturo AFP']
+
+export default function RecordForm({ planilla, record, onClose, onSaved, soloBasicos = false }) {
   const { tabla, columnas } = planilla
   const isEdit = !!record?.id
   const secciones = getSeccionesCalculo(planilla)
   const totalKeys = new Set(['t_ingreso', 't_dsctos', 't_liquido'])
 
+  // En el alta rápida solo se piden DNI, Apellidos y Nombres, Fecha de Ingreso y S.N.P.
+  const columnasVisibles = soloBasicos
+    ? columnas.filter(
+        (c) => c.key === 'dni' || c.key === 'apellidos_y_nombres' || c.key === 'snp' || c.type === 'date'
+      )
+    : columnas
+
   const [form, setForm] = useState(() =>
     isEdit ? { ...record } : emptyRecord(columnas)
   )
   const [saving, setSaving] = useState(false)
+  // Estado del selector S.N.P.: '' | 'ONP' | 'AFP' (el AFP concreto se guarda en form.snp)
+  const [snpSistema, setSnpSistema] = useState(() => {
+    const v = isEdit ? record?.snp : ''
+    if (v === 'ONP') return 'ONP'
+    if (AFP_OPCIONES.includes(v)) return 'AFP'
+    return ''
+  })
+
+  const handleSnpSistema = (val) => {
+    setSnpSistema(val)
+    // ONP se guarda tal cual; AFP queda vacío hasta elegir la AFP concreta
+    setForm((prev) => ({ ...prev, snp: val === 'ONP' ? 'ONP' : '' }))
+  }
 
   // Recalcula totales automáticamente cuando cambia cualquier ingreso/descuento
   useEffect(() => {
@@ -44,6 +67,23 @@ export default function RecordForm({ planilla, record, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Alta rápida: los 4 campos básicos son obligatorios
+    if (soloBasicos) {
+      const has = (k) => columnas.some((c) => c.key === k)
+      const dateCol = columnas.find((c) => c.type === 'date')
+      const faltan = []
+      if (has('dni') && (form.dni === '' || form.dni == null)) faltan.push('D.N.I.')
+      if (has('apellidos_y_nombres') && !String(form.apellidos_y_nombres ?? '').trim())
+        faltan.push('Apellidos y Nombres')
+      if (dateCol && !form[dateCol.key]) faltan.push('Fecha de Ingreso')
+      if (has('snp') && !form.snp) faltan.push('S.N.P.')
+      if (faltan.length) {
+        toast.error(`Faltan campos obligatorios: ${faltan.join(', ')}`)
+        return
+      }
+    }
+
     setSaving(true)
 
     const payload = {}
@@ -84,7 +124,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved }) {
             <h2 className="font-semibold text-primary text-lg">
               {isEdit ? 'Editar registro' : 'Nuevo registro'} — {planilla.label}
             </h2>
-            {secciones && (
+            {secciones && !soloBasicos && (
               <p className="text-xs text-green-600 flex items-center gap-1 mt-0.5">
                 <Calculator size={11} /> Totales calculados automáticamente
               </p>
@@ -99,20 +139,49 @@ export default function RecordForm({ planilla, record, onClose, onSaved }) {
           onSubmit={handleSubmit}
           className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto"
         >
-          {columnas.map((col) => {
+          {columnasVisibles.map((col) => {
             const autoTotal = isAutoTotal(col.key)
+            const requerido = soloBasicos || col.type === 'dni' || col.required
+            const esSnpBasico = soloBasicos && col.key === 'snp'
             return (
               <div key={col.key}>
                 <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                   {col.label}
+                  {requerido && <span className="text-red-500">*</span>}
                   {autoTotal && <Calculator size={10} className="text-primary" />}
                 </label>
-                {col.type === 'text' ? (
+                {esSnpBasico ? (
+                  <div className="space-y-2">
+                    <select
+                      value={snpSistema}
+                      onChange={(e) => handleSnpSistema(e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="">Seleccione…</option>
+                      <option value="ONP">ONP</option>
+                      <option value="AFP">AFP</option>
+                    </select>
+                    {snpSistema === 'AFP' && (
+                      <select
+                        value={form.snp ?? ''}
+                        onChange={(e) => handleChange('snp', e.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="">Seleccione AFP…</option>
+                        {AFP_OPCIONES.map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                ) : col.type === 'text' ? (
                   <input
                     type="text"
                     value={form[col.key] ?? ''}
                     onChange={(e) => handleChange(col.key, e.target.value)}
-                    required={col.required}
+                    required={requerido}
                     className={inputClass}
                   />
                 ) : col.type === 'date' ? (
@@ -120,6 +189,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved }) {
                     type="date"
                     value={form[col.key] ?? ''}
                     onChange={(e) => handleChange(col.key, e.target.value)}
+                    required={requerido}
                     className={inputClass}
                   />
                 ) : autoTotal ? (
@@ -137,7 +207,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved }) {
                     step={col.type === 'money' ? '0.01' : '1'}
                     value={form[col.key] ?? ''}
                     onChange={(e) => handleChange(col.key, e.target.value)}
-                    required={col.type === 'dni' || col.required}
+                    required={requerido}
                     className={inputClass}
                   />
                 )}

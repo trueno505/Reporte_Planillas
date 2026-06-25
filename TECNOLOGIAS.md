@@ -42,7 +42,7 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 | Tecnología | Versión | Para qué se usa |
 |---|---|---|
 | **@tanstack/react-table** | ^8.21.3 | Renderizado de tablas (orden, filtros, edición en línea, alertas) |
-| **xlsx** (SheetJS) | ^0.18.5 | Importar y exportar archivos Excel (`.xlsx`) |
+| **xlsx** (SheetJS) | ^0.18.5 | Exportar y leer archivos Excel (`.xlsx`) |
 | **jspdf** | ^4.2.1 | Generación de PDF (boletas de pago individuales) |
 | **jspdf-autotable** | ^5.0.8 | Tablas dentro de los PDF |
 | **recharts** | ^3.8.1 | Gráficos del Dashboard (barras de líquido total por grupo) |
@@ -61,8 +61,8 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 ### Características de PostgreSQL utilizadas
 
 - **Row Level Security (RLS)** — control de acceso por rol (`consultor` / `editor` / `administrador`).
-- **Funciones (PL/pgSQL y SQL)** — `get_my_rol()`, `importar_planilla()`,
-  `recalcular_totales()`, `buscar_trabajador()`, `resumen_planillas()`,
+- **Funciones (PL/pgSQL y SQL)** — `get_my_rol()`, `recalcular_totales()`,
+  `actualizar_columna_planilla()`, `buscar_trabajador()`, `resumen_planillas()`,
   `sync_dni_registro()`, etc.
 - **Triggers** — totales calculados en la BD, auditoría automática, DNI único global.
 - **Vistas** — `vw_dni_todos` (con `security_invoker`).
@@ -94,5 +94,5 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 
 > SPA en **React + Vite** estilizada con **Tailwind**, que consume **Supabase**
 > (PostgreSQL con RLS, Auth, Realtime y funciones/triggers en SQL) como backend,
-> con importación/exportación **Excel**, generación de **PDF** y gráficos con
+> con exportación/actualización por **Excel**, generación de **PDF** y gráficos con
 > **Recharts**.
