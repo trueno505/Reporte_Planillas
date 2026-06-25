@@ -34,7 +34,6 @@ The same config object drives:
 - `PlanillaTable` column rendering, formatting, and alerts
 - `RecordForm` input types, validation, and live auto-calculation
 - Excel export header order (`ExcelExport`)
-- Excel import header-to-key mapping (`ExcelImport`)
 - PDF boleta layout (`boletaPdf.js`)
 - Totals calculation (`calculos.js`)
 
@@ -62,7 +61,7 @@ PlanillaPage (slug from URL)
   → usePlanilla(tabla)          initial fetch from Supabase, returns {filas, applyChange, refetch}
   → useRealtime(tabla, cb)      subscribes postgres_changes; calls applyChange on event
   → PlanillaTable               renders rows via @tanstack/react-table with alerts
-  → RecordForm / ExcelImport / ExcelDelete / ExcelExport   mutate/read Supabase
+  → RecordForm / ExcelActualizarColumna / ExcelExport   mutate/read Supabase
 ```
 
 Realtime updates mutate local state (`applyChange`) **without** re-fetching. A full refetch (`refetch`) is called only after bulk Excel operations.
@@ -99,10 +98,8 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 | `ProtectedRoute.jsx` | Redirects unauthenticated users to `/login` |
 | `PlanillaTable.jsx` | Data table with sort, filter, inline edit, row alerts, PDF boleta download, edit/delete actions |
 | `RecordForm.jsx` | Modal to create/edit a record; live auto-calculates totals |
-| `ExcelImport.jsx` | Upload Excel → preview (new/updated/errors) → UPSERT; also generates blank template |
 | `ExcelActualizarColumna.jsx` | Pick one column → upload Excel (DNI + value) → preview (matched/not-found/invalid) → atomic single-column UPDATE by DNI via `actualizar_columna_planilla` RPC; also downloads a fill-in template |
 | `ExcelExport.jsx` | Download current rows as `.xlsx` |
-| `ExcelDelete.jsx` | Upload Excel with DNIs → confirm → bulk DELETE |
 | `ConfirmDialog.jsx` | Reusable confirm modal; `danger` prop for red styling |
 
 ### Hooks
@@ -134,7 +131,7 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
   - `administrador` — full control: data + user management (`/usuarios`) + auditoría (`/auditoria`).
 - Role is read by the Supabase RLS function `get_my_rol()` (SECURITY DEFINER). RLS is the real enforcement; the UI only hides controls.
 - `AuthContext` exposes `isAdmin`, `isEditor`, `isConsultor` and the derived **`puedeEditar`** (= admin || editor). Use `puedeEditar` to gate data-editing UI and `isAdmin` to gate user/auditoría UI.
-- Planilla RLS: SELECT → all three roles; INSERT/UPDATE/DELETE → `('editor','administrador')`. The bulk RPCs (`importar_planilla`, `recalcular_totales`, `actualizar_columna_planilla`) check `get_my_rol() IN ('editor','administrador')`.
+- Planilla RLS: SELECT → all three roles; INSERT/UPDATE/DELETE → `('editor','administrador')`. The bulk RPCs (`recalcular_totales`, `actualizar_columna_planilla`) check `get_my_rol() IN ('editor','administrador')`.
 - `perfiles` row is auto-created on signup via the `handle_new_user` trigger with default role `consultor`. Admin reassigns roles from the `/usuarios` page, or via `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'`.
 - `perfiles` columns: `id`, `nombre`, `celular`, `rol`, `created_at`. Users self-edit `nombre`/`celular` from `/perfil`; the `proteger_rol` BEFORE UPDATE trigger blocks non-admins from changing `rol`.
 - The whole schema (including the `editor` role) lives in the single file `supabase/_migracion_completa.sql`. There are no standalone patch files; any schema change is folded into this consolidated file.
@@ -160,7 +157,7 @@ El consolidado contiene, en orden:
 | Admin | políticas extra para que el admin gestione todos los `perfiles` |
 | Totales | triggers BEFORE INSERT/UPDATE que calculan `t_ingreso/t_dsctos/t_liquido` (18 planillas — no `obreros_necesidad_mercado`) |
 | Índices | GIN trigram sobre `apellidos_y_nombres` para búsqueda por nombre |
-| Operaciones | RPCs atómicas `importar_planilla(p_tabla, p_filas)`, `recalcular_totales(p_tabla)` y `actualizar_columna_planilla(p_tabla, p_columna, p_valores)` (solo admin, whitelist de tablas) |
+| Operaciones | RPCs atómicas `recalcular_totales(p_tabla)` y `actualizar_columna_planilla(p_tabla, p_columna, p_valores)` (solo admin, whitelist de tablas) |
 | DNI único global | `dni_registro` (PK en `dni`) + vista `vw_dni_todos` (`security_invoker`) + trigger `sync_dni_registro` en las 19 tablas |
 
 > El consolidado se generó concatenando los antiguos archivos `01..13`. Si en el
@@ -169,7 +166,7 @@ El consolidado contiene, en orden:
 
 **Totals are computed in the database.** Los triggers de totales son la fuente de
 verdad para `t_ingreso/t_dsctos/t_liquido`. El `calculos.js` del cliente es solo
-para la vista previa en vivo en `RecordForm`/`ExcelImport`; lo que envíe el
+para la vista previa en vivo en `RecordForm`; lo que envíe el
 cliente es sobrescrito por el trigger al escribir.
 
 ### Type mapping reference

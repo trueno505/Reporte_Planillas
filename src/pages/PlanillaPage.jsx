@@ -5,9 +5,7 @@ import Layout from '../components/Layout'
 import PlanillaTable from '../components/PlanillaTable'
 import RecordForm from '../components/RecordForm'
 import ExcelExport from '../components/ExcelExport'
-import ExcelImport from '../components/ExcelImport'
 import ExcelActualizarColumna from '../components/ExcelActualizarColumna'
-import ExcelDelete from '../components/ExcelDelete'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { getPlanillaBySlug, getSeccionesCalculo } from '../config/planillas'
 import { usePlanilla } from '../hooks/usePlanilla'
@@ -94,9 +92,7 @@ export default function PlanillaPage() {
                   <Plus size={15} />
                   Nuevo registro
                 </button>
-                <ExcelImport planilla={planilla} onDone={refetch} onBusy={setBulkBusy} />
                 <ExcelActualizarColumna planilla={planilla} filas={filas} onDone={refetch} onBusy={setBulkBusy} />
-                <ExcelDelete planilla={planilla} onDone={refetch} onBusy={setBulkBusy} />
                 {getSeccionesCalculo(planilla) && (
                   <button
                     onClick={handleRecalcular}
