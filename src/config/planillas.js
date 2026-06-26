@@ -45,7 +45,7 @@ const CAS_COLS = [
   { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
   { key: 't_liquido', label: 'Total Líquido', type: 'money' },
   { key: 'firma', label: 'Firma', type: 'text' },
-  { key: 'observaciones', label: 'Observaciones', type: 'text' },
+  { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
 ]
 
 const EMPL_PI_COLS = [
@@ -85,7 +85,7 @@ const EMPL_PI_COLS = [
   { key: 'coop_virgen_las_nieves', label: 'Coop. Virgen Las Nieves', type: 'money' },
   { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
   { key: 't_liquido', label: 'Total Líquido', type: 'money' },
-  { key: 'observaciones', label: 'Observaciones', type: 'text' },
+  { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
 ]
 
 export const PLANILLAS = [
@@ -147,7 +147,7 @@ export const PLANILLAS = [
       { key: 'c_sindical', label: 'C. Sindical', type: 'money' },
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -209,7 +209,7 @@ export const PLANILLAS = [
       { key: 'dscto_autoriz', label: 'Dscto. Autoriz.', type: 'money' },
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -252,7 +252,7 @@ export const PLANILLAS = [
       { key: 'dscto_ii', label: 'Dscto. II', type: 'money' },
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -299,7 +299,7 @@ export const PLANILLAS = [
       { key: 'dscto_ii', label: 'Dscto. II', type: 'money' },
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -317,7 +317,7 @@ export const PLANILLAS = [
       { key: 't_ingreso', label: 'Total Ingreso', type: 'money' },
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -380,7 +380,7 @@ export const PLANILLAS = [
       { key: 'clap', label: 'CLAP', type: 'money' },
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -436,7 +436,7 @@ export const PLANILLAS = [
       { key: 'coop_la_rehabilitadora', label: 'Coop. La Rehabilitadora', type: 'money' },
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -529,7 +529,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'firma', label: 'Firma', type: 'text' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -569,7 +569,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'firma', label: 'Firma', type: 'text' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
   {
@@ -616,7 +616,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'firma', label: 'Firma', type: 'text' },
-      { key: 'observaciones', label: 'Observaciones', type: 'text' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
     ],
   },
 ]

@@ -2,7 +2,7 @@
 
 > Documento de referencia que explica **todo lo que está creado e implementado** en el
 > proyecto. Generado a partir de una revisión completa del código fuente.
-> **Última revisión:** 2026-06-24
+> **Última revisión:** 2026-06-26
 
 ---
 
@@ -13,8 +13,11 @@ y gestiona **19 planillas de pago** (remuneraciones) de distintos regímenes lab
 (Obreros, Empleados, CAS, Pensionistas y Autoridades).
 
 Permite:
-- Ver cada planilla en una tabla con búsqueda, orden, paginación y edición en línea.
-- Crear / editar / eliminar registros con **cálculo automático de totales**.
+- Ver cada planilla en una tabla con **paginación de 50 en 50 del lado del servidor**,
+  búsqueda y orden (también server-side) y edición en línea, con **actualización en vivo**
+  (Realtime) de la lista y la paginación.
+- Editar / eliminar registros con **cálculo automático de totales**. El **alta** se hace
+  únicamente desde *Nuevo registro* (global); las planillas ya no tienen botón de alta propio.
 - **Alta rápida** desde *Nuevo registro* (solo DNI, Apellidos y Nombres, Fecha de Ingreso y S.N.P.).
 - Exportar datos en **Excel** y **actualizar una columna** masivamente por Excel.
 - Generar **boletas de pago en PDF** por trabajador y un **reporte consolidado** en Excel.
@@ -103,6 +106,10 @@ Cada columna tiene un **tipo** que determina su comportamiento en toda la app:
 
 > **Para agregar o renombrar una columna:** editar `planillas.js` → ejecutar
 > `node scripts/genSql.mjs` → correr el SQL generado en el editor SQL de Supabase.
+> Si la base de datos **ya tiene datos**, no recrear la tabla: aplicar un
+> `ALTER TABLE … RENAME COLUMN` (renombrar) o `ADD COLUMN` (agregar) para preservar los
+> registros. Ejemplo real: el rename `observaciones → tipo_acto_administrativo` se aplicó
+> con el parche idempotente `supabase/migracion_rename_observaciones.sql`.
 
 ### Conjuntos de columnas compartidos
 - **`CAS_COLS`** — usado por las 7 planillas CAS (todas comparten columnas idénticas).
@@ -183,8 +190,9 @@ Reporte_Planillas/
 │   │   └── AuthContext.jsx    Sesión, perfil y rol del usuario
 │   │
 │   ├── hooks/
-│   │   ├── usePlanilla.js     Carga inicial + estado local de filas
-│   │   └── useRealtime.js     Suscripción a cambios en tiempo real
+│   │   ├── usePlanillaPaginada.js  ★ Paginación server-side (50/pág) + búsqueda/orden + conteo real
+│   │   ├── usePlanilla.js     Carga TODAS las filas (heredado; reemplazado por usePlanillaPaginada en la planilla)
+│   │   └── useRealtime.js     Suscripción a cambios en tiempo real (filtra por tabla = planilla)
 │   │
 │   ├── lib/
 │   │   ├── supabaseClient.js  Inicializa el cliente Supabase
@@ -198,10 +206,11 @@ Reporte_Planillas/
 │   │   ├── Header.jsx         Barra superior (usuario, rol, logout)
 │   │   ├── Sidebar.jsx        Navegación agrupada por grupo
 │   │   ├── ProtectedRoute.jsx Redirige a /login si no hay sesión
-│   │   ├── PlanillaTable.jsx  Tabla de datos (orden/filtro/edición/PDF)
-│   │   ├── RecordForm.jsx           Modal crear/editar con auto-cálculo (+ modo alta rápida)
-│   │   ├── ExcelActualizarColumna.jsx  Actualizar una columna por DNI desde Excel + plantilla
-│   │   ├── ExcelExport.jsx          Exportar filas actuales a .xlsx
+│   │   ├── PlanillaTable.jsx  Tabla de la página actual (orden/búsqueda server-side, edición, PDF)
+│   │   ├── Paginacion.jsx           ★ Control de paginación reutilizable (« Anterior 1 … 4 5 6 … 20 Siguiente »)
+│   │   ├── RecordForm.jsx           Modal editar (todos obligatorios) / alta rápida, con auto-cálculo
+│   │   ├── ExcelActualizarColumna.jsx  Actualizar una columna por DNI desde Excel + plantilla (trae todas las filas)
+│   │   ├── ExcelExport.jsx          Exportar TODAS las filas a .xlsx (las trae bajo demanda)
 │   │   └── ConfirmDialog.jsx        Modal de confirmación reutilizable
 │   │
 │   └── pages/
@@ -214,11 +223,18 @@ Reporte_Planillas/
 │       ├── Auditoria.jsx      Historial de cambios (admin)
 │       └── Usuarios.jsx       Gestión de roles (admin)
 │
-├── supabase/                  Esquema SQL — UN SOLO ARCHIVO
-│   └── _migracion_completa.sql  Todo el esquema (tablas, RLS, realtime,
-│                                auditoría, funciones, totales, índices,
-│                                operaciones, 3 roles). Correr una vez en
-│                                el SQL Editor de Supabase.
+├── supabase/                  Esquema SQL
+│   ├── _migracion_completa.sql  Todo el esquema (tablas, RLS, realtime,
+│   │                            auditoría, funciones, totales, índices,
+│   │                            operaciones, 3 roles). Correr una vez en
+│   │                            el SQL Editor de Supabase.
+│   └── migracion_rename_observaciones.sql  Parche idempotente: renombra
+│                                observaciones → tipo_acto_administrativo en una BD ya instalada.
+│
+├── e2e/                       Pruebas end-to-end (Playwright, herméticas con mock de Supabase)
+│   ├── paginacion.spec.js     Paginación, estado vacío, sin botón "Nuevo registro", obligatorios al editar
+│   ├── actualizar-columna.spec.js  Flujo de actualizar columna por Excel
+│   └── support/supabaseMock.js     Intercepta auth/REST/RPC/realtime (sin backend real)
 │
 └── dist/                      Build de producción (generado)
 ```
@@ -244,9 +260,10 @@ spinner mientras carga la sesión y redirige a `/login` si no hay sesión. El es
 resuelve**, de modo que las páginas que dependen del rol (p. ej. `/nuevo-registro`) no
 redirigen por error al cargarse por URL directa o al refrescar.
 
-> **Acceso a la edición de datos** (botones de crear/editar/eliminar, alta rápida,
-> actualizar columna por Excel, recálculo, edición en línea) está reservado a
-> **administrador y editor** —
+> **Acceso a la edición de datos** (botones de editar/eliminar, alta rápida en
+> `/nuevo-registro`, actualizar columna por Excel, recálculo, edición en línea) está
+> reservado a **administrador y editor** — (el alta de registros es solo global; las
+> planillas ya no tienen botón "Nuevo registro" propio) —
 > se controla con el derivado `puedeEditar` de `AuthContext` (= `isAdmin || isEditor`).
 > La página **Nuevo registro** (`/nuevo-registro`) también exige `puedeEditar`.
 
@@ -256,32 +273,60 @@ redirigen por error al cargarse por URL directa o al refrescar.
 
 ```
 PlanillaPage (lee :slug de la URL)
-  → getPlanillaBySlug()          obtiene la config
-  → usePlanilla(tabla)           carga inicial desde Supabase → { filas, applyChange, refetch }
-  → useRealtime(tabla, applyChange)   se suscribe a cambios postgres y aplica al estado local
-  → PlanillaTable                renderiza con @tanstack/react-table + alertas
+  → getPlanillaBySlug()               obtiene la config
+  → usePlanillaPaginada(tabla)        paginación server-side: trae SOLO 50 filas con
+                                      .range() y el total real con { count: 'exact' };
+                                      maneja página/búsqueda/orden → { filas, total, page,
+                                      setPage, pageCount, search, setSearch, sort, setSort, refetch }
+  → useRealtime(tabla, onCambio)      se suscribe a los cambios postgres de ESA tabla y,
+                                      ante cualquier evento, hace un refetch (con debounce)
+  → PlanillaTable + Paginacion        renderiza la página actual + el control de paginación
   → RecordForm / ExcelActualizarColumna / ExcelExport   mutan o leen Supabase
 ```
 
-**Detalle importante de rendimiento:** los cambios en tiempo real mutan el estado local
-(`applyChange`) **sin volver a consultar la BD**. Solo se hace un `refetch` completo
-después de operaciones masivas de Excel o tras el recálculo global.
+**Tiempo real con paginación:** como insertar/borrar cambia qué 50 filas tocan a la página
+y el total de páginas, Realtime **vuelve a consultar la página actual** (con un pequeño
+debounce para agrupar ráfagas) en lugar de mutar el estado local. El canal escucha solo la
+tabla de la planilla abierta y se limpia al desmontar o cambiar de planilla; se pausa durante
+operaciones masivas de Excel / recálculo.
+
+> **Recordatorio:** la suscripción Realtime solo funciona si la tabla está habilitada en
+> Supabase (Database → Replication / publicación `supabase_realtime`). El
+> `_migracion_completa.sql` ya agrega las 19 tablas con `REPLICA IDENTITY FULL`.
+
+> **Exportar Excel** y **Actualizar columna** necesitan TODOS los registros (no solo los 50
+> visibles), así que los traen **bajo demanda** al usarlos.
 
 ---
 
 ## 8. Funcionalidades clave (detalle)
 
-### 8.1 Tabla de planilla (`PlanillaTable.jsx`)
-- Orden por columna, búsqueda global y paginación (10/25/50/100 por página).
+### 8.1 Tabla de planilla (`PlanillaTable.jsx` + `Paginacion.jsx`)
+- **Paginación del lado del servidor: 50 trabajadores por página.** Solo se traen las 50
+  filas de la página actual con `.range(desde, hasta)` y el total real con
+  `{ count: 'exact' }` → `pageCount = Math.ceil(total / 50)`. La tabla empieza vacía y se va
+  llenando conforme se guardan trabajadores (con refresco en vivo por Realtime).
+- **Búsqueda y orden server-side:** el buscador filtra **toda** la planilla por nombre
+  (ILIKE) o DNI; ordenar por columna también consulta a Supabase. Ambos vuelven a la página 1.
+- **Control de paginación reutilizable** (`Paginacion.jsx`): `« Anterior | 1 … 4 5 6 … 20 |
+  Siguiente »`, página actual resaltada, elipsis cuando hay muchas páginas, "Anterior"
+  deshabilitado en la primera y "Siguiente" en la última. Con 0 trabajadores se muestra un
+  **estado vacío** y el control **se oculta** (solo aparece con más de 1 página).
 - **Edición en línea** con doble clic (admin/editor; campos `money`/`int`/`text`).
-  Al guardar una celda se **recalculan los totales** de toda la fila y se actualiza.
+  Al guardar una celda se **recalculan los totales** de toda la fila (trigger de la BD).
 - Las columnas de total (`t_ingreso`, `t_dsctos`, `t_liquido`) son de solo lectura.
 - **Panel de alertas** y resaltado de filas con problemas.
 - Acciones por fila: descargar **boleta PDF**, **Editar**, **Eliminar** (las dos
-  últimas, admin/editor — se reciben vía el prop `puedeEditar`).
+  últimas, admin/editor — se reciben vía el prop `puedeEditar`). **No hay botón de alta** en
+  la planilla; los registros se crean solo desde *Nuevo registro* (global).
 
-### 8.2 Formulario crear/editar (`RecordForm.jsx`)
+### 8.2 Formulario editar / alta rápida (`RecordForm.jsx`)
 - Modal con todos los campos según el tipo de columna.
+- **Obligatoriedad por contexto** (`esRequerido`): al **editar**, **todos** los campos son
+  obligatorios (obliga a completar los que quedaron vacíos en el alta rápida); en el alta
+  rápida, los 4 básicos; los totales automáticos nunca (son de solo lectura). La validación
+  se hace en JS al guardar (el botón está fuera del `<form>`, el `required` nativo no basta)
+  y muestra un toast *"Completa todos los campos: …"* sin enviar nada si falta algo.
 - **Auto-cálculo en vivo:** al cambiar cualquier ingreso o descuento se recalculan
   `t_ingreso`, `t_dsctos` y `t_liquido` (campos de total en solo lectura).
 - Maneja error de DNI duplicado (código `23505`).
@@ -304,7 +349,9 @@ Se detectan tres tipos por fila:
 - **`FALTAS_EXCESIVAS`** (naranja): `faltas > 10` días.
 
 ### 8.4 Exportar / Actualizar por Excel
-- **Exportar** (`ExcelExport`): descarga las filas actuales como `.xlsx` con cabeceras = labels.
+> Como la tabla está paginada (50 filas en memoria), ambas funciones traen **todos** los
+> registros bajo demanda (`fetchAllRows`) al usarlas, para no exportar/validar solo la página visible.
+- **Exportar** (`ExcelExport`): descarga **todas** las filas como `.xlsx` con cabeceras = labels.
 - **Actualizar columna** (`ExcelActualizarColumna`): se elige **una** columna, se sube un
   Excel con `DNI + valor`, muestra una **vista previa** (emparejados / no encontrados /
   inválidos) y hace un **UPDATE atómico por DNI** vía el RPC `actualizar_columna_planilla`.
@@ -345,6 +392,12 @@ se mantienen archivos sueltos por número.
 > El SQL de tablas, totales e índices se **genera** con `scripts/genSql.mjs` desde
 > `planillas.js`; su salida se **integra a mano** dentro de `_migracion_completa.sql`
 > (no se versiona como archivos separados).
+
+> **Parches sobre una BD ya instalada:** cuando un cambio de esquema afecta a una base con
+> datos, se aplica un parche puntual en vez de reinstalar. Hoy existe
+> `supabase/migracion_rename_observaciones.sql` (renombra `observaciones →
+> tipo_acto_administrativo` en las 19 tablas, idempotente, conservando los datos). El
+> `_migracion_completa.sql` ya refleja el nombre nuevo para instalaciones desde cero.
 
 El archivo contiene, en orden:
 
@@ -411,7 +464,7 @@ leerla (RLS).
 
 | Quiero… | Hago… |
 |---|---|
-| Agregar/renombrar una columna | Editar `src/config/planillas.js` → `node scripts/genSql.mjs` → integrar la salida en `supabase/_migracion_completa.sql` → correr ese SQL en Supabase. |
+| Agregar/renombrar una columna | Editar `src/config/planillas.js` → `node scripts/genSql.mjs` → integrar la salida en `supabase/_migracion_completa.sql`. En una BD **con datos**, no reinstalar: aplicar `ALTER TABLE … ADD/RENAME COLUMN` (ver `migracion_rename_observaciones.sql` como ejemplo). Actualizar también referencias hardcodeadas (p. ej. `boletaPdf.js`). |
 | Agregar una planilla nueva | Añadir su objeto a `PLANILLAS`, regenerar el SQL, e integrar la tabla en `_migracion_completa.sql` (bloques de RLS, realtime, auditoría, listas de tablas de los RPCs y trigger de DNI único). |
 | Cambiar reglas de alertas | Editar `src/lib/alertas.js`. |
 | Cambiar diseño de la boleta | Editar `src/lib/boletaPdf.js`. |

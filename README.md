@@ -4,9 +4,10 @@ Sistema web para centralizar, consultar y gestionar **19 planillas de pago**
 (remuneraciones) de distintos regímenes laborales (Obreros, Empleados, CAS,
 Pensionistas y Autoridades).
 
-Permite ver cada planilla en tabla con búsqueda/orden/paginación y edición en línea,
-crear/editar/eliminar registros con **cálculo automático de totales**, un **alta rápida**
-(solo datos básicos + S.N.P.), **exportar** y **actualizar columnas** por **Excel**,
+Permite ver cada planilla en tabla con **paginación de 50 en 50 (server-side) y refresco en
+vivo** (Realtime), búsqueda/orden y edición en línea, editar/eliminar registros con
+**cálculo automático de totales**, un **alta rápida** global (solo datos básicos + S.N.P.;
+las planillas no tienen alta propia), **exportar** y **actualizar columnas** por **Excel**,
 generar **boletas PDF** y un **reporte consolidado**, buscar a un trabajador por DNI o
 nombre en las 19 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
 de cambios, **gestión de usuarios/roles** y actualizaciones en **tiempo real**
@@ -39,6 +40,13 @@ Todo el esquema vive en **un solo archivo**: `supabase/_migracion_completa.sql`.
 Para instalar (o reinstalar) la base de datos, pega ese archivo completo en el
 **SQL Editor de Supabase** y ejecútalo una vez.
 
+Para cambios sobre una base **con datos** se usan parches puntuales (no se reinstala).
+Ejemplo: `supabase/migracion_rename_observaciones.sql` renombra la columna
+`observaciones → tipo_acto_administrativo` en las 19 tablas conservando los registros.
+
+> **Realtime:** las suscripciones en vivo requieren que las tablas estén en la publicación
+> `supabase_realtime` (Database → Replication). El `_migracion_completa.sql` ya las agrega.
+
 ## Scripts
 
 ```bash
@@ -46,6 +54,8 @@ npm run dev        # Servidor de desarrollo (localhost:5173)
 npm run build      # Build de producción → dist/
 npm run lint       # ESLint
 npm run preview    # Sirve el build de producción
+npm run test       # Pruebas unitarias (Vitest)
+npm run test:e2e   # Pruebas end-to-end en navegador (Playwright, herméticas)
 
 node scripts/genSql.mjs   # Regenera el SQL de tablas/totales/índices desde
                           # src/config/planillas.js (su salida se integra a mano

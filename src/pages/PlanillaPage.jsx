@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
-import { Plus, RefreshCw, Calculator } from 'lucide-react'
+import { RefreshCw, Calculator } from 'lucide-react'
 import Layout from '../components/Layout'
 import PlanillaTable from '../components/PlanillaTable'
 import RecordForm from '../components/RecordForm'
@@ -8,7 +8,7 @@ import ExcelExport from '../components/ExcelExport'
 import ExcelActualizarColumna from '../components/ExcelActualizarColumna'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { getPlanillaBySlug, getSeccionesCalculo } from '../config/planillas'
-import { usePlanilla } from '../hooks/usePlanilla'
+import { usePlanillaPaginada } from '../hooks/usePlanillaPaginada'
 import { useRealtime } from '../hooks/useRealtime'
 import { useAuth } from '../context/auth-context'
 import { supabase } from '../lib/supabaseClient'
@@ -19,7 +19,11 @@ export default function PlanillaPage() {
   const planilla = getPlanillaBySlug(slug)
   const { puedeEditar } = useAuth()
 
-  const { filas, loading, error, refetch, applyChange } = usePlanilla(planilla?.tabla)
+  const {
+    filas, total, loading, error, refetch,
+    page, setPage, pageCount, pageSize,
+    search, setSearch, sort, setSort,
+  } = usePlanillaPaginada(planilla?.tabla)
 
   const [formRecord, setFormRecord] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -27,8 +31,22 @@ export default function PlanillaPage() {
   const [recalculating, setRecalculating] = useState(false)
   const [bulkBusy, setBulkBusy] = useState(false)
 
-  // Pausa Realtime mientras corre una operación masiva (importar/recalcular/borrar)
-  useRealtime(planilla?.tabla, applyChange, !bulkBusy)
+  // Realtime: ante cualquier INSERT/UPDATE/DELETE de ESTA planilla refrescamos
+  // la página y el conteo actuales (paginación server-side). Agrupamos ráfagas
+  // de eventos con un pequeño debounce para no recargar varias veces seguidas.
+  const refetchRef = useRef(refetch)
+  useEffect(() => { refetchRef.current = refetch })
+  const debounceRef = useRef(null)
+  const onRealtime = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => refetchRef.current(), 200)
+  }, [])
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current) }, [])
+
+  // Pausa Realtime mientras corre una operación masiva (importar/recalcular/borrar).
+  // El canal escucha solo la tabla de esta planilla (filtrado por planilla) y se
+  // limpia al desmontar o cambiar de planilla (ver useRealtime).
+  useRealtime(planilla?.tabla, onRealtime, !bulkBusy)
 
   const handleEdit = useCallback((row) => setFormRecord(row), [])
   const handleDeleteClick = useCallback((row) => setDeleteTarget(row), [])
@@ -44,9 +62,9 @@ export default function PlanillaPage() {
     setRecalculating(false)
     setBulkBusy(false)
     if (error) toast.error(`Error al recalcular: ${error.message}`)
-    else toast.success(`${data ?? filas.length} registros recalculados correctamente.`)
+    else toast.success(`${data ?? total} registros recalculados correctamente.`)
     refetch()
-  }, [planilla, filas, refetch])
+  }, [planilla, total, refetch])
 
   const handleDeleteConfirm = async () => {
     setDeleting(true)
@@ -81,22 +99,15 @@ export default function PlanillaPage() {
               Recargar
             </button>
 
-            <ExcelExport planilla={planilla} filas={filas} />
+            <ExcelExport planilla={planilla} />
 
             {puedeEditar && (
               <>
-                <button
-                  onClick={() => setFormRecord({})}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-light transition"
-                >
-                  <Plus size={15} />
-                  Nuevo registro
-                </button>
-                <ExcelActualizarColumna planilla={planilla} filas={filas} onDone={refetch} onBusy={setBulkBusy} />
+                <ExcelActualizarColumna planilla={planilla} onDone={refetch} onBusy={setBulkBusy} />
                 {getSeccionesCalculo(planilla) && (
                   <button
                     onClick={handleRecalcular}
-                    disabled={recalculating || filas.length === 0}
+                    disabled={recalculating || total === 0}
                     title="Recalcular todos los totales de esta planilla"
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-amber-700 border border-amber-300 hover:bg-amber-50 transition disabled:opacity-60"
                   >
@@ -109,15 +120,13 @@ export default function PlanillaPage() {
           </div>
         </div>
 
-        {/* Estado de carga/error */}
-        {loading && (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
-          </div>
-        )}
+        {/* Estado de error */}
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        {!loading && !error && (
+        {/* La tabla queda siempre montada (no desmontamos en cada cambio de
+            página/búsqueda para no perder el foco del buscador). El propio
+            componente muestra "Cargando…" o el estado vacío según corresponda. */}
+        {!error && (
           <PlanillaTable
             planilla={planilla}
             columnas={planilla.columnas}
@@ -125,6 +134,16 @@ export default function PlanillaPage() {
             puedeEditar={puedeEditar}
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
+            search={search}
+            onSearchChange={setSearch}
+            sort={sort}
+            onSortChange={setSort}
+            page={page}
+            pageCount={pageCount}
+            onPage={setPage}
+            total={total}
+            pageSize={pageSize}
+            loading={loading}
           />
         )}
       </div>

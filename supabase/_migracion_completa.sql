@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_permanentes (
   c_sindical NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_obreros_permanentes
@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_plazo_indeterminado (
   dscto_autoriz NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_obreros_plazo_indeterminado
@@ -244,7 +244,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_mandato_judicial (
   dscto_ii NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_obreros_mandato_judicial
@@ -297,7 +297,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_concurso (
   dscto_ii NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_obreros_concurso
@@ -320,7 +320,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_necesidad_mercado (
   t_ingreso NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_obreros_necesidad_mercado
@@ -389,7 +389,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_permanentes (
   clap NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_empleados_permanentes
@@ -440,7 +440,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_contrato_plazo_indet (
   coop_virgen_las_nieves NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_empleados_contrato_plazo_indet
@@ -491,7 +491,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_contrato_provisional (
   coop_virgen_las_nieves NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_empleados_contrato_provisional
@@ -539,7 +539,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_mandato_judicial_24041 (
   coop_la_rehabilitadora NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_empleados_mandato_judicial_24041
@@ -591,7 +591,7 @@ CREATE TABLE IF NOT EXISTS public.cas_general (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_cas_general
@@ -643,7 +643,7 @@ CREATE TABLE IF NOT EXISTS public.cas_choferes (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_cas_choferes
@@ -695,7 +695,7 @@ CREATE TABLE IF NOT EXISTS public.cas_i_2025 (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_cas_i_2025
@@ -747,7 +747,7 @@ CREATE TABLE IF NOT EXISTS public.cas_ii_2023 (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_cas_ii_2023
@@ -799,7 +799,7 @@ CREATE TABLE IF NOT EXISTS public.cas_ii_2024 (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_cas_ii_2024
@@ -851,7 +851,7 @@ CREATE TABLE IF NOT EXISTS public.cas_iii_2025 (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_cas_iii_2025
@@ -903,7 +903,7 @@ CREATE TABLE IF NOT EXISTS public.cas_funcional (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_cas_funcional
@@ -953,7 +953,7 @@ CREATE TABLE IF NOT EXISTS public.cesantes_pensionistas (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_cesantes_pensionistas
@@ -999,7 +999,7 @@ CREATE TABLE IF NOT EXISTS public.gerente_municipal (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_gerente_municipal
@@ -1051,7 +1051,7 @@ CREATE TABLE IF NOT EXISTS public.alcalde (
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
   firma TEXT,
-  observaciones TEXT
+  tipo_acto_administrativo TEXT
 );
 
 CREATE TRIGGER handle_updated_at_alcalde

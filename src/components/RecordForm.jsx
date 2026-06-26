@@ -65,6 +65,21 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
 
   const handleChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
 
+  // ¿Es obligatorio este campo?
+  //  - Totales automáticos: nunca (son de solo lectura, los calcula la BD).
+  //  - Alta rápida (soloBasicos): todos los campos visibles.
+  //  - Al EDITAR: todos los campos → obliga a completar los que quedaron vacíos.
+  //  - Al crear normal: solo DNI y los marcados `required` en la config.
+  const esRequerido = (col) => {
+    if (secciones && totalKeys.has(col.key)) return false
+    if (soloBasicos) return true
+    if (isEdit) return true
+    return col.type === 'dni' || col.required
+  }
+
+  const estaVacio = (v) =>
+    v === '' || v === null || v === undefined || (typeof v === 'string' && v.trim() === '')
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -80,6 +95,16 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
       if (has('snp') && !form.snp) faltan.push('S.N.P.')
       if (faltan.length) {
         toast.error(`Faltan campos obligatorios: ${faltan.join(', ')}`)
+        return
+      }
+    } else {
+      // Formulario completo (crear/editar): valida todos los campos obligatorios.
+      // Al editar esto incluye TODOS los campos, así que no se permiten vacíos.
+      const faltan = columnasVisibles
+        .filter((c) => esRequerido(c) && estaVacio(form[c.key]))
+        .map((c) => c.label)
+      if (faltan.length) {
+        toast.error(`Completa todos los campos: ${faltan.join(', ')}`)
         return
       }
     }
@@ -141,7 +166,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
         >
           {columnasVisibles.map((col) => {
             const autoTotal = isAutoTotal(col.key)
-            const requerido = soloBasicos || col.type === 'dni' || col.required
+            const requerido = esRequerido(col)
             const esSnpBasico = soloBasicos && col.key === 'snp'
             return (
               <div key={col.key}>

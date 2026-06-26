@@ -1,6 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { fetchAllRows } from '../lib/db'
 
+// HEREDADO: carga TODAS las filas y aplica los cambios de Realtime al estado local.
+// `PlanillaPage` ya NO usa este hook; ahora usa `usePlanillaPaginada` (paginación
+// server-side de 50 en 50 + refetch en vivo). Se conserva solo como referencia; si
+// se necesita la lista completa en memoria, preferir `fetchAllRows` directamente.
 export function usePlanilla(tabla) {
   const [filas, setFilas] = useState([])
   const [loading, setLoading] = useState(true)

@@ -1,7 +1,8 @@
-import { useRef, useState, useMemo } from 'react'
+import { useRef, useState, useMemo, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { PencilLine, X, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
+import { fetchAllRows } from '../lib/db'
 import { getSeccionesCalculo } from '../config/planillas'
 import toast from 'react-hot-toast'
 
@@ -35,6 +36,21 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
   // { columna, colLabel, colType, actualizar: [{dni, valor, nombre}], noEncontrados: [dni], invalidos }
   const [preview, setPreview] = useState(null)
 
+  // La planilla en pantalla está paginada (50 filas), pero validar los DNIs y
+  // generar la plantilla requiere TODOS los registros. Si el padre no nos pasa
+  // `filas`, los traemos bajo demanda al abrir el modal.
+  const [filasFetched, setFilasFetched] = useState(null)
+  const filasAll = filas ?? filasFetched
+  const cargandoFilas = filasAll == null
+
+  useEffect(() => {
+    if (open && filas == null && filasFetched == null) {
+      fetchAllRows(tabla, { order: 'apellidos_y_nombres' })
+        .then(setFilasFetched)
+        .catch((e) => toast.error(`No se pudieron cargar los registros: ${e.message}`))
+    }
+  }, [open, filas, filasFetched, tabla])
+
   // Columnas que se pueden actualizar: todas menos el DNI. Si la planilla
   // calcula totales automáticamente, se excluyen las columnas de total
   // (las sobreescribiría el trigger de la BD).
@@ -49,14 +65,16 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
   // DNIs existentes en la planilla → nombre, para validar y mostrar la vista previa.
   const dniIndex = useMemo(() => {
     const m = new Map()
-    for (const f of filas ?? []) m.set(Number(f.dni), f.apellidos_y_nombres)
+    for (const f of filasAll ?? []) m.set(Number(f.dni), f.apellidos_y_nombres)
     return m
-  }, [filas])
+  }, [filasAll])
 
   const reset = () => {
     setOpen(false)
     setColumna('')
     setPreview(null)
+    // Limpiamos la caché para que la próxima apertura traiga datos frescos.
+    setFilasFetched(null)
   }
 
   const colMeta = columnas.find((c) => c.key === columna)
@@ -151,7 +169,7 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
   // registros actuales de la planilla.
   const descargarPlantilla = () => {
     if (!columna) { toast.error('Primero selecciona la columna a actualizar.'); return }
-    const datos = (filas ?? []).map((f) => ({
+    const datos = (filasAll ?? []).map((f) => ({
       DNI: f.dni,
       'Apellidos y Nombres': f.apellidos_y_nombres,
       [colMeta.label]: f[columna] ?? '',
@@ -208,22 +226,26 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
                   (cabecera <strong>«{colMeta.label}»</strong> o <strong>«VALOR»</strong>). Solo se
                   actualizarán los DNI que existan en esta planilla.
                 </p>
-                <div className="flex gap-2 mb-1">
+                <div className="flex gap-2 mb-1 items-center">
                   <button
                     onClick={descargarPlantilla}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
+                    disabled={cargandoFilas}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-60"
                   >
                     <Download size={14} />
                     Descargar plantilla
                   </button>
                   <button
                     onClick={() => inputRef.current?.click()}
-                    disabled={loading}
+                    disabled={loading || cargandoFilas}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition disabled:opacity-60"
                   >
                     <PencilLine size={14} />
                     {loading ? 'Leyendo…' : 'Subir Excel'}
                   </button>
+                  {cargandoFilas && (
+                    <span className="text-xs text-gray-400">Cargando registros…</span>
+                  )}
                 </div>
               </>
             )}

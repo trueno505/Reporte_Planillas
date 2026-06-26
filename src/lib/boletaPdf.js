@@ -115,12 +115,12 @@ export function generarBoletaPdf(planilla, fila) {
   doc.text('TOTAL LÍQUIDO A PAGAR:', 18, finalY + 8)
   doc.text(`S/ ${fmt(fila.t_liquido)}`, 180, finalY + 8, { align: 'right' })
 
-  // ─── Observaciones ───────────────────────────────────────────────────────────
-  if (fila.observaciones) {
+  // ─── Tipo de acto administrativo ─────────────────────────────────────────────
+  if (fila.tipo_acto_administrativo) {
     doc.setTextColor(80, 80, 80)
     doc.setFontSize(8)
     doc.setFont('helvetica', 'italic')
-    doc.text(`Obs: ${fila.observaciones}`, 14, finalY + 18)
+    doc.text(`Tipo de acto administrativo: ${fila.tipo_acto_administrativo}`, 14, finalY + 18)
   }
 
   // ─── Pie ─────────────────────────────────────────────────────────────────────

@@ -26,3 +26,50 @@ export async function fetchAllRows(tabla, { order = 'apellidos_y_nombres' } = {}
   }
   return todas
 }
+
+/**
+ * Paginación del lado del servidor: trae SOLO las filas de la página pedida
+ * con `.range(desde, hasta)` y el conteo real de la planilla con
+ * `{ count: 'exact' }`. El total permite calcular `Math.ceil(total / pageSize)`
+ * páginas sin descargar toda la tabla.
+ *
+ * @param {string} tabla
+ * @param {{
+ *   page?: number,        // 1-based
+ *   pageSize?: number,
+ *   search?: string,      // filtra por apellidos/nombres (ILIKE) y DNI si es numérico
+ *   orderBy?: string,
+ *   ascending?: boolean,
+ * }} [opts]
+ * @returns {Promise<{ filas: Array, total: number }>}
+ * @throws si Supabase devuelve un error
+ */
+export async function fetchPagina(
+  tabla,
+  { page = 1, pageSize = 50, search = '', orderBy = 'apellidos_y_nombres', ascending = true } = {}
+) {
+  const desde = (page - 1) * pageSize
+  const hasta = desde + pageSize - 1
+
+  let query = supabase.from(tabla).select('*', { count: 'exact' })
+
+  const term = String(search ?? '').trim()
+  if (term) {
+    // Saneamos el término: las comas/paréntesis/asteriscos rompen el filtro
+    // `.or()` de PostgREST, así que los convertimos en espacios.
+    const safe = term.replace(/[,()*]/g, ' ').trim()
+    if (/^\d+$/.test(term)) {
+      // Solo dígitos → busca por nombre O por DNI exacto.
+      query = query.or(`apellidos_y_nombres.ilike.%${safe}%,dni.eq.${term}`)
+    } else {
+      query = query.ilike('apellidos_y_nombres', `%${safe}%`)
+    }
+  }
+
+  const { data, error, count } = await query
+    .order(orderBy, { ascending })
+    .range(desde, hasta)
+
+  if (error) throw error
+  return { filas: data ?? [], total: count ?? 0 }
+}

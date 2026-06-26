@@ -2,15 +2,13 @@ import { useMemo, useState, useCallback } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
-  getSortedRowModel,
-  getPaginationRowModel,
-  getFilteredRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Printer, AlertTriangle } from 'lucide-react'
+import { ChevronUp, ChevronDown, ChevronsUpDown, Printer, AlertTriangle, Search } from 'lucide-react'
 import { mapAlertasPlanilla } from '../lib/alertas'
 import { generarBoletaPdf } from '../lib/boletaPdf'
 import { supabase } from '../lib/supabaseClient'
+import Paginacion from './Paginacion'
 import toast from 'react-hot-toast'
 
 const TOTAL_KEYS = new Set(['t_ingreso', 't_dsctos', 't_liquido'])
@@ -84,11 +82,30 @@ function InlineCell({ value: initialValue, col, rowId, planilla, puedeEditar }) 
   )
 }
 
-export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDelete, puedeEditar }) {
-  const [globalFilter, setGlobalFilter] = useState('')
-  const [sorting, setSorting] = useState([])
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 })
-
+/**
+ * Tabla de una planilla. La paginación, búsqueda y ordenamiento son del lado del
+ * servidor (controlados por el componente padre vía `usePlanillaPaginada`):
+ * `filas` son SOLO los registros de la página actual.
+ */
+export default function PlanillaTable({
+  planilla,
+  columnas,
+  filas,
+  onEdit,
+  onDelete,
+  puedeEditar,
+  // Estado de paginación/búsqueda/orden controlado (server-side)
+  search,
+  onSearchChange,
+  sort,
+  onSortChange,
+  page,
+  pageCount,
+  onPage,
+  total,
+  pageSize,
+  loading,
+}) {
   const alertasMap = useMemo(() => mapAlertasPlanilla(planilla, filas), [planilla, filas])
   const totalAlertas = alertasMap.size
 
@@ -153,18 +170,15 @@ export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDel
     [columnas, puedeEditar, onEdit, onDelete, alertasMap, planilla]
   )
 
+  // El ordenamiento real lo hace el servidor; @tanstack solo arma las filas.
   const table = useReactTable({
     data: filas,
     columns,
-    state: { sorting, globalFilter, pagination },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
   })
+
+  const buscando = search.trim().length > 0
+  const sinFilas = filas.length === 0
 
   return (
     <div className="flex flex-col gap-3">
@@ -173,22 +187,26 @@ export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDel
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 flex items-center gap-2 text-sm text-amber-800">
           <AlertTriangle size={16} className="text-amber-500 shrink-0" />
           <span>
-            <strong>{totalAlertas}</strong> registro{totalAlertas > 1 ? 's' : ''} con alertas.
+            <strong>{totalAlertas}</strong> registro{totalAlertas > 1 ? 's' : ''} con alertas en esta página.
             Pasa el cursor sobre el ícono <AlertTriangle className="inline" size={12} /> en la fila para ver el detalle.
           </span>
         </div>
       )}
 
-      {/* Barra de búsqueda */}
+      {/* Barra de búsqueda (server-side: filtra toda la planilla) */}
       <div className="flex items-center gap-2">
-        <input
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Buscar en la planilla…"
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
+        <div className="relative w-72">
+          <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Buscar por nombre o DNI…"
+            className="border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
         <span className="text-sm text-gray-500 ml-auto">
-          {table.getFilteredRowModel().rows.length} registros
+          {total} {total === 1 ? 'registro' : 'registros'}
+          {buscando && ' (filtrados)'}
           {puedeEditar && <span className="text-gray-400 ml-1 text-xs">(doble clic en celda para editar)</span>}
         </span>
       </div>
@@ -199,39 +217,48 @@ export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDel
           <thead className="bg-primary text-white sticky top-0">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
-                {hg.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    style={{ width: header.column.columnDef.size }}
-                    className={`px-3 py-2 text-left text-xs font-semibold whitespace-nowrap select-none hover:bg-primary-light
-                      ${TOTAL_KEYS.has(header.column.id) ? 'bg-primary-dark' : ''}
-                      ${header.column.getCanSort() ? 'cursor-pointer' : ''}`}
-                  >
-                    <div className="flex items-center gap-1">
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                      {header.column.getCanSort() && (
-                        <span className="opacity-70">
-                          {header.column.getIsSorted() === 'asc' ? (
-                            <ChevronUp size={12} />
-                          ) : header.column.getIsSorted() === 'desc' ? (
-                            <ChevronDown size={12} />
-                          ) : (
-                            <ChevronsUpDown size={12} />
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                ))}
+                {hg.headers.map((header) => {
+                  const colId = header.column.id
+                  const sortable = colId !== 'acciones'
+                  const activo = sort.key === colId
+                  return (
+                    <th
+                      key={header.id}
+                      onClick={sortable ? () => onSortChange(colId) : undefined}
+                      style={{ width: header.column.columnDef.size }}
+                      className={`px-3 py-2 text-left text-xs font-semibold whitespace-nowrap select-none hover:bg-primary-light
+                        ${TOTAL_KEYS.has(colId) ? 'bg-primary-dark' : ''}
+                        ${sortable ? 'cursor-pointer' : ''}`}
+                    >
+                      <div className="flex items-center gap-1">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {sortable && (
+                          <span className="opacity-70">
+                            {activo && sort.ascending ? (
+                              <ChevronUp size={12} />
+                            ) : activo && !sort.ascending ? (
+                              <ChevronDown size={12} />
+                            ) : (
+                              <ChevronsUpDown size={12} />
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  )
+                })}
               </tr>
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.length === 0 ? (
+            {sinFilas ? (
               <tr>
                 <td colSpan={columns.length} className="text-center py-12 text-gray-400">
-                  No hay registros en esta planilla.
+                  {loading
+                    ? 'Cargando…'
+                    : buscando
+                      ? 'Sin resultados para la búsqueda.'
+                      : 'Aún no hay trabajadores en esta planilla.'}
                 </td>
               </tr>
             ) : (
@@ -257,37 +284,14 @@ export default function PlanillaTable({ planilla, columnas, filas, onEdit, onDel
         </table>
       </div>
 
-      {/* Paginación */}
-      <div className="flex items-center justify-between text-sm text-gray-600">
-        <span>
-          Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount() || 1}
-        </span>
-        <div className="flex items-center gap-2">
-          <select
-            value={pagination.pageSize}
-            onChange={(e) => setPagination((p) => ({ ...p, pageSize: Number(e.target.value), pageIndex: 0 }))}
-            className="border border-gray-200 rounded px-2 py-1 text-sm"
-          >
-            {[10, 25, 50, 100].map((n) => (
-              <option key={n} value={n}>{n} / página</option>
-            ))}
-          </select>
-          <button
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <button
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      </div>
+      {/* Paginación reutilizable (oculta con una sola página) */}
+      <Paginacion
+        page={page}
+        pageCount={pageCount}
+        onPage={onPage}
+        total={total}
+        pageSize={pageSize}
+      />
     </div>
   )
 }

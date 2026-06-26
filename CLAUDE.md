@@ -57,14 +57,27 @@ Slugs: `obreros-permanentes`, `obreros-plazo-indeterminado`, `obreros-mandato-ju
 
 ```
 PlanillaPage (slug from URL)
-  → getPlanillaBySlug()         reads config
-  → usePlanilla(tabla)          initial fetch from Supabase, returns {filas, applyChange, refetch}
-  → useRealtime(tabla, cb)      subscribes postgres_changes; calls applyChange on event
-  → PlanillaTable               renders rows via @tanstack/react-table with alerts
-  → RecordForm / ExcelActualizarColumna / ExcelExport   mutate/read Supabase
+  → getPlanillaBySlug()              reads config
+  → usePlanillaPaginada(tabla)       server-side pagination: fetches ONE page of 50
+                                     rows via .range() + total via { count: 'exact' };
+                                     owns page/search/sort state; returns
+                                     {filas, total, page, setPage, pageCount, search,
+                                      setSearch, sort, setSort, refetch}
+  → useRealtime(tabla, cb)           subscribes postgres_changes for THIS table; on any
+                                     event debounce-calls refetch (re-reads current page
+                                     + count, so list and pagination update live)
+  → PlanillaTable                    renders the 50 page rows + <Paginacion>; search and
+                                     column sort are controlled and resolved server-side
+  → RecordForm                       mutates Supabase (realtime refreshes the page)
+  → ExcelActualizarColumna / ExcelExport   lazily fetch ALL rows on demand (bulk ops need
+                                     the full dataset, not just the visible page)
 ```
 
-Realtime updates mutate local state (`applyChange`) **without** re-fetching. A full refetch (`refetch`) is called only after bulk Excel operations.
+Pagination is **server-side**: only 50 rows live in memory at a time. `pageCount = Math.ceil(total / 50)`; with 0 workers the table shows an empty state and `<Paginacion>` hides itself (it returns `null` when `pageCount <= 1`). Search (name ILIKE / DNI exact) and column sort are pushed to Supabase and reset to page 1.
+
+Realtime now **refetches the current page** (debounced ~200 ms) instead of mutating local state — required because inserts/deletes change which 50 rows belong on the page and the total page count. The subscription channel is `realtime:<tabla>`, so it only listens to the current planilla's table (each planilla is its own table) and is torn down on unmount or planilla change. Realtime is paused (`enabled=false`) during bulk Excel/recalcular operations.
+
+> **Realtime must be enabled for each planilla table in Supabase** (Database → Replication, or via `_migracion_completa.sql` which adds the tables to the `supabase_realtime` publication with `REPLICA IDENTITY FULL`). The subscription is silently inert if the table isn't in the publication.
 
 ### Pages
 
@@ -99,8 +112,9 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 | `Header.jsx` | Top bar: current user, role badge, logout |
 | `Sidebar.jsx` | Collapsible navigation grouped by `grupo` |
 | `ProtectedRoute.jsx` | Redirects unauthenticated users to `/login` |
-| `PlanillaTable.jsx` | Data table with sort, filter, inline edit, row alerts, PDF boleta download, edit/delete actions |
-| `RecordForm.jsx` | Modal to create/edit a record; live auto-calculates totals. `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI/Apellidos/Fecha/S.N.P., makes them required, and renders S.N.P. as an ONP/AFP selector |
+| `PlanillaTable.jsx` | Data table for the current page (50 rows) with controlled server-side sort/search, inline edit, row alerts, PDF boleta download, edit/delete actions; renders `<Paginacion>` |
+| `Paginacion.jsx` | Reusable Tailwind pagination control (« Anterior \| 1 … 4 5 6 … 20 \| Siguiente »), current page highlighted, ellipsis for large ranges, prev/next disabled at ends; hidden when ≤1 page |
+| `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI/Apellidos/Fecha/S.N.P., makes them required, and renders S.N.P. as an ONP/AFP selector. **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
 | `ExcelActualizarColumna.jsx` | Pick one column → upload Excel (DNI + value) → preview (matched/not-found/invalid) → atomic single-column UPDATE by DNI via `actualizar_columna_planilla` RPC; also downloads a fill-in template |
 | `ExcelExport.jsx` | Download current rows as `.xlsx` |
 | `ConfirmDialog.jsx` | Reusable confirm modal; `danger` prop for red styling |
@@ -109,8 +123,9 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 
 | Hook | Signature | Returns |
 |---|---|---|
-| `usePlanilla` | `usePlanilla(tabla)` | `{ filas, loading, error, refetch, applyChange }` |
-| `useRealtime` | `useRealtime(tabla, onPayload)` | — (sets up subscription, cleans up on unmount) |
+| `usePlanillaPaginada` | `usePlanillaPaginada(tabla, { pageSize=50 })` | `{ filas, total, page, setPage, pageCount, pageSize, search, setSearch, sort, setSort, loading, error, refetch }` — server-side paginated page of 50 |
+| `usePlanilla` | `usePlanilla(tabla)` | `{ filas, loading, error, refetch, applyChange }` — fetches ALL rows; **superseded by `usePlanillaPaginada` for PlanillaPage**, kept for reference |
+| `useRealtime` | `useRealtime(tabla, onPayload, enabled=true)` | — (subscribes to `tabla`'s postgres_changes, cleans up on unmount/table change) |
 
 ### Context
 
@@ -137,7 +152,7 @@ Realtime updates mutate local state (`applyChange`) **without** re-fetching. A f
 - Planilla RLS: SELECT → all three roles; INSERT/UPDATE/DELETE → `('editor','administrador')`. The bulk RPCs (`recalcular_totales`, `actualizar_columna_planilla`) check `get_my_rol() IN ('editor','administrador')`.
 - `perfiles` row is auto-created on signup via the `handle_new_user` trigger with default role `consultor`. Admin reassigns roles from the `/usuarios` page, or via `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'`.
 - `perfiles` columns: `id`, `nombre`, `celular`, `rol`, `created_at`. Users self-edit `nombre`/`celular` from `/perfil`; the `proteger_rol` BEFORE UPDATE trigger blocks non-admins from changing `rol`.
-- The whole schema (including the `editor` role) lives in the single file `supabase/_migracion_completa.sql`. There are no standalone patch files; any schema change is folded into this consolidated file.
+- The whole schema (including the `editor` role) lives in the single file `supabase/_migracion_completa.sql` — the source of truth for a **fresh install**, into which every schema change is also folded. For changes against a **live DB with data**, apply a targeted, idempotent patch instead of reinstalling (e.g. `supabase/migracion_rename_observaciones.sql`, which renames `observaciones → tipo_acto_administrativo` across the 19 tables via `ALTER TABLE … RENAME COLUMN`).
 
 ### Database setup — un solo archivo
 

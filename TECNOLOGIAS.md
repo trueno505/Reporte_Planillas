@@ -68,6 +68,16 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 - **Vistas** — `vw_dni_todos` (con `security_invoker`).
 - **Extensiones** — `moddatetime` (timestamps) y `pg_trgm` (búsqueda por nombre con índices GIN).
 
+## Pruebas (testing)
+
+| Tecnología | Versión | Para qué se usa |
+|---|---|---|
+| **Vitest** | ^4.1.9 | Pruebas unitarias / de componentes (`npm run test`) |
+| **@testing-library/react** | ^16.3.2 | Render y consultas de componentes en las pruebas |
+| **@testing-library/jest-dom** · **user-event** | ^6.x · ^14.x | Matchers del DOM y simulación de interacción del usuario |
+| **jsdom** | ^29.1.1 | DOM simulado para las pruebas unitarias |
+| **@playwright/test** | ^1.61.1 | Pruebas end-to-end en navegador real (`npm run test:e2e`), herméticas con un mock de Supabase (auth/REST/RPC/realtime) — sin backend ni credenciales |
+
 ## Herramientas de desarrollo (tooling)
 
 | Tecnología | Versión | Para qué se usa |
