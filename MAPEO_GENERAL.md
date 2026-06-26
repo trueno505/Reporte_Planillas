@@ -18,7 +18,7 @@ Permite:
   (Realtime) de la lista y la paginación.
 - Editar / eliminar registros con **cálculo automático de totales**. El **alta** se hace
   únicamente desde *Nuevo registro* (global); las planillas ya no tienen botón de alta propio.
-- **Alta rápida** desde *Nuevo registro* (solo DNI, Apellidos y Nombres, Fecha de Ingreso y S.N.P.).
+- **Alta rápida** desde *Nuevo registro* (solo DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P. y Tipo de acto administrativo).
 - Exportar datos en **Excel** y **actualizar una columna** masivamente por Excel.
 - Generar **boletas de pago en PDF** por trabajador y un **reporte consolidado** en Excel.
 - Buscar a un trabajador por DNI o nombre en **las 19 planillas a la vez**.
@@ -331,8 +331,8 @@ operaciones masivas de Excel / recálculo.
   `t_ingreso`, `t_dsctos` y `t_liquido` (campos de total en solo lectura).
 - Maneja error de DNI duplicado (código `23505`).
 - **Modo alta rápida (`soloBasicos`):** lo usa *Nuevo registro* (`NuevoRegistro.jsx`).
-  Muestra solo **DNI**, **Apellidos y Nombres**, **Fecha de Ingreso** y **S.N.P.**, los
-  cuatro **obligatorios** (validados al guardar). El campo **S.N.P.** es un selector
+  Muestra solo **DNI**, **Apellidos y Nombres**, **Fecha de Ingreso**, **S.N.P.** y
+  **Tipo de acto administrativo**, todos **obligatorios** (validados al guardar). El campo **S.N.P.** es un selector
   **ONP / AFP**; si se elige *AFP* aparece un segundo selector con las cuatro AFP
   (*AFP Integra, Prima AFP, AFP Habitat, Profuturo AFP*) y se guarda el **nombre completo**
   de la AFP en la columna `snp` (o `"ONP"`). El resto de columnas quedan en blanco y los

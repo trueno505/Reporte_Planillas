@@ -25,10 +25,16 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
   const secciones = getSeccionesCalculo(planilla)
   const totalKeys = new Set(['t_ingreso', 't_dsctos', 't_liquido'])
 
-  // En el alta rápida solo se piden DNI, Apellidos y Nombres, Fecha de Ingreso y S.N.P.
+  // En el alta rápida solo se piden DNI, Apellidos y Nombres, Fecha de Ingreso,
+  // S.N.P. y Tipo de acto administrativo.
   const columnasVisibles = soloBasicos
     ? columnas.filter(
-        (c) => c.key === 'dni' || c.key === 'apellidos_y_nombres' || c.key === 'snp' || c.type === 'date'
+        (c) =>
+          c.key === 'dni' ||
+          c.key === 'apellidos_y_nombres' ||
+          c.key === 'snp' ||
+          c.key === 'tipo_acto_administrativo' ||
+          c.type === 'date'
       )
     : columnas
 
@@ -83,7 +89,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Alta rápida: los 4 campos básicos son obligatorios
+    // Alta rápida: los campos básicos son obligatorios
     if (soloBasicos) {
       const has = (k) => columnas.some((c) => c.key === k)
       const dateCol = columnas.find((c) => c.type === 'date')
@@ -93,6 +99,8 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
         faltan.push('Apellidos y Nombres')
       if (dateCol && !form[dateCol.key]) faltan.push('Fecha de Ingreso')
       if (has('snp') && !form.snp) faltan.push('S.N.P.')
+      if (has('tipo_acto_administrativo') && !String(form.tipo_acto_administrativo ?? '').trim())
+        faltan.push('Tipo de acto administrativo')
       if (faltan.length) {
         toast.error(`Faltan campos obligatorios: ${faltan.join(', ')}`)
         return

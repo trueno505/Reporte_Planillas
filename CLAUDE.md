@@ -94,7 +94,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 
 **Dashboard** shows KPIs, a bar chart (Recharts) of total líquido by group, a summary table per planilla, and a button to generate a consolidated Excel report (`reporteConsolidado.js`).
 
-**NuevoRegistro** is a 3-step wizard (grupo → planilla → datos) that reuses `RecordForm` in `soloBasicos` mode — only **DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P.** are shown, all required. S.N.P. is an ONP/AFP selector (AFP reveals a second select with the 4 AFPs; the full AFP name is stored in `snp`). Gated by `puedeEditar`; relies on `AuthContext.loading` staying true until the profile/role resolves (otherwise a direct URL load would bounce to `/dashboard`).
+**NuevoRegistro** is a 3-step wizard (grupo → planilla → datos) that reuses `RecordForm` in `soloBasicos` mode — only **DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P., Tipo de acto administrativo** are shown, all required. S.N.P. is an ONP/AFP selector (AFP reveals a second select with the 4 AFPs; the full AFP name is stored in `snp`). Gated by `puedeEditar`; relies on `AuthContext.loading` staying true until the profile/role resolves (otherwise a direct URL load would bounce to `/dashboard`).
 
 **BusquedaGlobal** searches all 19 planillas by DNI (exact) or name (ILIKE) via the `buscar_trabajador(termino)` RPC.
 
@@ -114,7 +114,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 | `ProtectedRoute.jsx` | Redirects unauthenticated users to `/login` |
 | `PlanillaTable.jsx` | Data table for the current page (50 rows) with controlled server-side sort/search, inline edit, row alerts, PDF boleta download, edit/delete actions; renders `<Paginacion>` |
 | `Paginacion.jsx` | Reusable Tailwind pagination control (« Anterior \| 1 … 4 5 6 … 20 \| Siguiente »), current page highlighted, ellipsis for large ranges, prev/next disabled at ends; hidden when ≤1 page |
-| `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI/Apellidos/Fecha/S.N.P., makes them required, and renders S.N.P. as an ONP/AFP selector. **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
+| `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI/Apellidos/Fecha/S.N.P./Tipo de acto administrativo, makes them required, and renders S.N.P. as an ONP/AFP selector. **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
 | `ExcelActualizarColumna.jsx` | Pick one column → upload Excel (DNI + value) → preview (matched/not-found/invalid) → atomic single-column UPDATE by DNI via `actualizar_columna_planilla` RPC; also downloads a fill-in template |
 | `ExcelExport.jsx` | Download current rows as `.xlsx` |
 | `ConfirmDialog.jsx` | Reusable confirm modal; `danger` prop for red styling |
