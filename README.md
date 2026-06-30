@@ -72,9 +72,15 @@ Tres roles, almacenados en `public.perfiles.rol` (la seguridad real la impone RL
 | **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, alta rápida, actualizar columnas por Excel, recálculo). **No** gestiona usuarios ni ve la auditoría. |
 | **administrador** | Control total: datos + **gestión de usuarios** + **auditoría**. |
 
-Los usuarios se dan de alta invitándolos desde **Supabase → Authentication → Invite
-user**; aparecen como `consultor` y un administrador les asigna el rol desde la página
-**Usuarios** de la app.
+Un **administrador** gestiona las cuentas que usan la app desde la página
+**Usuarios** (`/usuarios`): puede **crear** cuentas (nombre, correo, rol y contraseña
+inicial), **asignar el rol** de cada usuario, **cambiar la contraseña** de cualquier
+persona y **eliminar** cuentas (no puede cambiar su propio rol ni eliminarse a sí mismo,
+para evitar quedar bloqueado). Las acciones que requieren la `service_role` (crear,
+cambiar contraseña, eliminar, listar correos) corren en las Edge Functions
+`crear-usuario` y `admin-usuarios`, que verifican en el servidor que quien llama sea
+administrador. Invitar desde **Supabase → Authentication → Invite user** sigue
+funcionando como alternativa y deja la cuenta como `consultor`.
 
 ## Documentación
 
