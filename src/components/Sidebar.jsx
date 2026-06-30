@@ -27,7 +27,7 @@ export default function Sidebar({ open, onClose }) {
       >
         <div className="px-5 py-5 border-b border-white/10">
           <p className="text-white font-bold text-sm leading-tight">Municipalidad Provincial de Ica</p>
-          <p className="text-blue-200 text-xs mt-0.5">Reporte de Planillas</p>
+          <p className="text-blue-200 text-xs mt-0.5">Ica planillas</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 space-y-0.5 px-2">

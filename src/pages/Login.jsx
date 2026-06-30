@@ -30,7 +30,7 @@ export default function Login() {
             <span className="text-white font-bold text-2xl">MPI</span>
           </div>
           <h1 className="text-primary font-bold text-xl leading-tight">Municipalidad Provincial de Ica</h1>
-          <p className="text-gray-500 text-sm mt-1">Reporte de Planillas</p>
+          <p className="text-gray-500 text-sm mt-1">Ica planillas</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
