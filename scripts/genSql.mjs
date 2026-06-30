@@ -28,7 +28,9 @@ function genTable(planilla) {
   const { tabla, columnas } = planilla
   const colDefs = columnas.map((col) => {
     let def = `  ${col.key} ${sqlType(col)}`
-    if (col.type === 'dni') def += ' UNIQUE NOT NULL'
+    // El DNI ya NO es único por sí solo: la unicidad es por (dni, periodo) para
+    // permitir el histórico mensual (mismo trabajador, varios meses).
+    if (col.type === 'dni') def += ' NOT NULL'
     else if (col.required) def += ' NOT NULL'
     return def
   })
@@ -41,12 +43,16 @@ CREATE TABLE IF NOT EXISTS public.${tabla} (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-${colDefs.join(',\n')}
+  periodo DATE NOT NULL DEFAULT date_trunc('month', now())::date,
+${colDefs.join(',\n')},
+  CONSTRAINT ${tabla}_dni_periodo_key UNIQUE (dni, periodo)
 );
 
 CREATE TRIGGER handle_updated_at_${tabla}
   BEFORE UPDATE ON public.${tabla}
   FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+
+CREATE INDEX IF NOT EXISTS idx_${tabla}_periodo ON public.${tabla} (periodo);
 `
 }
 

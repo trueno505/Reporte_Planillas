@@ -7,6 +7,7 @@ import { PLANILLAS, GRUPOS, getPlanillaByTabla } from '../config/planillas'
 import { useAuth } from '../context/auth-context'
 import { supabase } from '../lib/supabaseClient'
 import { generarReporteConsolidado } from '../lib/reporteConsolidado'
+import { periodoActual, formatPeriodo } from '../lib/periodo'
 
 const GRUPO_ICON = {
   Obreros: '👷',
@@ -33,9 +34,11 @@ export default function Dashboard() {
   const [resumen, setResumen] = useState([])
   const [loadingResumen, setLoadingResumen] = useState(true)
   const [exportando, setExportando] = useState(false)
+  const [periodo, setPeriodo] = useState(periodoActual())
 
   useEffect(() => {
-    supabase.rpc('resumen_planillas').then(({ data, error }) => {
+    setLoadingResumen(true)
+    supabase.rpc('resumen_planillas', { p_periodo: periodo }).then(({ data, error }) => {
       if (!error && data) {
         // Enriquecer con label de la config
         const enriched = data.map((r) => ({
@@ -47,7 +50,7 @@ export default function Dashboard() {
       }
       setLoadingResumen(false)
     })
-  }, [])
+  }, [periodo])
 
   const totalLiquido = resumen.reduce((a, r) => a + Number(r.suma_liquido ?? 0), 0)
   const totalTrabajadores = resumen.reduce((a, r) => a + Number(r.n_registros ?? 0), 0)
@@ -62,7 +65,7 @@ export default function Dashboard() {
 
   const handleExportar = async () => {
     setExportando(true)
-    await generarReporteConsolidado(resumen)
+    await generarReporteConsolidado(resumen, periodo)
     setExportando(false)
   }
 
@@ -77,17 +80,27 @@ export default function Dashboard() {
               Bienvenido/a, <strong>{perfil?.nombre}</strong>. Rol:{' '}
               <span className={`font-semibold ${puedeEditar ? 'text-primary' : 'text-gray-600'}`}>
                 {perfil?.rol}
-              </span>
+              </span>{' '}
+              · Mes: <strong className="text-gray-700">{formatPeriodo(periodo)}</strong>
             </p>
           </div>
-          <button
-            onClick={handleExportar}
-            disabled={exportando}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-light transition disabled:opacity-60"
-          >
-            {exportando ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-            {exportando ? 'Generando…' : 'Reporte consolidado'}
-          </button>
+          <div className="flex items-center gap-2">
+            <input
+              type="month"
+              value={periodo.slice(0, 7)}
+              onChange={(e) => setPeriodo(e.target.value ? `${e.target.value}-01` : periodoActual())}
+              title="Mes a consultar"
+              className="border border-gray-300 rounded-lg px-2 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <button
+              onClick={handleExportar}
+              disabled={exportando}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-light transition disabled:opacity-60"
+            >
+              {exportando ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              {exportando ? 'Generando…' : 'Reporte consolidado'}
+            </button>
+          </div>
         </div>
 
         {/* KPIs */}

@@ -621,6 +621,33 @@ export const PLANILLAS = [
   },
 ]
 
+// Claves de las columnas FIJAS (identidad del trabajador) que se mantienen
+// iguales todos los meses: DNI, Apellidos y Nombres, Fecha de Ingreso (su clave
+// varía: f_ingreso / fecha_ing), S.N.P. y Tipo de acto administrativo. Algunas
+// planillas no tienen todas (p.ej. cesantes no tiene fecha de ingreso ni snp).
+const IDENTIDAD_KEYS = new Set([
+  'dni',
+  'apellidos_y_nombres',
+  'f_ingreso',
+  'fecha_ing',
+  'snp',
+  'tipo_acto_administrativo',
+])
+
+/**
+ * Devuelve las columnas de identidad (fijas) que EXISTEN en una planilla.
+ * Se usan para mostrarlas en solo lectura al editar un mes y para la corrección
+ * de identidad (que las cambia en todos los meses del trabajador).
+ */
+export function getColumnasIdentidad(planilla) {
+  return planilla.columnas.filter((c) => IDENTIDAD_KEYS.has(c.key))
+}
+
+/** ¿La columna es de identidad (fija mes a mes)? */
+export function esColumnaIdentidad(key) {
+  return IDENTIDAD_KEYS.has(key)
+}
+
 export function getPlanillaBySlug(slug) {
   return PLANILLAS.find((p) => p.slug === slug) ?? null
 }

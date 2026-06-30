@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { UserCog, ShieldCheck, Pencil, Eye, UserPlus, X, RefreshCw, KeyRound, Trash2 } from 'lucide-react'
+import { UserCog, ShieldCheck, Pencil, Eye, UserPlus, X, RefreshCw, KeyRound, Ban, CircleCheck } from 'lucide-react'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabaseClient'
 import { Navigate } from 'react-router-dom'
@@ -316,13 +316,14 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(true)
   const [mostrarNuevo, setMostrarNuevo] = useState(false)
   const [editarPass, setEditarPass] = useState(null)   // usuario al que se le cambia la clave
-  const [aEliminar, setAEliminar] = useState(null)     // usuario pendiente de eliminar
-  const [eliminando, setEliminando] = useState(false)
+  const [aDesactivar, setADesactivar] = useState(null) // usuario pendiente de desactivar
+  const [procesando, setProcesando] = useState(false)
 
   const cargar = () => {
     Promise.all([
       supabase.from('perfiles').select('*').order('created_at', { ascending: false }),
-      // Los correos viven en auth.users; los trae la Edge Function (solo admin).
+      // Correo y estado (activa/desactivada) viven en auth.users; los trae la
+      // Edge Function (solo admin).
       supabase.functions.invoke('admin-usuarios', { body: { accion: 'listar' } }),
     ]).then(([perfilesRes, listaRes]) => {
       const { data, error } = perfilesRes
@@ -331,12 +332,17 @@ export default function Usuarios() {
         toast.error(`No se pudieron cargar los usuarios: ${error.message}`)
       }
       if (listaRes.error) {
-        console.error('No se pudieron cargar los correos:', listaRes.error)
+        console.error('No se pudo cargar el estado de las cuentas:', listaRes.error)
       }
-      const emailPorId = Object.fromEntries(
-        (listaRes.data?.usuarios ?? []).map((u) => [u.id, u.email]),
+      const infoPorId = Object.fromEntries(
+        (listaRes.data?.usuarios ?? []).map((u) => [u.id, u]),
       )
-      setPerfiles((data ?? []).map((p) => ({ ...p, email: emailPorId[p.id] ?? null })))
+      const ahora = Date.now()
+      setPerfiles((data ?? []).map((p) => {
+        const u = infoPorId[p.id]
+        const ban = u?.banned_until ? Date.parse(u.banned_until) : 0
+        return { ...p, email: u?.email ?? null, activo: !(ban > ahora) }
+      }))
       setLoading(false)
     })
   }
@@ -358,13 +364,13 @@ export default function Usuarios() {
     }
   }
 
-  const eliminarUsuario = async () => {
-    if (!aEliminar) return
-    setEliminando(true)
+  // Llama a la Edge Function para desactivar/activar y refresca la lista.
+  const cambiarEstado = async (usuario, activar) => {
+    setProcesando(true)
     const { error } = await supabase.functions.invoke('admin-usuarios', {
-      body: { accion: 'eliminar', userId: aEliminar.id },
+      body: { accion: activar ? 'activar' : 'desactivar', userId: usuario.id },
     })
-    setEliminando(false)
+    setProcesando(false)
 
     if (error) {
       let msg = error.message
@@ -376,8 +382,12 @@ export default function Usuarios() {
       return
     }
 
-    toast.success(`Usuario "${aEliminar.nombre ?? ''}" eliminado.`)
-    setAEliminar(null)
+    toast.success(
+      activar
+        ? `Cuenta de "${usuario.nombre ?? ''}" activada.`
+        : `Cuenta de "${usuario.nombre ?? ''}" desactivada.`,
+    )
+    setADesactivar(null)
     cargar()
   }
 
@@ -429,6 +439,7 @@ export default function Usuarios() {
                   <th className="px-4 py-2.5 text-left">Registrado</th>
                   <th className="px-4 py-2.5 text-left">Rol actual</th>
                   <th className="px-4 py-2.5 text-left">Cambiar rol</th>
+                  <th className="px-4 py-2.5 text-left">Estado</th>
                   <th className="px-4 py-2.5 text-left">Acciones</th>
                 </tr>
               </thead>
@@ -467,6 +478,17 @@ export default function Usuarios() {
                         </select>
                       </td>
                       <td className="px-4 py-3">
+                        {p.activo ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700">
+                            <CircleCheck size={12} /> Activa
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold bg-gray-200 text-gray-600">
+                            <Ban size={12} /> Desactivada
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => setEditarPass(p)}
@@ -475,14 +497,25 @@ export default function Usuarios() {
                           >
                             <KeyRound size={14} /> Contraseña
                           </button>
-                          <button
-                            onClick={() => setAEliminar(p)}
-                            disabled={esMiPerfil}
-                            title={esMiPerfil ? 'No puedes eliminar tu propia cuenta' : 'Eliminar usuario'}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            <Trash2 size={14} /> Eliminar
-                          </button>
+                          {p.activo ? (
+                            <button
+                              onClick={() => setADesactivar(p)}
+                              disabled={esMiPerfil || procesando}
+                              title={esMiPerfil ? 'No puedes desactivar tu propia cuenta' : 'Desactivar la cuenta (no podrá iniciar sesión)'}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-amber-700 border border-amber-300 hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <Ban size={14} /> Desactivar
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => cambiarEstado(p, true)}
+                              disabled={procesando}
+                              title="Reactivar la cuenta"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-green-700 border border-green-300 hover:bg-green-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <CircleCheck size={14} /> Activar
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -508,14 +541,14 @@ export default function Usuarios() {
         />
       )}
 
-      {aEliminar && (
+      {aDesactivar && (
         <ConfirmDialog
           danger
-          loading={eliminando}
-          title="Eliminar usuario"
-          message={`Se eliminará la cuenta de "${aEliminar.nombre ?? '—'}" de forma permanente. Esta acción no se puede deshacer.`}
-          onConfirm={eliminarUsuario}
-          onCancel={() => setAEliminar(null)}
+          loading={procesando}
+          title="Desactivar usuario"
+          message={`Se desactivará la cuenta de "${aDesactivar.nombre ?? '—'}": no podrá iniciar sesión hasta que la reactives. No se borra ningún dato.`}
+          onConfirm={() => cambiarEstado(aDesactivar, false)}
+          onCancel={() => setADesactivar(null)}
         />
       )}
     </Layout>

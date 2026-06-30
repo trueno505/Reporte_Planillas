@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { getSeccionesCalculo } from '../config/planillas'
+import { formatPeriodo } from './periodo'
 
 const AZUL = [0, 51, 102]   // #003366
 const GRIS = [245, 246, 250] // #f5f6fa
@@ -28,6 +29,11 @@ export function generarBoletaPdf(planilla, fila) {
   doc.setFont('helvetica', 'normal')
   doc.text('BOLETA DE PAGO DE REMUNERACIONES', 14, 18)
   doc.text(planilla.label.toUpperCase(), 14, 24)
+  if (fila.periodo) {
+    doc.setFont('helvetica', 'bold')
+    doc.text(`MES: ${formatPeriodo(fila.periodo).toUpperCase()}`, 196, 18, { align: 'right' })
+    doc.setFont('helvetica', 'normal')
+  }
 
   // ─── Datos del trabajador ────────────────────────────────────────────────────
   doc.setTextColor(30, 30, 30)
@@ -131,7 +137,8 @@ export function generarBoletaPdf(planilla, fila) {
 
   // ─── Descarga ────────────────────────────────────────────────────────────────
   const nombre = String(fila.apellidos_y_nombres ?? fila.dni ?? 'trabajador').replace(/\s+/g, '_')
-  doc.save(`Boleta_${planilla.tabla}_${nombre}.pdf`)
+  const mes = fila.periodo ? `_${String(fila.periodo).slice(0, 7)}` : ''
+  doc.save(`Boleta_${planilla.tabla}_${nombre}${mes}.pdf`)
 }
 
 function fmt(v) {

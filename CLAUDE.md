@@ -100,7 +100,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 
 **Auditoria** shows the change log from `public.auditoria` with filters by table and action (INSERT/UPDATE/DELETE), joined with `perfiles`.
 
-**Usuarios** allows admins to (a) **create accounts in-app** via a "Nuevo usuario" modal — nombre, email, rol, and an admin-set initial password — (b) assign each user one of the three roles (`consultor`, `editor`, `administrador`) via a dropdown, (c) **reset any user's password** via a "Contraseña" button per row (modal with generate/show controls), and (d) **delete any user** via a "Eliminar" button (red `ConfirmDialog`). Admins cannot change their own role nor delete their own account (guards against lock-out). Account creation calls the `crear-usuario` Edge Function; password-reset and deletion call the `admin-usuarios` Edge Function (`accion: 'cambiar_password' | 'eliminar'`) — both via `supabase.functions.invoke` and both verify the caller is `administrador` server-side with the service-role key. The user is created already confirmed (`email_confirm: true`) so it can log in immediately, and can later change its password from `/perfil`. Deleting a user removes the auth account; its `perfiles` row falls automatically via `ON DELETE CASCADE`. (Inviting from the Supabase panel still works as a fallback and lands the profile here as `consultor`.)
+**Usuarios** allows admins to (a) **create accounts in-app** via a "Nuevo usuario" modal — nombre, email, rol, and an admin-set initial password — (b) assign each user one of the three roles (`consultor`, `editor`, `administrador`) via a dropdown, (c) **reset any user's password** via a "Contraseña" button per row (modal with generate/show controls), and (d) **deactivate / reactivate** any account via a per-row toggle (an **Estado** column shows Activa/Desactivada). **Accounts are never deleted** — deactivating bans the user (cannot log in) while keeping its profile and audit trail; reactivating restores access. Admins cannot change their own role nor deactivate their own account (guards against lock-out). Account creation calls the `crear-usuario` Edge Function; password-reset, listing and (de)activation call the `admin-usuarios` Edge Function (`accion: 'listar' | 'cambiar_password' | 'desactivar' | 'activar'`) — both via `supabase.functions.invoke` and both verify the caller is `administrador` server-side with the service-role key. The user is created already confirmed (`email_confirm: true`) so it can log in immediately, and can later change its password from `/perfil`. (Inviting from the Supabase panel still works as a fallback and lands the profile here as `consultor`.)
 
 **MiPerfil** is each user's self-service page (any role): shows email + role (read-only), lets them edit their own `nombre` and `celular` (`perfiles` row), and change their own password via `supabase.auth.updateUser({ password })`. Users **cannot** change their own `rol` — the DB trigger `proteger_rol` reverts any role change made by a non-admin (defense against privilege escalation, since the `perfiles_update` RLS policy allows self-update of the row).
 
@@ -152,7 +152,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 - Planilla RLS: SELECT → all three roles; INSERT/UPDATE/DELETE → `('editor','administrador')`. The bulk RPCs (`recalcular_totales`, `actualizar_columna_planilla`) check `get_my_rol() IN ('editor','administrador')`.
 - `perfiles` row is auto-created on signup via the `handle_new_user` trigger with default role `consultor`. Admin reassigns roles from the `/usuarios` page, or via `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'`.
 - **Creating users from the app** is done by the `crear-usuario` Edge Function (`supabase/functions/crear-usuario/index.ts`). It needs the **service_role key** (Admin API `auth.admin.createUser`), which can never live in the frontend — that's the whole reason it's an Edge Function. The function: ① reads the caller's JWT, ② confirms the caller's `perfiles.rol = 'administrador'` (using a service-role client), ③ creates the user `email_confirm: true`, ④ upserts `nombre` + `rol` into `perfiles`. Deploy with `npx supabase functions deploy crear-usuario --project-ref <ref>`. `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically into the function runtime — no secrets are copied into the repo or Vercel.
-- **Resetting passwords, deleting users, and listing emails from the app** is done by the `admin-usuarios` Edge Function (`supabase/functions/admin-usuarios/index.ts`) — the sibling of `crear-usuario`, sharing the same admin-verification boilerplate. It dispatches on `accion`: `'listar'` (no args → `auth.admin.listUsers`, paginated, returns `[{ id, email }]`), `'cambiar_password'` (`{ userId, password }` → `auth.admin.updateUserById`), and `'eliminar'` (`{ userId }` → `auth.admin.deleteUser`; refuses to delete the caller's own account). Deploy with `npx supabase functions deploy admin-usuarios --project-ref <ref>`. The `/usuarios` list shows each user's **Correo** by merging the `'listar'` result (emails live in `auth.users`, not `perfiles`) into the `perfiles` rows by `id`.
+- **Resetting passwords, (de)activating accounts, and listing emails/status from the app** is done by the `admin-usuarios` Edge Function (`supabase/functions/admin-usuarios/index.ts`) — the sibling of `crear-usuario`, sharing the same admin-verification boilerplate. It dispatches on `accion`: `'listar'` (no args → `auth.admin.listUsers`, paginated, returns `[{ id, email, banned_until }]`), `'cambiar_password'` (`{ userId, password }` → `auth.admin.updateUserById`), `'desactivar'` (`{ userId }` → `updateUserById` with `ban_duration: '876000h'`; refuses to ban the caller's own account), and `'activar'` (`{ userId }` → `ban_duration: 'none'`). **No delete action** — accounts are banned, not removed. Deploy with `npx supabase functions deploy admin-usuarios --project-ref <ref>`. The `/usuarios` list shows each user's **Correo** and **Estado** (Activa/Desactivada, derived from `banned_until`) by merging the `'listar'` result into the `perfiles` rows by `id`.
 - `perfiles` columns: `id`, `nombre`, `celular`, `rol`, `created_at`. Users self-edit `nombre`/`celular` from `/perfil`; the `proteger_rol` BEFORE UPDATE trigger blocks non-admins from changing `rol`.
 - The whole schema (including the `editor` role) lives in the single file `supabase/_migracion_completa.sql` — the source of truth for a **fresh install**, into which every schema change is also folded. For changes against a **live DB with data**, apply a targeted, idempotent patch instead of reinstalling (e.g. `supabase/migracion_rename_observaciones.sql`, which renames `observaciones → tipo_acto_administrativo` across the 19 tables via `ALTER TABLE … RENAME COLUMN`).
 
@@ -188,6 +188,39 @@ El consolidado contiene, en orden:
 verdad para `t_ingreso/t_dsctos/t_liquido`. El `calculos.js` del cliente es solo
 para la vista previa en vivo en `RecordForm`; lo que envíe el
 cliente es sobrescrito por el trigger al escribir.
+
+### Historización mensual (`periodo`)
+
+Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
+`periodo DATE` = primer día del mes. Los datos **no se sobrescriben** mes a mes.
+
+- **Columna `periodo`** en las 19 tablas (`DATE NOT NULL DEFAULT date_trunc('month', now())`),
+  con `UNIQUE (dni, periodo)` (reemplaza la antigua `dni UNIQUE`) e índice `idx_<tabla>_periodo`.
+  El histórico arranca en **junio 2026** (las filas previas se backfillearon a `2026-06-01`).
+- **Identidad fija**: al generar un mes, se copian `dni` + las que existan de
+  `{apellidos_y_nombres, f_ingreso/fecha_ing, snp, tipo_acto_administrativo}`; el resto de
+  columnas (montos, faltas, cargo…) quedan en blanco. En el front, `getColumnasIdentidad(planilla)`
+  (en `planillas.js`) devuelve esas columnas; `RecordForm` las muestra **solo lectura** al editar.
+- **Mes abierto vs cerrado**: el mes editable es `MAX(periodo)` de cada tabla; los anteriores son
+  **solo lectura**, impuesto por el trigger `proteger_periodo_cerrado` (BEFORE I/U/D en las 19
+  tablas). Se salta con el GUC de sesión `app.bypass_periodo='1'` (lo usa solo `corregir_identidad`).
+- **DNI único por periodo**: `dni_registro` pasa a PK `(dni, periodo)`; `vw_dni_todos` y
+  `sync_dni_registro` incluyen `periodo` (un DNI no puede estar en dos planillas el **mismo mes**).
+- **RPCs** (todas reciben/filtran por mes): `resumen_planillas(p_periodo)`,
+  `buscar_trabajador(termino, p_periodo)`, `recalcular_totales(p_tabla, p_periodo)`,
+  `actualizar_columna_planilla(p_tabla, p_periodo, p_columna, p_valores)`. Nuevas:
+  `abrir_periodo(p_tabla, p_periodo)` (genera el mes clonando identidad; admin/editor),
+  `periodos_planilla(p_tabla)` (lista de meses para el selector), `corregir_identidad(p_tabla,
+  p_dni, p_datos)` (corrige los 5 campos fijos en **todos** los meses, vía el bypass).
+- **Frontend**: `src/lib/periodo.js` (helpers `formatPeriodo`/`periodoActual`/`siguientePeriodo`),
+  `PeriodoSelector.jsx`, y `periodo` enhebrado por `usePlanillaPaginada` → `db.js`
+  (`fetchPagina`/`fetchAllRows` filtran `.eq('periodo', …)`). `PlanillaPage` tiene el selector de
+  mes, banner de solo-lectura y botón **"Generar mes siguiente"** (`abrir_periodo`). `Dashboard` y
+  `BusquedaGlobal` usan un `<input type="month">` para consultar meses/años anteriores. `CorregirIdentidad.jsx`
+  es el modal de corrección de datos fijos. `boletaPdf`/`ExcelExport`/`reporteConsolidado` reflejan el mes.
+- **SQL**: el parche idempotente para BD viva es `supabase/migracion_historico_periodo.sql`; el mismo
+  bloque está integrado al final de `_migracion_completa.sql` y `genSql.mjs` ya genera las tablas con
+  `periodo` + `UNIQUE (dni, periodo)`.
 
 ### Type mapping reference
 

@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { FilePlus, Layers, Table2, ChevronRight, Check } from 'lucide-react'
 import Layout from '../components/Layout'
 import RecordForm from '../components/RecordForm'
 import { PLANILLAS, GRUPOS, getPlanillaBySlug } from '../config/planillas'
 import { useAuth } from '../context/auth-context'
+import { supabase } from '../lib/supabaseClient'
+import { periodoActual } from '../lib/periodo'
 
 function Paso({ n, titulo, activo, hecho }) {
   return (
@@ -31,6 +33,18 @@ export default function NuevoRegistro() {
   const { puedeEditar, loading } = useAuth()
   const [grupo, setGrupo] = useState(null)
   const [slug, setSlug] = useState(null)
+  // Mes abierto de la planilla elegida (donde entra el alta). Si la planilla aún
+  // no tiene meses, se usa el mes calendario actual.
+  const [periodoNuevo, setPeriodoNuevo] = useState(periodoActual())
+
+  const planillaSel = slug ? getPlanillaBySlug(slug) : null
+  useEffect(() => {
+    if (!planillaSel?.tabla) return
+    supabase.rpc('periodos_planilla', { p_tabla: planillaSel.tabla }).then(({ data }) => {
+      const max = (data ?? []).map((r) => String(r.periodo).slice(0, 10))[0]
+      setPeriodoNuevo(max ?? periodoActual())
+    })
+  }, [planillaSel?.tabla])
 
   if (loading) return null
   // Crear registros es una acción de edición (admin o editor); RLS lo exige igualmente.
@@ -133,12 +147,14 @@ export default function NuevoRegistro() {
         )}
       </div>
 
-      {/* Paso 3: formulario de columnas (modal reutilizado) */}
+      {/* Paso 3: formulario de columnas (modal reutilizado). El alta entra en el
+          mes abierto de la planilla (periodoNuevo). */}
       {planilla && (
         <RecordForm
           planilla={planilla}
           record={null}
           soloBasicos
+          periodo={periodoNuevo}
           onClose={() => setSlug(null)}
           onSaved={() => {}}
         />

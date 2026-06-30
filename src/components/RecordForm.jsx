@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { X, Calculator } from 'lucide-react'
+import { X, Calculator, ShieldAlert } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { calcularTotales } from '../lib/calculos'
-import { getSeccionesCalculo } from '../config/planillas'
+import { getSeccionesCalculo, esColumnaIdentidad } from '../config/planillas'
+import CorregirIdentidad from './CorregirIdentidad'
+import { formatPeriodo } from '../lib/periodo'
 import toast from 'react-hot-toast'
 
 function emptyRecord(columnas) {
@@ -19,11 +21,16 @@ function castValue(val, type) {
 // Sistema de pensiones para el campo S.N.P. en el alta rápida (soloBasicos)
 const AFP_OPCIONES = ['AFP Integra', 'Prima AFP', 'AFP Habitat', 'Profuturo AFP']
 
-export default function RecordForm({ planilla, record, onClose, onSaved, soloBasicos = false }) {
+export default function RecordForm({ planilla, record, onClose, onSaved, soloBasicos = false, periodo = null }) {
   const { tabla, columnas } = planilla
   const isEdit = !!record?.id
   const secciones = getSeccionesCalculo(planilla)
   const totalKeys = new Set(['t_ingreso', 't_dsctos', 't_liquido'])
+
+  // Al editar un mes, las columnas FIJAS (identidad) van en solo lectura: solo
+  // se corrigen con la acción aparte (que las cambia en todos los meses).
+  const [corregirOpen, setCorregirOpen] = useState(false)
+  const esFijaBloqueada = (key) => isEdit && !soloBasicos && esColumnaIdentidad(key)
 
   // En el alta rápida solo se piden DNI, Apellidos y Nombres, Fecha de Ingreso,
   // S.N.P. y Tipo de acto administrativo.
@@ -78,6 +85,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
   //  - Al crear normal: solo DNI y los marcados `required` en la config.
   const esRequerido = (col) => {
     if (secciones && totalKeys.has(col.key)) return false
+    if (esFijaBloqueada(col.key)) return false // identidad en solo lectura al editar
     if (soloBasicos) return true
     if (isEdit) return true
     return col.type === 'dni' || col.required
@@ -128,6 +136,9 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
     if (isEdit) {
       ;({ error } = await supabase.from(tabla).update(payload).eq('id', record.id))
     } else {
+      // El alta entra en el mes ABIERTO (periodo). Si no llega, la BD usa el mes
+      // calendario actual por defecto.
+      if (periodo) payload.periodo = periodo
       ;({ error } = await supabase.from(tabla).insert(payload))
     }
 
@@ -157,6 +168,9 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             <h2 className="font-semibold text-primary text-lg">
               {isEdit ? 'Editar registro' : 'Nuevo registro'} — {planilla.label}
             </h2>
+            {periodo && (
+              <p className="text-xs text-gray-500 mt-0.5">Mes: <strong>{formatPeriodo(periodo)}</strong></p>
+            )}
             {secciones && !soloBasicos && (
               <p className="text-xs text-green-600 flex items-center gap-1 mt-0.5">
                 <Calculator size={11} /> Totales calculados automáticamente
@@ -176,14 +190,26 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             const autoTotal = isAutoTotal(col.key)
             const requerido = esRequerido(col)
             const esSnpBasico = soloBasicos && col.key === 'snp'
+            const fijaBloqueada = esFijaBloqueada(col.key)
             return (
               <div key={col.key}>
                 <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                   {col.label}
                   {requerido && <span className="text-red-500">*</span>}
                   {autoTotal && <Calculator size={10} className="text-primary" />}
+                  {fijaBloqueada && <span className="text-gray-400 text-[10px]">(fijo)</span>}
                 </label>
-                {esSnpBasico ? (
+                {fijaBloqueada ? (
+                  // Columna de identidad: solo lectura al editar el mes.
+                  <input
+                    type="text"
+                    readOnly
+                    value={form[col.key] ?? ''}
+                    title="Dato fijo. Usa «Corregir datos fijos» para cambiarlo en todos los meses."
+                    className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-1.5 text-sm text-gray-500 cursor-not-allowed"
+                    tabIndex={-1}
+                  />
+                ) : esSnpBasico ? (
                   <div className="space-y-2">
                     <select
                       value={snpSistema}
@@ -249,7 +275,16 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
           })}
         </form>
 
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
+          {isEdit && !soloBasicos && (
+            <button
+              onClick={() => setCorregirOpen(true)}
+              className="mr-auto flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-amber-700 border border-amber-300 hover:bg-amber-50 transition"
+              title="Cambia DNI/nombres/fecha/S.N.P./tipo de acto en todos los meses"
+            >
+              <ShieldAlert size={14} /> Corregir datos fijos
+            </button>
+          )}
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
@@ -265,6 +300,15 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
           </button>
         </div>
       </div>
+
+      {corregirOpen && (
+        <CorregirIdentidad
+          planilla={planilla}
+          record={record}
+          onClose={() => setCorregirOpen(false)}
+          onSaved={() => { onSaved?.(); onClose() }}
+        />
+      )}
     </div>
   )
 }
