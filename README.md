@@ -10,8 +10,8 @@ vivo** (Realtime), búsqueda/orden y edición en línea, editar/eliminar registr
 las planillas no tienen alta propia), **exportar** y **actualizar columnas** por **Excel**,
 generar **boletas PDF** y un **reporte consolidado**, buscar a un trabajador por DNI o
 nombre en las 19 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
-de cambios, **gestión de usuarios/roles** y actualizaciones en **tiempo real**
-(Supabase Realtime).
+de cambios, **gestión de usuarios/roles**, **histórico mensual permanente** (cada mes se
+conserva; ver abajo) y actualizaciones en **tiempo real** (Supabase Realtime).
 
 ## Stack
 
@@ -75,12 +75,28 @@ Tres roles, almacenados en `public.perfiles.rol` (la seguridad real la impone RL
 Un **administrador** gestiona las cuentas que usan la app desde la página
 **Usuarios** (`/usuarios`): puede **crear** cuentas (nombre, correo, rol y contraseña
 inicial), **asignar el rol** de cada usuario, **cambiar la contraseña** de cualquier
-persona y **eliminar** cuentas (no puede cambiar su propio rol ni eliminarse a sí mismo,
-para evitar quedar bloqueado). Las acciones que requieren la `service_role` (crear,
-cambiar contraseña, eliminar, listar correos) corren en las Edge Functions
-`crear-usuario` y `admin-usuarios`, que verifican en el servidor que quien llama sea
-administrador. Invitar desde **Supabase → Authentication → Invite user** sigue
-funcionando como alternativa y deja la cuenta como `consultor`.
+persona y **desactivar/reactivar** cuentas (no puede cambiar su propio rol ni desactivarse
+a sí mismo, para evitar quedar bloqueado). Las cuentas **no se eliminan**: desactivar
+impide el inicio de sesión pero conserva el perfil y la auditoría, y se puede reactivar.
+Las acciones que requieren la `service_role` (crear, cambiar contraseña, desactivar/activar,
+listar correos y estado) corren en las Edge Functions `crear-usuario` y `admin-usuarios`,
+que verifican en el servidor que quien llama sea administrador. Invitar desde **Supabase →
+Authentication → Invite user** sigue funcionando como alternativa y deja la cuenta como `consultor`.
+
+## Histórico mensual
+
+Cada planilla guarda una fila por **(trabajador, mes)** mediante una columna `periodo`
+(primer día del mes). Los datos **no se sobrescriben**: cada mes queda archivado.
+
+- Las columnas **fijas** (DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P., Tipo de
+  acto administrativo) se mantienen iguales todos los meses; las demás varían.
+- El **mes actual** es editable; los **meses anteriores** quedan en **solo lectura**.
+- En cada planilla, el botón **«Generar mes siguiente»** crea el mes nuevo copiando a los
+  trabajadores (identidad) con los montos en blanco para llenarlos.
+- El selector de mes (en la planilla, el dashboard y la búsqueda global) permite consultar
+  meses y años anteriores. Para corregir un dato fijo, **«Corregir datos fijos»** lo cambia
+  en todos los meses del trabajador.
+- El histórico arranca en **junio 2026** con los datos ya cargados.
 
 ## Documentación
 

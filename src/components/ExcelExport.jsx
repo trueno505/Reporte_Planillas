@@ -2,19 +2,20 @@ import { useState } from 'react'
 import * as XLSX from 'xlsx'
 import { Download } from 'lucide-react'
 import { fetchAllRows } from '../lib/db'
+import { formatPeriodo } from '../lib/periodo'
 import toast from 'react-hot-toast'
 
-export default function ExcelExport({ planilla }) {
+export default function ExcelExport({ planilla, periodo = null }) {
   const [loading, setLoading] = useState(false)
 
   // La tabla en pantalla está paginada (50 filas), pero la exportación debe
-  // incluir TODOS los registros: los traemos bajo demanda al hacer clic.
+  // incluir TODOS los registros del mes: los traemos bajo demanda al hacer clic.
   const handleExport = async () => {
     const { columnas, label, tabla } = planilla
     setLoading(true)
     let filas
     try {
-      filas = await fetchAllRows(tabla, { order: 'apellidos_y_nombres' })
+      filas = await fetchAllRows(tabla, { order: 'apellidos_y_nombres', periodo })
     } catch (e) {
       setLoading(false)
       toast.error(`No se pudo exportar: ${e.message}`)
@@ -29,7 +30,8 @@ export default function ExcelExport({ planilla }) {
     )
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, label.slice(0, 31))
-    XLSX.writeFile(wb, `${label}.xlsx`)
+    const sufijo = periodo ? `_${formatPeriodo(periodo).replace(' ', '_')}` : ''
+    XLSX.writeFile(wb, `${label}${sufijo}.xlsx`)
     setLoading(false)
   }
 

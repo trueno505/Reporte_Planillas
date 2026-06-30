@@ -12,11 +12,12 @@ const PAGE = 1000
  * @returns {Promise<Array>}
  * @throws si Supabase devuelve un error en cualquier bloque
  */
-export async function fetchAllRows(tabla, { order = 'apellidos_y_nombres' } = {}) {
+export async function fetchAllRows(tabla, { order = 'apellidos_y_nombres', periodo = null } = {}) {
   let desde = 0
   let todas = []
   for (;;) {
     let query = supabase.from(tabla).select('*').range(desde, desde + PAGE - 1)
+    if (periodo) query = query.eq('periodo', periodo)
     if (order) query = query.order(order, { ascending: true })
     const { data, error } = await query
     if (error) throw error
@@ -46,12 +47,13 @@ export async function fetchAllRows(tabla, { order = 'apellidos_y_nombres' } = {}
  */
 export async function fetchPagina(
   tabla,
-  { page = 1, pageSize = 50, search = '', orderBy = 'apellidos_y_nombres', ascending = true } = {}
+  { page = 1, pageSize = 50, search = '', orderBy = 'apellidos_y_nombres', ascending = true, periodo = null } = {}
 ) {
   const desde = (page - 1) * pageSize
   const hasta = desde + pageSize - 1
 
   let query = supabase.from(tabla).select('*', { count: 'exact' })
+  if (periodo) query = query.eq('periodo', periodo)
 
   const term = String(search ?? '').trim()
   if (term) {

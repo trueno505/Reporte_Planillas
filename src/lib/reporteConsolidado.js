@@ -1,12 +1,14 @@
 import * as XLSX from 'xlsx'
 import { fetchAllRows } from './db'
 import { PLANILLAS } from '../config/planillas'
+import { formatPeriodo } from './periodo'
 
 /**
- * Descarga un Excel con una hoja por planilla + hoja de resumen.
+ * Descarga un Excel con una hoja por planilla + hoja de resumen, para un mes.
  * @param {Array} resumenData - datos del RPC resumen_planillas (puede ser null)
+ * @param {string|null} periodo - mes 'YYYY-MM-01' a exportar (null = sin filtro)
  */
-export async function generarReporteConsolidado(resumenData) {
+export async function generarReporteConsolidado(resumenData, periodo = null) {
   const wb = XLSX.utils.book_new()
 
   // Hoja resumen al inicio
@@ -37,7 +39,7 @@ export async function generarReporteConsolidado(resumenData) {
     // Trae todas las filas (bloques de 1000) para no truncar el consolidado
     let data
     try {
-      data = await fetchAllRows(planilla.tabla, { order: 'apellidos_y_nombres' })
+      data = await fetchAllRows(planilla.tabla, { order: 'apellidos_y_nombres', periodo })
     } catch {
       data = []
     }
@@ -51,7 +53,8 @@ export async function generarReporteConsolidado(resumenData) {
     XLSX.utils.book_append_sheet(wb, ws, planilla.label.slice(0, 31))
   }
 
-  XLSX.writeFile(wb, `Planillas_Consolidado_${hoy()}.xlsx`)
+  const sufijo = periodo ? formatPeriodo(periodo).replace(' ', '_') : hoy()
+  XLSX.writeFile(wb, `Planillas_Consolidado_${sufijo}.xlsx`)
 }
 
 function hoy() {

@@ -3,8 +3,13 @@
 // Acciones de gestión de cuentas que SOLO un ADMINISTRADOR puede ejecutar y que
 // requieren la Admin API de Supabase (auth.admin.*) con la SERVICE_ROLE_KEY:
 //
+//   • listar            → devuelve [{ id, email, banned_until }] de los usuarios.
 //   • cambiar_password  → restablece la contraseña de cualquier usuario.
-//   • eliminar          → borra la cuenta (su perfil cae por ON DELETE CASCADE).
+//   • desactivar        → inhabilita la cuenta (ban): no podrá iniciar sesión.
+//   • activar           → reactiva una cuenta desactivada.
+//
+// No se borran cuentas: desactivar conserva el usuario, su perfil y su rastro en
+// la auditoría, y permite reactivarlo después.
 //
 // Por qué una Edge Function: la SERVICE_ROLE_KEY salta toda la seguridad (RLS) y
 // NUNCA puede vivir en el frontend. Aquí corre en el servidor de Supabase, donde
@@ -18,6 +23,9 @@
 // -----------------------------------------------------------------------------
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+
+// Duración del "ban" para desactivar (efectivamente permanente hasta reactivar).
+const BAN_LARGO = '876000h' // ~100 años
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -92,17 +100,23 @@ Deno.serve(async (req) => {
   const accion = (payload.accion ?? '').trim()
   const userId = (payload.userId ?? '').trim()
 
-  // ── Listar emails (no requiere userId) ─────────────────────────────────────
-  // Devuelve [{ id, email }] de todos los usuarios de auth (paginado), para que
-  // la lista de /usuarios pueda mostrar el correo junto al nombre.
+  // ── Listar usuarios (no requiere userId) ───────────────────────────────────
+  // Devuelve [{ id, email, banned_until }] de todos los usuarios de auth
+  // (paginado), para poblar la lista de /usuarios con correo y estado.
   if (accion === 'listar') {
-    const usuarios: { id: string; email: string | null }[] = []
+    const usuarios: { id: string; email: string | null; banned_until: string | null }[] = []
     let page = 1
-    // listUsers pagina de a 1000 como máximo; recorremos hasta vaciar.
     for (;;) {
       const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
       if (error) return json({ error: error.message }, 400)
-      for (const u of data.users) usuarios.push({ id: u.id, email: u.email ?? null })
+      for (const u of data.users) {
+        usuarios.push({
+          id: u.id,
+          email: u.email ?? null,
+          // banned_until existe en el objeto user de GoTrue aunque el tipo no lo declare.
+          banned_until: (u as { banned_until?: string | null }).banned_until ?? null,
+        })
+      }
       if (data.users.length < 1000) break
       page++
     }
@@ -127,14 +141,21 @@ Deno.serve(async (req) => {
     return json({ ok: true, accion })
   }
 
-  if (accion === 'eliminar') {
-    // Un admin no puede eliminarse a sí mismo (evita quedarse sin acceso).
+  if (accion === 'desactivar') {
+    // Un admin no puede desactivarse a sí mismo (evita quedarse sin acceso).
     if (userId === callerId) {
-      return json({ error: 'No puedes eliminar tu propia cuenta.' }, 400)
+      return json({ error: 'No puedes desactivar tu propia cuenta.' }, 400)
     }
+    // ban_duration inhabilita el inicio de sesión sin borrar la cuenta.
+    const { error } = await admin.auth.admin.updateUserById(userId, { ban_duration: BAN_LARGO })
+    if (error) {
+      return json({ error: error.message }, 400)
+    }
+    return json({ ok: true, accion })
+  }
 
-    // La fila de perfiles cae sola por ON DELETE CASCADE.
-    const { error } = await admin.auth.admin.deleteUser(userId)
+  if (accion === 'activar') {
+    const { error } = await admin.auth.admin.updateUserById(userId, { ban_duration: 'none' })
     if (error) {
       return json({ error: error.message }, 400)
     }

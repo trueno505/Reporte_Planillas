@@ -221,7 +221,7 @@ Reporte_Planillas/
 │       ├── BusquedaGlobal.jsx Búsqueda en las 19 planillas
 │       ├── MiPerfil.jsx       Perfil propio: nombre/celular + cambiar contraseña
 │       ├── Auditoria.jsx      Historial de cambios (admin)
-│       └── Usuarios.jsx       Gestión de usuarios: crear, rol, contraseña, eliminar (admin)
+│       └── Usuarios.jsx       Gestión de usuarios: crear, rol, contraseña, desactivar/activar (admin)
 │
 ├── supabase/                  Esquema SQL + Edge Functions
 │   ├── _migracion_completa.sql  Todo el esquema (tablas, RLS, realtime,
@@ -230,9 +230,11 @@ Reporte_Planillas/
 │   │                            el SQL Editor de Supabase.
 │   ├── migracion_rename_observaciones.sql  Parche idempotente: renombra
 │   │                            observaciones → tipo_acto_administrativo en una BD ya instalada.
+│   ├── migracion_historico_periodo.sql  Parche idempotente: añade el histórico
+│   │                            mensual (columna periodo, bloqueo de meses cerrados, RPCs por mes).
 │   └── functions/             Edge Functions (corren con service_role; solo admin)
 │       ├── crear-usuario/index.ts    Crear cuentas desde la app
-│       └── admin-usuarios/index.ts   Listar correos, cambiar contraseña y eliminar usuarios
+│       └── admin-usuarios/index.ts   Listar correos/estado, cambiar contraseña y desactivar/activar usuarios
 │
 ├── e2e/                       Pruebas end-to-end (Playwright, herméticas con mock de Supabase)
 │   ├── paginacion.spec.js     Paginación, estado vacío, sin botón "Nuevo registro", obligatorios al editar
@@ -459,15 +461,17 @@ leerla (RLS).
   privilegios).
 - **Gestión de usuarios desde `/usuarios` (solo admin):** el administrador puede
   **crear** cuentas (nombre, correo, rol y contraseña inicial), **cambiar la contraseña**
-  de cualquier persona y **eliminar** cuentas (no puede eliminarse a sí mismo). La página
-  también muestra el **correo** de cada usuario. Estas operaciones usan la `service_role`
-  (Admin API `auth.admin.*`), que **nunca** puede vivir en el frontend, por lo que corren
-  en dos Edge Functions que verifican en el servidor que quien llama sea `administrador`:
+  de cualquier persona y **desactivar/reactivar** cuentas (no puede desactivarse a sí mismo).
+  Las cuentas **no se eliminan**: desactivar impide el login pero conserva perfil y auditoría.
+  La página muestra el **correo** y el **estado** (Activa/Desactivada) de cada usuario. Estas
+  operaciones usan la `service_role` (Admin API `auth.admin.*`), que **nunca** puede vivir en
+  el frontend, por lo que corren en dos Edge Functions que verifican en el servidor que quien
+  llama sea `administrador`:
   - **`crear-usuario`** — `auth.admin.createUser` (`email_confirm: true`) + fija `nombre`
     y `rol` en `perfiles`.
-  - **`admin-usuarios`** — despacha por `accion`: `listar` (correos vía
-    `auth.admin.listUsers`), `cambiar_password` (`auth.admin.updateUserById`) y `eliminar`
-    (`auth.admin.deleteUser`; el perfil cae por `ON DELETE CASCADE`).
+  - **`admin-usuarios`** — despacha por `accion`: `listar` (correo + `banned_until` vía
+    `auth.admin.listUsers`), `cambiar_password` (`auth.admin.updateUserById`), `desactivar`
+    (`ban_duration: '876000h'`) y `activar` (`ban_duration: 'none'`).
   Despliegue: `npx supabase functions deploy <nombre> --project-ref <ref>`. Invitar desde
   **Supabase → Authentication → Invite user** sigue funcionando como alternativa y deja la
   cuenta como `consultor`.

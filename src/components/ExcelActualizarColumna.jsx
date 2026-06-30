@@ -27,7 +27,7 @@ function castValue(val, type) {
   return String(val).trim()
 }
 
-export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy }) {
+export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy, periodo = null }) {
   const { tabla, columnas, label } = planilla
   const inputRef = useRef()
   const [open, setOpen] = useState(false)
@@ -45,11 +45,11 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
 
   useEffect(() => {
     if (open && filas == null && filasFetched == null) {
-      fetchAllRows(tabla, { order: 'apellidos_y_nombres' })
+      fetchAllRows(tabla, { order: 'apellidos_y_nombres', periodo })
         .then(setFilasFetched)
         .catch((e) => toast.error(`No se pudieron cargar los registros: ${e.message}`))
     }
-  }, [open, filas, filasFetched, tabla])
+  }, [open, filas, filasFetched, tabla, periodo])
 
   // Columnas que se pueden actualizar: todas menos el DNI. Si la planilla
   // calcula totales automáticamente, se excluyen las columnas de total
@@ -150,6 +150,7 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
     const valores = preview.actualizar.map((r) => ({ dni: r.dni, valor: r.valor }))
     const { data, error } = await supabase.rpc('actualizar_columna_planilla', {
       p_tabla: tabla,
+      p_periodo: periodo,
       p_columna: preview.columna,
       p_valores: valores,
     })
