@@ -221,15 +221,18 @@ Reporte_Planillas/
 │       ├── BusquedaGlobal.jsx Búsqueda en las 19 planillas
 │       ├── MiPerfil.jsx       Perfil propio: nombre/celular + cambiar contraseña
 │       ├── Auditoria.jsx      Historial de cambios (admin)
-│       └── Usuarios.jsx       Gestión de roles (admin)
+│       └── Usuarios.jsx       Gestión de usuarios: crear, rol, contraseña, eliminar (admin)
 │
-├── supabase/                  Esquema SQL
+├── supabase/                  Esquema SQL + Edge Functions
 │   ├── _migracion_completa.sql  Todo el esquema (tablas, RLS, realtime,
 │   │                            auditoría, funciones, totales, índices,
 │   │                            operaciones, 3 roles). Correr una vez en
 │   │                            el SQL Editor de Supabase.
-│   └── migracion_rename_observaciones.sql  Parche idempotente: renombra
-│                                observaciones → tipo_acto_administrativo en una BD ya instalada.
+│   ├── migracion_rename_observaciones.sql  Parche idempotente: renombra
+│   │                            observaciones → tipo_acto_administrativo en una BD ya instalada.
+│   └── functions/             Edge Functions (corren con service_role; solo admin)
+│       ├── crear-usuario/index.ts    Crear cuentas desde la app
+│       └── admin-usuarios/index.ts   Listar correos, cambiar contraseña y eliminar usuarios
 │
 ├── e2e/                       Pruebas end-to-end (Playwright, herméticas con mock de Supabase)
 │   ├── paginacion.spec.js     Paginación, estado vacío, sin botón "Nuevo registro", obligatorios al editar
@@ -454,9 +457,20 @@ leerla (RLS).
   `perfiles_update` permite editar la propia fila, pero el trigger `proteger_rol`
   revierte cualquier intento de un no-admin de cambiarse el `rol` (anti-escalada de
   privilegios).
-- Crear nuevos usuarios se hace desde **Supabase → Authentication → Invite user**; la
-  cuenta aparece en `/usuarios` como `consultor` y el admin le asigna el rol deseado.
-  (Crear cuentas desde el frontend requeriría una Edge Function con `service_role`.)
+- **Gestión de usuarios desde `/usuarios` (solo admin):** el administrador puede
+  **crear** cuentas (nombre, correo, rol y contraseña inicial), **cambiar la contraseña**
+  de cualquier persona y **eliminar** cuentas (no puede eliminarse a sí mismo). La página
+  también muestra el **correo** de cada usuario. Estas operaciones usan la `service_role`
+  (Admin API `auth.admin.*`), que **nunca** puede vivir en el frontend, por lo que corren
+  en dos Edge Functions que verifican en el servidor que quien llama sea `administrador`:
+  - **`crear-usuario`** — `auth.admin.createUser` (`email_confirm: true`) + fija `nombre`
+    y `rol` en `perfiles`.
+  - **`admin-usuarios`** — despacha por `accion`: `listar` (correos vía
+    `auth.admin.listUsers`), `cambiar_password` (`auth.admin.updateUserById`) y `eliminar`
+    (`auth.admin.deleteUser`; el perfil cae por `ON DELETE CASCADE`).
+  Despliegue: `npx supabase functions deploy <nombre> --project-ref <ref>`. Invitar desde
+  **Supabase → Authentication → Invite user** sigue funcionando como alternativa y deja la
+  cuenta como `consultor`.
 
 ---
 

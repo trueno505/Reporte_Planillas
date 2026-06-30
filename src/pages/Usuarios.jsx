@@ -383,7 +383,7 @@ export default function Usuarios() {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
             <UserCog size={20} className="text-primary" />
@@ -420,8 +420,8 @@ export default function Usuarios() {
         ) : perfiles.length === 0 ? (
           <p className="text-center py-12 text-gray-400">No hay perfiles registrados aún.</p>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <table className="min-w-full text-sm">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto shadow-sm">
+            <table className="min-w-full text-sm whitespace-nowrap">
               <thead className="bg-primary text-white text-xs">
                 <tr>
                   <th className="px-4 py-2.5 text-left">Nombre</th>
