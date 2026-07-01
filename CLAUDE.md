@@ -41,6 +41,8 @@ The same config object drives:
 - `getPlanillaBySlug(slug)` — lookup by URL slug
 - `getPlanillaByTabla(tabla)` — lookup by table name
 - `getSeccionesCalculo(planilla)` — returns ingresos/descuentos/totales sections
+- `getColumnasIdentidad(planilla)` — returns the fixed identity columns (see below) that exist in that planilla
+- `esColumnaIdentidad(key)` — true if the column is an identity field (`dni`, `apellidos_y_nombres`, `f_ingreso`/`fecha_ing`, `snp`, `tipo_acto_administrativo`)
 - `GRUPOS` — array of unique group names
 
 ### Shared column sets
@@ -96,7 +98,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 
 **NuevoRegistro** is a 3-step wizard (grupo → planilla → datos) that reuses `RecordForm` in `soloBasicos` mode — only **DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P., Tipo de acto administrativo** are shown, all required. S.N.P. is an ONP/AFP selector (AFP reveals a second select with the 4 AFPs; the full AFP name is stored in `snp`). Gated by `puedeEditar`; relies on `AuthContext.loading` staying true until the profile/role resolves (otherwise a direct URL load would bounce to `/dashboard`).
 
-**BusquedaGlobal** searches all 19 planillas by DNI (exact) or name (ILIKE) via the `buscar_trabajador(termino)` RPC.
+**BusquedaGlobal** searches all 19 planillas by DNI (exact) or name (ILIKE) via the `buscar_trabajador(termino, p_periodo)` RPC, for the month/year picked in the `<input type="month">`. Each result row has an **Imprimir** (boleta PDF) button: since the search RPC returns only DNI, name and `t_liquido`, the button first fetches the **full row** from that worker's own table (`getPlanillaByTabla(tabla)` → `supabase.from(tabla).select('*').eq('dni', …).eq('periodo', …).single()`) and then calls `generarBoletaPdf(planilla, fila)` — so the boleta can be printed without navigating to the planilla. A per-row spinner (`boletaCargando` keyed by `tabla-dni`) disables that button while it loads; errors surface via `react-hot-toast`.
 
 **Auditoria** shows the change log from `public.auditoria` with filters by table and action (INSERT/UPDATE/DELETE), joined with `perfiles`.
 
@@ -114,10 +116,12 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 | `ProtectedRoute.jsx` | Redirects unauthenticated users to `/login` |
 | `PlanillaTable.jsx` | Data table for the current page (50 rows) with controlled server-side sort/search, inline edit, row alerts, PDF boleta download, edit/delete actions; renders `<Paginacion>` |
 | `Paginacion.jsx` | Reusable Tailwind pagination control (« Anterior \| 1 … 4 5 6 … 20 \| Siguiente »), current page highlighted, ellipsis for large ranges, prev/next disabled at ends; hidden when ≤1 page |
-| `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI/Apellidos/Fecha/S.N.P./Tipo de acto administrativo, makes them required, and renders S.N.P. as an ONP/AFP selector. **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
+| `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI, Apellidos y Nombres, the **date column(s)** (`type === 'date'`, typically F. Ingreso), S.N.P. and Tipo de acto administrativo, makes them required, and renders S.N.P. as an ONP/AFP selector. **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
 | `ExcelActualizarColumna.jsx` | Pick one column → upload Excel (DNI + value) → preview (matched/not-found/invalid) → atomic single-column UPDATE by DNI via `actualizar_columna_planilla` RPC; also downloads a fill-in template |
 | `ExcelExport.jsx` | Download current rows as `.xlsx` |
 | `ConfirmDialog.jsx` | Reusable confirm modal; `danger` prop for red styling |
+| `PeriodoSelector.jsx` | Month/period selector dropdown (populated from `periodos_planilla`); used by `PlanillaPage` to switch between historical months |
+| `CorregirIdentidad.jsx` | Modal that corrects the 5 fixed identity fields (DNI, Apellidos y Nombres, Fecha, S.N.P., Tipo de acto) across **all** months of a worker via the `corregir_identidad` RPC |
 
 ### Hooks
 
@@ -129,7 +133,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 
 ### Context
 
-`AuthContext.jsx` — provides `{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut, refreshPerfil }` via `useAuth()`. `refreshPerfil()` re-fetches the `perfiles` row (used after MiPerfil edits so the Header reflects the new name). **`loading` stays true until the current user's profile (role) has resolved**, not just the session — it tracks `perfilUserId` (the user whose `perfiles` fetch finished) so role-gated pages (e.g. `/nuevo-registro`) don't redirect before the role is known, even on direct URL load or refresh.
+The context is split into two files for React Fast Refresh compatibility: `context/auth-context.js` defines the `AuthContext` object and the `useAuth()` hook, and `context/AuthContext.jsx` is the `AuthProvider` component. The provider provides `{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut, refreshPerfil }` via `useAuth()`. `refreshPerfil()` re-fetches the `perfiles` row (used after MiPerfil edits so the Header reflects the new name). **`loading` stays true until the current user's profile (role) has resolved**, not just the session — it tracks `perfilUserId` (the user whose `perfiles` fetch finished) so role-gated pages (e.g. `/nuevo-registro`) don't redirect before the role is known, even on direct URL load or refresh.
 
 ### Utility libraries (`src/lib/`)
 
@@ -212,7 +216,7 @@ Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
   `abrir_periodo(p_tabla, p_periodo)` (genera el mes clonando identidad; admin/editor),
   `periodos_planilla(p_tabla)` (lista de meses para el selector), `corregir_identidad(p_tabla,
   p_dni, p_datos)` (corrige los 5 campos fijos en **todos** los meses, vía el bypass).
-- **Frontend**: `src/lib/periodo.js` (helpers `formatPeriodo`/`periodoActual`/`siguientePeriodo`),
+- **Frontend**: `src/lib/periodo.js` (helpers `formatPeriodo`/`periodoActual`/`siguientePeriodo`/`aPrimerDiaMes`),
   `PeriodoSelector.jsx`, y `periodo` enhebrado por `usePlanillaPaginada` → `db.js`
   (`fetchPagina`/`fetchAllRows` filtran `.eq('periodo', …)`). `PlanillaPage` tiene el selector de
   mes, banner de solo-lectura y botón **"Generar mes siguiente"** (`abrir_periodo`). `Dashboard` y
