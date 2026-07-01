@@ -2381,6 +2381,54 @@ $cor$;
 
 
 -- =====================================================================
+-- Endurecimiento de seguridad (auditoría 2026-07)
+--   C-1: las RPCs SECURITY DEFINER NO deben ser ejecutables por 'anon'
+--        (buscar_trabajador/resumen_planillas devolvían PII+sueldos sin login).
+--   M-2: fijar search_path en todas nuestras funciones (anti search_path hijack).
+--   M-4: política SELECT explícita para dni_registro (RLS activo sin política).
+-- Idempotente: se puede re-ejecutar sin efectos adversos.
+-- =====================================================================
+REVOKE EXECUTE ON FUNCTION public.buscar_trabajador(text, date)                       FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.resumen_planillas(date)                              FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.periodos_planilla(text)                              FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.recalcular_totales(text, date)                       FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.actualizar_columna_planilla(text, date, text, jsonb) FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.abrir_periodo(text, date)                            FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.corregir_identidad(text, integer, jsonb)             FROM anon, public;
+
+GRANT EXECUTE ON FUNCTION public.buscar_trabajador(text, date)                       TO authenticated;
+GRANT EXECUTE ON FUNCTION public.resumen_planillas(date)                              TO authenticated;
+GRANT EXECUTE ON FUNCTION public.periodos_planilla(text)                              TO authenticated;
+GRANT EXECUTE ON FUNCTION public.recalcular_totales(text, date)                       TO authenticated;
+GRANT EXECUTE ON FUNCTION public.actualizar_columna_planilla(text, date, text, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.abrir_periodo(text, date)                            TO authenticated;
+GRANT EXECUTE ON FUNCTION public.corregir_identidad(text, integer, jsonb)             TO authenticated;
+
+DO $hard$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT p.oid::regprocedure AS sig
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')
+      AND NOT EXISTS (
+        SELECT 1 FROM unnest(coalesce(p.proconfig, '{}'::text[])) c WHERE c LIKE 'search_path=%'
+      )
+  LOOP
+    EXECUTE format('ALTER FUNCTION %s SET search_path = public', r.sig);
+  END LOOP;
+END
+$hard$;
+
+DROP POLICY IF EXISTS dni_registro_select ON public.dni_registro;
+CREATE POLICY dni_registro_select ON public.dni_registro
+  FOR SELECT TO authenticated
+  USING ((select public.get_my_rol()) IN ('consultor', 'editor', 'administrador'));
+
+
+-- =====================================================================
 -- Recarga del esquema de PostgREST
 -- Tras ejecutar todo el archivo, PostgREST recarga su caché para exponer
 -- de inmediato las funciones/columnas nuevas en la API REST.
