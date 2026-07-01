@@ -19,8 +19,12 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const ROLES_VALIDOS = ['consultor', 'editor', 'administrador']
 
+// Restringe CORS al origen de la app si defines ALLOWED_ORIGIN en el entorno de
+// la función (Supabase → Edge Functions → Secrets). Cae a '*' si no está.
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*'
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -96,8 +100,8 @@ Deno.serve(async (req) => {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return json({ error: 'Correo electrónico inválido.' }, 400)
   }
-  if (password.length < 6) {
-    return json({ error: 'La contraseña debe tener al menos 6 caracteres.' }, 400)
+  if (password.length < 8) {
+    return json({ error: 'La contraseña debe tener al menos 8 caracteres.' }, 400)
   }
   if (!ROLES_VALIDOS.includes(rol)) {
     return json({ error: 'Rol inválido.' }, 400)
