@@ -187,7 +187,8 @@ Reporte_Planillas/
 │   │   └── planillas.js       ★ FUENTE ÚNICA DE VERDAD (19 planillas)
 │   │
 │   ├── context/
-│   │   └── AuthContext.jsx    Sesión, perfil y rol del usuario
+│   │   ├── AuthContext.jsx    Proveedor (AuthProvider): sesión, perfil y rol del usuario
+│   │   └── auth-context.js    Contexto + hook useAuth() (separado por Fast Refresh)
 │   │
 │   ├── hooks/
 │   │   ├── usePlanillaPaginada.js  ★ Paginación server-side (50/pág) + búsqueda/orden + conteo real
@@ -199,6 +200,8 @@ Reporte_Planillas/
 │   │   ├── calculos.js        Cálculo de totales (ingreso/dscto/líquido)
 │   │   ├── alertas.js         Detección de alertas por fila
 │   │   ├── boletaPdf.js       Boleta de pago individual en PDF
+│   │   ├── periodo.js         Helpers de periodo (formatear, mes actual/siguiente, primer día)
+│   │   ├── db.js              Consultas paginadas/masivas (filtran por periodo)
 │   │   └── reporteConsolidado.js  Excel consolidado + plantilla vacía
 │   │
 │   ├── components/
@@ -211,14 +214,16 @@ Reporte_Planillas/
 │   │   ├── RecordForm.jsx           Modal editar (todos obligatorios) / alta rápida, con auto-cálculo
 │   │   ├── ExcelActualizarColumna.jsx  Actualizar una columna por DNI desde Excel + plantilla (trae todas las filas)
 │   │   ├── ExcelExport.jsx          Exportar TODAS las filas a .xlsx (las trae bajo demanda)
-│   │   └── ConfirmDialog.jsx        Modal de confirmación reutilizable
+│   │   ├── ConfirmDialog.jsx        Modal de confirmación reutilizable
+│   │   ├── PeriodoSelector.jsx      Selector de mes/periodo (para históricos mensuales)
+│   │   └── CorregirIdentidad.jsx    Modal para corregir datos fijos en todos los meses
 │   │
 │   └── pages/
 │       ├── Login.jsx          Inicio de sesión (email/contraseña)
 │       ├── Dashboard.jsx      KPIs, gráfico, resumen, tarjetas por grupo
 │       ├── PlanillaPage.jsx   Página de una planilla (orquesta todo)
 │       ├── NuevoRegistro.jsx  Alta rápida: elegir grupo → planilla → datos básicos
-│       ├── BusquedaGlobal.jsx Búsqueda en las 19 planillas
+│       ├── BusquedaGlobal.jsx Búsqueda en las 19 planillas + imprimir boleta
 │       ├── MiPerfil.jsx       Perfil propio: nombre/celular + cambiar contraseña
 │       ├── Auditoria.jsx      Historial de cambios (admin)
 │       └── Usuarios.jsx       Gestión de usuarios: crear, rol, contraseña, desactivar/activar (admin)
@@ -366,6 +371,8 @@ Se detectan tres tipos por fila:
 Genera una boleta A4 por trabajador con encabezado institucional, datos del trabajador,
 dos tablas (Ingresos / Descuentos, solo conceptos con monto ≠ 0), el **Total Líquido a
 pagar** destacado y un pie. Se descarga como `Boleta_<tabla>_<nombre>.pdf`.
+Se invoca desde el botón de la columna **Acciones** de `PlanillaTable.jsx` y
+desde el botón **Imprimir** de cada resultado de `BusquedaGlobal.jsx` (ver 8.7).
 
 ### 8.6 Dashboard (`Dashboard.jsx`)
 - KPIs: nº de planillas, total de trabajadores, total a pagar.
@@ -378,7 +385,17 @@ pagar** destacado y un pie. Se descarga como `Boleta_<tabla>_<nombre>.pdf`.
 
 ### 8.7 Búsqueda global (`BusquedaGlobal.jsx`)
 Busca por DNI (exacto) o nombre (ILIKE) en las 19 tablas vía el RPC
-`buscar_trabajador(termino)`, agrupando resultados por planilla.
+`buscar_trabajador(termino, p_periodo)` para el mes/año elegido en el
+`<input type="month">`, agrupando resultados por planilla.
+
+Cada fila de resultado incluye un botón **Imprimir** que descarga la boleta PDF
+del trabajador **sin ir a la planilla**. Como el RPC solo devuelve DNI, nombre y
+`t_liquido`, el botón primero trae la **fila completa** desde la tabla del
+trabajador (`getPlanillaByTabla(tabla)` →
+`supabase.from(tabla).select('*').eq('dni', …).eq('periodo', …).single()`) y luego
+llama a `generarBoletaPdf(planilla, fila)`. Un spinner por fila
+(`boletaCargando`, con clave `tabla-dni`) deshabilita el botón mientras carga;
+los errores se muestran con `react-hot-toast`.
 
 ### 8.8 Recálculo global (`PlanillaPage.jsx`)
 Botón "Recalcular totales" (admin/editor) que recalcula todas las filas de la planilla

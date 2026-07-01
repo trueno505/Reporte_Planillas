@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, Loader2 } from 'lucide-react'
+import { Search, Loader2, Printer } from 'lucide-react'
+import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabaseClient'
+import { getPlanillaByTabla } from '../config/planillas'
+import { generarBoletaPdf } from '../lib/boletaPdf'
 import { periodoActual, formatPeriodo } from '../lib/periodo'
 
 function fmt(n) {
@@ -15,6 +18,34 @@ export default function BusquedaGlobal() {
   const [resultados, setResultados] = useState(null)
   const [loading, setLoading] = useState(false)
   const [buscado, setBuscado] = useState('')
+  const [boletaCargando, setBoletaCargando] = useState(null)
+
+  const imprimirBoleta = async (tabla, dni) => {
+    const planilla = getPlanillaByTabla(tabla)
+    if (!planilla) {
+      toast.error('No se pudo identificar la planilla.')
+      return
+    }
+    const clave = `${tabla}-${dni}`
+    setBoletaCargando(clave)
+    try {
+      const { data, error } = await supabase
+        .from(tabla)
+        .select('*')
+        .eq('dni', dni)
+        .eq('periodo', periodo)
+        .single()
+      if (error || !data) {
+        toast.error('No se pudo obtener la boleta del trabajador.')
+        return
+      }
+      generarBoletaPdf(planilla, data)
+    } catch {
+      toast.error('Ocurrió un error al generar la boleta.')
+    } finally {
+      setBoletaCargando(null)
+    }
+  }
 
   const buscar = async (e) => {
     e.preventDefault()
@@ -115,6 +146,7 @@ export default function BusquedaGlobal() {
                             <th className="px-4 py-2 text-left text-xs text-gray-500 font-semibold">DNI</th>
                             <th className="px-4 py-2 text-left text-xs text-gray-500 font-semibold">Apellidos y Nombres</th>
                             <th className="px-4 py-2 text-right text-xs text-gray-500 font-semibold">Líquido (S/)</th>
+                            <th className="px-4 py-2 text-right text-xs text-gray-500 font-semibold">Boleta</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -123,6 +155,21 @@ export default function BusquedaGlobal() {
                               <td className="px-4 py-2 tabular-nums text-gray-600">{r.dni}</td>
                               <td className="px-4 py-2 font-medium text-gray-900">{r.apellidos_y_nombres}</td>
                               <td className="px-4 py-2 text-right tabular-nums text-primary font-semibold">{fmt(r.t_liquido)}</td>
+                              <td className="px-4 py-2 text-right">
+                                <button
+                                  onClick={() => imprimirBoleta(tabla, r.dni)}
+                                  disabled={boletaCargando === `${tabla}-${r.dni}`}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-primary hover:bg-primary/5 transition disabled:opacity-60"
+                                  title="Imprimir boleta de este trabajador"
+                                >
+                                  {boletaCargando === `${tabla}-${r.dni}` ? (
+                                    <Loader2 size={13} className="animate-spin" />
+                                  ) : (
+                                    <Printer size={13} />
+                                  )}
+                                  Imprimir
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
