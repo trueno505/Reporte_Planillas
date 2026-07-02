@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Muni Sheets — Manual de Usuario · Consultor y Editor</title>
+<style>
+  :root{
+    --azul:#003366; --azul2:#004b93; --azul3:#0a6fd6;
+    --dorado:#c9a227; --gris:#5b6572; --grisc:#eef2f7;
+    --ok:#1a7f4b; --warn:#b8860b; --bad:#b3261e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:#1c2733;background:#e9eef5;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    width:210mm;min-height:297mm;margin:10mm auto;background:#fff;
+    padding:18mm 17mm 20mm;position:relative;box-shadow:0 8px 28px rgba(0,32,64,.14);
+  }
+  .page::after{content:"";position:absolute;left:0;right:0;top:0;height:6px;
+    background:linear-gradient(90deg,var(--azul),var(--azul3) 60%,var(--dorado))}
+  .pfoot{position:absolute;left:17mm;right:17mm;bottom:8mm;display:flex;
+    justify-content:space-between;font-size:10.5px;color:var(--gris);
+    border-top:1px solid #e4ebf3;padding-top:6px}
+  h1{font-size:30px;color:var(--azul);font-weight:800;line-height:1.15}
+  h2{font-size:21px;color:var(--azul);font-weight:800;margin:0 0 4px;
+    padding-bottom:6px;border-bottom:2px solid var(--grisc)}
+  h2 .num{display:inline-flex;align-items:center;justify-content:center;
+    min-width:30px;height:30px;border-radius:8px;background:var(--azul);color:#fff;
+    font-size:16px;margin-right:10px;padding:0 8px;vertical-align:middle}
+  h3{font-size:15.5px;color:var(--azul2);font-weight:700;margin:14px 0 4px}
+  p{font-size:13.5px;color:#2b3948;margin:6px 0}
+  .muted{color:var(--gris)}
+  .kicker{color:var(--azul3);font-weight:700;letter-spacing:.13em;
+    text-transform:uppercase;font-size:11.5px;margin-bottom:4px}
+  .rolechip{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;
+    border-radius:999px;font-size:12.5px;font-weight:700;margin:2px 6px 2px 0}
+  .rolechip.c{background:#eef1f5;color:#48515c;border:1px solid #d7dde5}
+  .rolechip.e{background:#fdf3d9;color:#8a6508;border:1px solid #ecd9a0}
+  .badge{display:inline-block;padding:2px 9px;border-radius:6px;font-size:11px;font-weight:700}
+  .badge.c{background:#eef1f5;color:#48515c}
+  .badge.e{background:#fdf3d9;color:#8a6508}
+  .badge.ce{background:#e6effb;color:var(--azul2)}
+  /* Pasos numerados */
+  ol.steps{margin:8px 0 4px;padding:0;list-style:none;counter-reset:s}
+  ol.steps>li{position:relative;padding-left:32px;margin:8px 0;font-size:13.5px;color:#2b3948}
+  ol.steps>li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;
+    width:22px;height:22px;border-radius:50%;background:var(--azul);color:#fff;font-size:12px;
+    font-weight:700;display:flex;align-items:center;justify-content:center}
+  ul.b{margin:6px 0 4px 20px}
+  ul.b li{font-size:13.5px;margin:5px 0;color:#2b3948}
+  b.ui{color:var(--azul2)}
+  /* Cajas */
+  .tip,.warn,.info{border-radius:9px;padding:10px 14px;font-size:12.5px;margin:10px 0}
+  .tip{background:#e7f4ec;border:1px solid #c4e6d1;color:#12603a}
+  .warn{background:#fdf3d9;border:1px solid #ecd9a0;color:#7a5a06}
+  .info{background:#e6effb;border:1px solid #cfe0f4;color:#0f3f77}
+  .tip b,.warn b,.info b{font-weight:800}
+  /* Capturas */
+  .shot{width:100%;border-radius:8px;border:1px solid #d5dfe9;
+    box-shadow:0 4px 14px rgba(0,32,64,.10);display:block;margin:10px 0 2px}
+  .cap{font-size:11px;color:var(--gris);text-align:center;margin:4px 0 10px;font-style:italic}
+  .shot2{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  /* Tablas */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #e7edf4;vertical-align:top}
+  th{background:var(--azul);color:#fff;font-weight:700;font-size:12px}
+  tr:nth-child(even) td{background:#f7fafd}
+  .check{color:var(--ok);font-weight:800;text-align:center}
+  .cross{color:var(--bad);font-weight:800;text-align:center}
+  td.center{text-align:center}
+  /* Portada */
+  .cover{background:radial-gradient(900px 500px at 85% -8%,#0a6fd6 0%,#004b93 42%,#003366 100%);
+    color:#fff;display:flex;flex-direction:column}
+  .cover::after{background:linear-gradient(90deg,var(--dorado),#e9cf72 60%,transparent)}
+  .cover h1{color:#fff;font-size:42px;margin-top:6px}
+  .cover .kicker{color:#bcd7f7}
+  .cover p{color:#dbe8f7;font-size:15px}
+  .cover .fill{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .cover .meta{display:flex;gap:30px;flex-wrap:wrap;margin-top:26px}
+  .cover .meta div{font-size:12.5px;color:#cfe0f4}
+  .cover .meta b{color:#fff;display:block;font-size:15px;margin-top:2px}
+  .cover .pfoot{color:#bcd7f7;border-top-color:#2c517c}
+  /* Índice */
+  .idx{margin-top:10px}
+  .idx .sec{font-weight:800;color:var(--azul);font-size:14px;margin:14px 0 4px}
+  .idx .it{display:flex;justify-content:space-between;font-size:13px;color:#2b3948;
+    padding:3.5px 0;border-bottom:1px dotted #d7dfe8}
+  .idx .it span:last-child{color:var(--gris);font-variant-numeric:tabular-nums}
+  .toolbar-list td:first-child{white-space:nowrap;font-weight:700;color:var(--azul2)}
+  kbd{background:#eef2f7;border:1px solid #d5dde7;border-radius:4px;padding:0 6px;
+    font-size:12px;font-family:inherit;font-weight:600;color:#31435a}
+  /* Impresión */
+  @page{size:A4 portrait;margin:0}
+  @media print{
+    body{background:#fff}
+    .page{width:210mm;height:296mm;min-height:0;margin:0;box-shadow:none;
+      page-break-after:always;break-after:page;overflow:hidden}
+    .page:last-child{page-break-after:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ PORTADA ══════════ -->
+<section class="page cover">
+  <div class="kicker">Municipalidad Provincial de Ica · Gerencia de Administración</div>
+  <div style="display:flex;align-items:center;gap:16px;margin-top:8px">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#e9cf72" stroke-width="1.5">
+      <path d="M12 2l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V5l8-3z"/>
+      <path d="M8 11l2.5 2.5L16 8" stroke="#fff"/>
+    </svg>
+    <b style="font-size:14px;letter-spacing:.05em">MUNI SHEETS — SISTEMA DE REPORTE DE PLANILLAS</b>
+  </div>
+  <div class="fill">
+    <h1>Manual de Usuario</h1>
+    <p style="font-size:21px;margin-top:8px;color:#e9cf72;font-weight:700">Roles Consultor y Editor</p>
+    <p style="max-width:620px;margin-top:14px">
+      Guía completa y detallada para el uso diario del sistema: consultar las 19 planillas,
+      buscar trabajadores, emitir boletas y reportes (Consultor), y además registrar, editar
+      y actualizar datos de forma masiva (Editor). Todas las capturas provienen del sistema real.
+    </p>
+    <div class="meta">
+      <div>Aplicación<b>Muni Sheets</b></div>
+      <div>Dirigido a<b>Personal con rol Consultor o Editor</b></div>
+      <div>Versión<b>1.0 — Julio 2026</b></div>
+    </div>
+  </div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Uso interno</span></div>
+</section>
+
+<!-- ══════════ ÍNDICE ══════════ -->
+<section class="page">
+  <div class="kicker">Contenido</div>
+  <h1 style="font-size:26px">Índice del manual</h1>
+  <div class="idx">
+    <div class="sec">Introducción</div>
+    <div class="it"><span>1 · ¿Qué es Muni Sheets y qué puede hacer cada rol?</span><span>pág. 3</span></div>
+    <div class="it"><span>2 · Ingresar al sistema (iniciar sesión)</span><span>pág. 4</span></div>
+    <div class="sec">Parte A — Funciones de consulta <span class="badge ce">consultor y editor</span></div>
+    <div class="it"><span>3 · El Panel de Planillas (pantalla de inicio)</span><span>pág. 5</span></div>
+    <div class="it"><span>4 · Abrir una planilla y navegar por sus páginas</span><span>pág. 6</span></div>
+    <div class="it"><span>5 · Buscar y ordenar dentro de una planilla</span><span>pág. 7</span></div>
+    <div class="it"><span>6 · El selector de mes: mes actual e histórico</span><span>pág. 8</span></div>
+    <div class="it"><span>7 · Búsqueda global: encontrar a cualquier trabajador</span><span>pág. 9</span></div>
+    <div class="it"><span>8 · Descargar la boleta de pago en PDF</span><span>pág. 10</span></div>
+    <div class="it"><span>9 · Exportar a Excel y Reporte consolidado</span><span>pág. 10</span></div>
+    <div class="it"><span>10 · Mi perfil: datos personales y contraseña</span><span>pág. 11</span></div>
+    <div class="sec">Parte B — Funciones de edición <span class="badge e">solo editor</span></div>
+    <div class="it"><span>11 · La planilla vista por el editor (barra de herramientas)</span><span>pág. 12</span></div>
+    <div class="it"><span>12 · Nuevo registro: asistente de 3 pasos</span><span>pág. 13</span></div>
+    <div class="it"><span>13 · Editar un registro (totales automáticos)</span><span>pág. 15</span></div>
+    <div class="it"><span>14 · Corregir datos fijos (identidad del trabajador)</span><span>pág. 16</span></div>
+    <div class="it"><span>15 · Eliminar un registro</span><span>pág. 17</span></div>
+    <div class="it"><span>16 · Actualizar una columna con Excel (carga masiva)</span><span>pág. 18</span></div>
+    <div class="it"><span>17 · Recalcular totales</span><span>pág. 19</span></div>
+    <div class="it"><span>18 · Generar el mes siguiente</span><span>pág. 20</span></div>
+    <div class="sec">Cierre</div>
+    <div class="it"><span>19 · Límites de cada rol y preguntas frecuentes</span><span>pág. 21</span></div>
+  </div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 2</span></div>
+</section>
+
+<!-- ══════════ 1 · INTRODUCCIÓN ══════════ -->
+<section class="page">
+  <div class="kicker">Introducción</div>
+  <h2><span class="num">1</span>¿Qué es Muni Sheets y qué puede hacer cada rol?</h2>
+  <p><b>Muni Sheets</b> es el sistema web de la Municipalidad Provincial de Ica que centraliza
+  las <b>19 planillas de pago</b> (Obreros, Empleados, CAS, Pensionistas y Autoridades) en una
+  sola plataforma, con cálculo automático de totales, histórico mensual y control de acceso por roles.</p>
+  <p>Este manual cubre los dos roles operativos:</p>
+  <div style="margin:10px 0">
+    <span class="rolechip c">👁 CONSULTOR — solo lectura</span>
+    <span class="rolechip e">✎ EDITOR — lectura + edición de datos</span>
+  </div>
+  <h3>¿Qué puede hacer cada uno?</h3>
+  <table>
+    <thead><tr><th>Acción</th><th style="width:90px;text-align:center">Consultor</th><th style="width:90px;text-align:center">Editor</th></tr></thead>
+    <tbody>
+      <tr><td>Ver el Panel de Planillas y las 19 planillas</td><td class="check">✔</td><td class="check">✔</td></tr>
+      <tr><td>Buscar dentro de una planilla y en las 19 a la vez (búsqueda global)</td><td class="check">✔</td><td class="check">✔</td></tr>
+      <tr><td>Consultar meses anteriores (histórico)</td><td class="check">✔</td><td class="check">✔</td></tr>
+      <tr><td>Descargar boletas de pago en PDF</td><td class="check">✔</td><td class="check">✔</td></tr>
+      <tr><td>Exportar planillas a Excel · Reporte consolidado</td><td class="check">✔</td><td class="check">✔</td></tr>
+      <tr><td>Editar sus propios datos de perfil y contraseña</td><td class="check">✔</td><td class="check">✔</td></tr>
+      <tr><td>Crear nuevos registros (asistente de 3 pasos)</td><td class="cross">✕</td><td class="check">✔</td></tr>
+      <tr><td>Editar y eliminar registros del mes abierto</td><td class="cross">✕</td><td class="check">✔</td></tr>
+      <tr><td>Actualizar una columna con Excel (carga masiva)</td><td class="cross">✕</td><td class="check">✔</td></tr>
+      <tr><td>Recalcular totales · Generar el mes siguiente</td><td class="cross">✕</td><td class="check">✔</td></tr>
+      <tr><td>Gestionar usuarios · Ver auditoría</td><td class="cross">✕</td><td class="cross">✕</td></tr>
+    </tbody>
+  </table>
+  <div class="info"><b>Importante:</b> la seguridad se aplica en la base de datos, no solo en la pantalla.
+  Si tu rol no permite una acción, el botón no aparece y — aunque se intentara por otra vía — el
+  sistema la rechazaría. La gestión de usuarios y la auditoría son exclusivas del administrador.</div>
+  <div class="tip"><b>Consejo:</b> si eres editor, todo lo de la <b>Parte A</b> también te corresponde:
+  el editor tiene todas las capacidades del consultor más las de edición de la <b>Parte B</b>.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 3</span></div>
+</section>
+
+<!-- ══════════ 2 · LOGIN ══════════ -->
+<section class="page">
+  <div class="kicker">Introducción</div>
+  <h2><span class="num">2</span>Ingresar al sistema (iniciar sesión)</h2>
+  <ol class="steps">
+    <li>Abre el navegador (Chrome, Edge o Firefox) y escribe la dirección del sistema que te
+        proporcionó el área de administración.</li>
+    <li>Aparece la pantalla de acceso de <b>Muni Sheets</b>. Escribe tu <b class="ui">correo electrónico</b>
+        institucional (el que registró el administrador al crear tu cuenta).</li>
+    <li>Escribe tu <b class="ui">contraseña</b>. Los caracteres se ocultan por seguridad.</li>
+    <li>Pulsa <b class="ui">Ingresar</b>. Si los datos son correctos entrarás directamente al
+        <b>Panel de Planillas</b>.</li>
+  </ol>
+  <img class="shot" style="max-width:420px;margin-left:auto;margin-right:auto" src="assets/login.png" alt="Pantalla de acceso" />
+  <p class="cap">Pantalla de acceso: correo + contraseña.</p>
+  <h3>Problemas frecuentes al ingresar</h3>
+  <ul class="b">
+    <li><b>«Invalid login credentials»</b>: el correo o la contraseña no coinciden. Revisa
+        mayúsculas y espacios al inicio o final.</li>
+    <li><b>Olvidaste tu contraseña</b>: solicita al administrador que te asigne una nueva desde
+        la pantalla de Usuarios; luego podrás cambiarla tú mismo en <b class="ui">Mi perfil</b> (sección 10).</li>
+    <li><b>Cuenta desactivada</b>: si el administrador desactivó tu cuenta, no podrás ingresar
+        aunque la contraseña sea correcta.</li>
+  </ul>
+  <div class="tip"><b>Cerrar sesión:</b> usa el ícono rojo de salida en la esquina superior derecha
+  cuando termines, especialmente en computadoras compartidas.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 4</span></div>
+</section>
+
+<!-- ══════════ 3 · DASHBOARD ══════════ -->
+<section class="page">
+  <div class="kicker">Parte A · Funciones de consulta <span class="badge ce">consultor y editor</span></div>
+  <h2><span class="num">3</span>El Panel de Planillas (pantalla de inicio)</h2>
+  <p>Al ingresar verás el <b>Panel de Planillas</b>: un resumen general del mes seleccionado.</p>
+  <img class="shot" src="assets/consultor-dashboard.png" alt="Panel de Planillas" />
+  <p class="cap">Panel de Planillas con el mes de Junio 2026 seleccionado (sesión de consultor).</p>
+  <h3>Qué encuentras en esta pantalla</h3>
+  <ul class="b">
+    <li><b>Barra superior:</b> tu nombre y tu rol (etiqueta gris «consultor» o dorada «editor»),
+        y el botón para cerrar sesión.</li>
+    <li><b>Menú lateral izquierdo:</b> Inicio, Búsqueda global, Mi perfil y las 19 planillas
+        agrupadas en 5 categorías (Obreros, Empleados, CAS, Pensionistas, Autoridades).
+        Cada grupo se despliega o contrae al hacer clic.</li>
+    <li><b>Indicadores:</b> número de planillas, total de trabajadores y total a pagar del mes.</li>
+    <li><b>Gráfico de barras:</b> total líquido por grupo laboral.</li>
+    <li><b>Resumen por planilla:</b> tabla con trabajadores, ingresos, descuentos y líquido de
+        cada una de las 19 planillas. El nombre de cada planilla es un enlace directo.</li>
+    <li><b>Selector «Mes a consultar»:</b> cambia todo el panel a un mes anterior (ver sección 6).</li>
+    <li><b>Botón «Reporte consolidado»:</b> descarga un Excel con todas las planillas del mes (sección 9).</li>
+  </ul>
+  <div class="tip"><b>Vuelve al inicio</b> en cualquier momento con la opción <b class="ui">Inicio</b>
+  del menú lateral.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 5</span></div>
+</section>
+
+<!-- ══════════ 4 · ABRIR PLANILLA ══════════ -->
+<section class="page">
+  <div class="kicker">Parte A · Funciones de consulta <span class="badge ce">consultor y editor</span></div>
+  <h2><span class="num">4</span>Abrir una planilla y navegar por sus páginas</h2>
+  <ol class="steps">
+    <li>En el menú lateral, haz clic en el <b>grupo</b> (por ejemplo <b class="ui">Empleados</b>)
+        para desplegar sus planillas.</li>
+    <li>Haz clic en la planilla deseada (por ejemplo <b class="ui">Empleados Permanentes</b>).</li>
+    <li>Se abre la tabla con los trabajadores del <b>mes más reciente</b>. Verás el número total
+        de registros junto a la caja de búsqueda.</li>
+    <li>Desplázate <b>horizontalmente</b> para ver todas las columnas (ingresos, descuentos y
+        totales) y <b>verticalmente</b> para recorrer las filas.</li>
+    <li>Si la planilla tiene más de <b>50 trabajadores</b>, usa la <b>paginación</b> del pie de la
+        tabla: botones «Anterior», «Siguiente» y números de página.</li>
+  </ol>
+  <img class="shot" src="assets/consultor-planilla.png" alt="Planilla abierta (vista consultor)" />
+  <p class="cap">Planilla «Empleados Permanentes» vista por un consultor: sin botones de edición.</p>
+  <div class="info"><b>Vista del consultor:</b> como se ve en la captura, el consultor dispone de
+  <b class="ui">Recargar</b> y <b class="ui">Exportar Excel</b> junto al selector de mes.
+  No aparecen botones de edición: esos son exclusivos del editor (Parte B).</div>
+  <div class="tip"><b>Recargar:</b> si otra persona está actualizando la planilla en ese momento,
+  los cambios aparecen solos (tiempo real). El botón <b class="ui">Recargar</b> fuerza una
+  actualización inmediata si lo necesitas.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 6</span></div>
+</section>
+
+<!-- ══════════ 5 · BUSCAR EN PLANILLA ══════════ -->
+<section class="page">
+  <div class="kicker">Parte A · Funciones de consulta <span class="badge ce">consultor y editor</span></div>
+  <h2><span class="num">5</span>Buscar y ordenar dentro de una planilla</h2>
+  <h3>Buscar un trabajador</h3>
+  <ol class="steps">
+    <li>Dentro de la planilla, ubica la caja <b class="ui">«Buscar por nombre o DNI…»</b>
+        en la parte superior de la tabla.</li>
+    <li>Escribe parte del <b>apellido o nombre</b> (no importan mayúsculas/minúsculas)
+        o el <b>DNI exacto</b>.</li>
+    <li>La tabla se filtra automáticamente mientras escribes y el contador de registros
+        muestra cuántos coinciden.</li>
+    <li>Borra el texto para volver a ver la planilla completa.</li>
+  </ol>
+  <img class="shot" src="assets/consultor-buscar-planilla.png" alt="Búsqueda dentro de la planilla" />
+  <p class="cap">Búsqueda por «gomez»: la tabla muestra solo las coincidencias.</p>
+  <h3>Ordenar por una columna</h3>
+  <ul class="b">
+    <li>Haz clic en el <b>encabezado</b> de cualquier columna (DNI, Apellidos, R. Básica…)
+        para ordenar de forma <b>ascendente</b>.</li>
+    <li>Haz clic de nuevo para invertir a <b>descendente</b>. Las flechas del encabezado
+        indican el orden activo.</li>
+  </ul>
+  <div class="tip"><b>Búsqueda por DNI:</b> con solo dígitos el sistema busca el DNI exacto
+  además del nombre — útil cuando conoces el documento del trabajador.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 7</span></div>
+</section>
+
+<!-- ══════════ 6 · SELECTOR DE MES ══════════ -->
+<section class="page">
+  <div class="kicker">Parte A · Funciones de consulta <span class="badge ce">consultor y editor</span></div>
+  <h2><span class="num">6</span>El selector de mes: mes actual e histórico</h2>
+  <p>Cada planilla guarda un <b>histórico mensual</b>: los datos de cada mes quedan archivados y
+  nunca se sobrescriben. El sistema distingue dos tipos de mes:</p>
+  <ul class="b">
+    <li><b>Mes abierto (editable):</b> el más reciente de la planilla. Es el único donde el
+        editor puede hacer cambios.</li>
+    <li><b>Meses cerrados (solo lectura):</b> todos los anteriores. Se pueden consultar,
+        exportar e imprimir, pero nadie puede modificarlos.</li>
+  </ul>
+  <ol class="steps">
+    <li>Dentro de la planilla, abre el <b>selector de mes</b> (junto al botón Recargar).</li>
+    <li>Elige el mes que quieres consultar (por ejemplo <b>Junio 2026</b>).</li>
+    <li>La tabla carga los datos de ese mes. Si es un mes cerrado, aparece un
+        <b>aviso ámbar</b> indicando que estás en solo lectura.</li>
+    <li>Para volver al mes de trabajo, selecciona nuevamente el mes más reciente.</li>
+  </ol>
+  <img class="shot" src="assets/consultor-mescerrado.png" alt="Mes cerrado en solo lectura" />
+  <p class="cap">Consultando Junio 2026 (mes cerrado): el aviso indica que es solo lectura y cuál es el mes editable.</p>
+  <div class="info"><b>Para el consultor no cambia nada</b> — su acceso siempre es de lectura.
+  El aviso es especialmente relevante para el editor: en meses cerrados sus botones de edición
+  desaparecen.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 8</span></div>
+</section>
+
+<!-- ══════════ 7 · BÚSQUEDA GLOBAL ══════════ -->
+<section class="page">
+  <div class="kicker">Parte A · Funciones de consulta <span class="badge ce">consultor y editor</span></div>
+  <h2><span class="num">7</span>Búsqueda global: encontrar a cualquier trabajador</h2>
+  <p>¿No sabes en qué planilla está una persona? La <b>búsqueda global</b> consulta las
+  <b>19 planillas a la vez</b>.</p>
+  <ol class="steps">
+    <li>En el menú lateral entra a <b class="ui">Búsqueda global</b>.</li>
+    <li>Elige el <b>mes</b> a consultar en el selector de la izquierda.</li>
+    <li>Escribe el <b>DNI</b> (búsqueda exacta) o parte del <b>nombre</b> (búsqueda parcial).</li>
+    <li>Pulsa <b class="ui">Buscar</b> o presiona <kbd>Enter</kbd>.</li>
+    <li>Los resultados aparecen <b>agrupados por planilla</b>: cada bloque azul indica la
+        planilla donde figura la persona, con su DNI, nombre y líquido del mes.</li>
+    <li>Desde cada resultado puedes: pulsar <b class="ui">Imprimir</b> para descargar su
+        <b>boleta PDF</b> (sección 8) o <b class="ui">Ver planilla completa →</b> para abrir esa planilla.</li>
+  </ol>
+  <img class="shot" src="assets/consultor-busqueda-global.png" alt="Búsqueda global con resultados" />
+  <p class="cap">Búsqueda del DNI 47851485 en Junio 2026: 1 coincidencia en «Empleados Permanentes»,
+  con botón Imprimir para su boleta.</p>
+  <div class="tip"><b>Sin resultados:</b> verifica que el mes elegido sea uno donde el trabajador
+  estuvo registrado y que el DNI no tenga errores de tipeo.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 9</span></div>
+</section>
+
+<!-- ══════════ 8 y 9 · BOLETA + EXCEL ══════════ -->
+<section class="page">
+  <div class="kicker">Parte A · Funciones de consulta <span class="badge ce">consultor y editor</span></div>
+  <h2><span class="num">8</span>Descargar la boleta de pago en PDF</h2>
+  <p>La boleta individual detalla los ingresos, descuentos y líquido de un trabajador en el mes elegido.</p>
+  <ol class="steps">
+    <li>Ubica al trabajador de una de estas dos formas: abre su <b>planilla</b> (secciones 4–5)
+        o encuéntralo con la <b>búsqueda global</b> (sección 7).</li>
+    <li>Pulsa el botón <b class="ui">Imprimir</b> de su fila (ícono de impresora).</li>
+    <li>El PDF se <b>descarga automáticamente</b> con el detalle del mes que estás viendo:
+        datos del trabajador, columnas de ingresos, columnas de descuentos y los tres totales.</li>
+    <li>Ábrelo con cualquier lector de PDF para imprimirlo o enviarlo.</li>
+  </ol>
+  <div class="info"><b>El PDF respeta el mes seleccionado:</b> si estás consultando Junio 2026,
+  la boleta sale con los montos de Junio 2026.</div>
+
+  <h2 style="margin-top:22px"><span class="num">9</span>Exportar a Excel y Reporte consolidado</h2>
+  <h3>Exportar una planilla</h3>
+  <ol class="steps">
+    <li>Abre la planilla y el mes que necesitas.</li>
+    <li>Pulsa <b class="ui">Exportar Excel</b> (barra superior de la planilla).</li>
+    <li>Se descarga un archivo <b>.xlsx</b> con <b>todos los registros del mes</b> (no solo la
+        página visible), con las columnas en el mismo orden de la tabla.</li>
+  </ol>
+  <h3>Reporte consolidado (todas las planillas)</h3>
+  <ol class="steps">
+    <li>Ve a <b class="ui">Inicio</b> (Panel de Planillas) y elige el mes.</li>
+    <li>Pulsa <b class="ui">Reporte consolidado</b> (esquina superior derecha).</li>
+    <li>Se descarga un Excel de <b>varias hojas</b>: un resumen general y una hoja por planilla
+        con sus trabajadores del mes.</li>
+  </ol>
+  <div class="tip"><b>Ambas descargas están disponibles para los dos roles</b> — exportar no
+  modifica ningún dato.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 10</span></div>
+</section>
+
+<!-- ══════════ 10 · MI PERFIL ══════════ -->
+<section class="page">
+  <div class="kicker">Parte A · Funciones de consulta <span class="badge ce">consultor y editor</span></div>
+  <h2><span class="num">10</span>Mi perfil: datos personales y contraseña</h2>
+  <p>Todo usuario puede administrar sus propios datos desde <b class="ui">Mi perfil</b> en el menú lateral
+  (o haciendo clic en su nombre en la barra superior).</p>
+  <h3>Editar tus datos</h3>
+  <ol class="steps">
+    <li>Entra a <b class="ui">Mi perfil</b>.</li>
+    <li>Modifica tu <b>Nombre</b> y/o tu <b>Celular</b>. Tu <b>correo</b> y tu <b>rol</b> aparecen
+        en solo lectura: solo el administrador puede cambiarlos.</li>
+    <li>Guarda los cambios. Tu nombre actualizado se reflejará en la barra superior.</li>
+  </ol>
+  <h3>Cambiar tu contraseña</h3>
+  <ol class="steps">
+    <li>En la misma pantalla, ubica la sección de contraseña.</li>
+    <li>Escribe la <b>nueva contraseña</b> y su confirmación.</li>
+    <li>Pulsa el botón de actualizar. A partir de ese momento ingresarás con la nueva clave.</li>
+  </ol>
+  <img class="shot" src="assets/perfil.png" alt="Pantalla Mi perfil" />
+  <p class="cap">Mi perfil: nombre y celular editables; correo y rol en solo lectura; cambio de contraseña.</p>
+  <div class="warn"><b>Recomendación de seguridad:</b> usa una contraseña que no utilices en otros
+  servicios y no la compartas. Si sospechas que alguien la conoce, cámbiala de inmediato.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 11</span></div>
+</section>
+
+<!-- ══════════ 11 · PLANILLA DEL EDITOR ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">11</span>La planilla vista por el editor (barra de herramientas)</h2>
+  <p>Cuando un <b>editor</b> abre una planilla en su <b>mes abierto</b>, aparecen las herramientas
+  de edición que el consultor no ve:</p>
+  <img class="shot" style="max-width:86%;margin-left:auto;margin-right:auto" src="assets/editor-planilla.png" alt="Planilla vista por el editor" />
+  <p class="cap">La misma planilla con sesión de editor: botones adicionales en la barra y acciones por fila.</p>
+  <table class="toolbar-list">
+    <thead><tr><th style="width:190px">Control</th><th>Para qué sirve</th><th style="width:60px">Sección</th></tr></thead>
+    <tbody>
+      <tr><td>Actualizar columna</td><td>Carga masiva de una columna (ej. un descuento) desde un archivo Excel, emparejando por DNI.</td><td class="center">16</td></tr>
+      <tr><td>Recalcular totales</td><td>Recalcula Total Ingreso, Total Descuentos y Total Líquido de todos los registros del mes.</td><td class="center">17</td></tr>
+      <tr><td>Generar mes siguiente</td><td>Crea la planilla del mes próximo copiando la identidad de los trabajadores.</td><td class="center">18</td></tr>
+      <tr><td>Editar (por fila)</td><td>Abre el formulario del trabajador para completar o corregir montos.</td><td class="center">13</td></tr>
+      <tr><td>Eliminar (por fila)</td><td>Retira al trabajador de la planilla del mes, previa confirmación.</td><td class="center">15</td></tr>
+      <tr><td>Nuevo registro (menú)</td><td>Alta de un trabajador con el asistente de 3 pasos (opción del menú lateral).</td><td class="center">12</td></tr>
+    </tbody>
+  </table>
+  <div class="warn"><b>Solo en el mes abierto:</b> si cambias a un mes cerrado (histórico), estos
+  botones desaparecen y la planilla queda en solo lectura, igual que para el consultor (sección 6).</div>
+  <div class="tip"><b>Edición rápida:</b> también puedes hacer <b>doble clic sobre una celda</b>
+  de la tabla para abrir la edición directamente.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 12</span></div>
+</section>
+
+<!-- ══════════ 12 · NUEVO REGISTRO (1/2) ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">12</span>Nuevo registro: asistente de 3 pasos (1/2)</h2>
+  <p>El alta de trabajadores se hace <b>únicamente</b> desde la opción <b class="ui">Nuevo registro</b>
+  del menú lateral. El asistente te guía para no equivocarte de planilla.</p>
+  <h3>Paso 1 — Elegir el grupo</h3>
+  <ol class="steps">
+    <li>En el menú lateral pulsa <b class="ui">Nuevo registro</b>.</li>
+    <li>Elige el <b>grupo laboral</b> del trabajador: Obreros, Empleados, CAS, Pensionistas o
+        Autoridades. Cada tarjeta indica cuántas planillas contiene.</li>
+  </ol>
+  <h3>Paso 2 — Elegir la planilla</h3>
+  <ol class="steps">
+    <li>Se despliegan las planillas del grupo elegido (por ejemplo, en Empleados: Permanentes,
+        Contrato Plazo Indeterminado, Contrato Provisional, Mandato Judicial).</li>
+    <li>Haz clic en la planilla donde se registrará el trabajador.</li>
+  </ol>
+  <div class="shot2">
+    <div>
+      <img class="shot" src="assets/editor-nuevo-paso1.png" alt="Nuevo registro - paso 1" />
+      <p class="cap">Paso 1: selección del grupo. El indicador superior<br/>muestra el avance (Grupo → Planilla → Datos).</p>
+    </div>
+    <div>
+      <img class="shot" src="assets/editor-nuevo-paso2.png" alt="Nuevo registro - paso 2" />
+      <p class="cap">Paso 2: selección de la planilla<br/>dentro del grupo «Empleados».</p>
+    </div>
+  </div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 13</span></div>
+</section>
+
+<!-- ══════════ 12 · NUEVO REGISTRO (2/2) ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">12</span>Nuevo registro: asistente de 3 pasos (2/2)</h2>
+  <h3>Paso 3 — Datos básicos del trabajador</h3>
+  <ol class="steps">
+    <li>Completa los <b>5 datos de identidad</b>, todos obligatorios:
+      <ul class="b">
+        <li><b>DNI</b> — solo números; no puede repetirse en otra planilla el mismo mes.</li>
+        <li><b>Apellidos y Nombres</b> — nombre completo del trabajador.</li>
+        <li><b>Fecha de Ingreso</b> — usa el calendario del campo.</li>
+        <li><b>S.N.P.</b> — elige <b>ONP</b> o <b>AFP</b>; si eliges AFP aparece un segundo
+            selector con las 4 AFP (Integra, Prima, Profuturo, Habitat).</li>
+        <li><b>Tipo de acto administrativo</b> — documento que sustenta el alta
+            (ej. Resolución de Alcaldía N° 123-2026).</li>
+      </ul>
+    </li>
+    <li>Pulsa <b class="ui">Crear</b>. El trabajador queda registrado en el <b>mes abierto</b>
+        de esa planilla.</li>
+  </ol>
+  <img class="shot" src="assets/editor-nuevo-paso3.png" alt="Nuevo registro - paso 3" />
+  <p class="cap">Paso 3: formulario de datos básicos ya completado, listo para «Crear».</p>
+  <div class="info"><b>¿Y los montos?</b> El alta solo registra la identidad. Las remuneraciones y
+  descuentos quedan <b>en blanco</b> para completarlos después con <b>Editar</b> (sección 13) o con la
+  <b>carga masiva por Excel</b> (sección 16).</div>
+  <div class="warn"><b>DNI duplicado:</b> si el DNI ya existe en cualquiera de las 19 planillas en ese
+  mes, el sistema rechazará el alta. Es una protección para que nadie cobre dos veces.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 14</span></div>
+</section>
+
+<!-- ══════════ 13 · EDITAR ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">13</span>Editar un registro (totales automáticos)</h2>
+  <ol class="steps">
+    <li>Abre la planilla en su <b>mes abierto</b> y ubica al trabajador (usa la búsqueda si es necesario).</li>
+    <li>Pulsa <b class="ui">Editar</b> en su fila (o haz <b>doble clic</b> sobre una celda).</li>
+    <li>Se abre el formulario con todas las columnas de la planilla. Los <b>5 datos de identidad</b>
+        (DNI, nombres, fecha, S.N.P., tipo de acto) aparecen <b>bloqueados con la marca «(fijo)»</b> —
+        se corrigen con otro procedimiento (sección 14).</li>
+    <li>Completa o corrige los <b>ingresos y descuentos</b>. Mientras escribes, los tres totales
+        (<b>T. Ingreso, T. Descuentos, T. Líquido</b>) se <b>recalculan solos</b> — no los digites.</li>
+    <li>Al editar, el sistema <b>exige llenar todos los campos</b> no totales: escribe <b>0</b>
+        donde no corresponda un monto.</li>
+    <li>Pulsa <b class="ui">Actualizar</b> para guardar. La tabla se refresca al instante.</li>
+  </ol>
+  <img class="shot" src="assets/editor-editar.png" alt="Modal de edición" />
+  <p class="cap">Edición de un registro: identidad bloqueada «(fijo)», montos editables, totales automáticos
+  y el botón «Corregir datos fijos» abajo a la izquierda.</p>
+  <div class="tip"><b>Si dejas campos vacíos</b>, al guardar verás el aviso «Completa todos los campos»
+  y el formulario seguirá abierto para que los llenes.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 15</span></div>
+</section>
+
+<!-- ══════════ 14 · CORREGIR IDENTIDAD ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">14</span>Corregir datos fijos (identidad del trabajador)</h2>
+  <p>Los 5 datos de identidad se mantienen iguales en todos los meses del histórico. Por eso no se
+  editan mes a mes: se corrigen <b>una sola vez y en todos los meses a la vez</b>, para que el
+  histórico quede consistente.</p>
+  <ol class="steps">
+    <li>Abre la edición del trabajador (sección 13).</li>
+    <li>Pulsa <b class="ui">Corregir datos fijos</b> (botón ámbar, abajo a la izquierda del formulario).</li>
+    <li>Se abre una ventana con los 5 campos de identidad ahora <b>editables</b>: DNI,
+        Apellidos y Nombres, Fecha de Ingreso, S.N.P. y Tipo de acto administrativo.</li>
+    <li>Corrige lo necesario (por ejemplo, un apellido mal escrito o un DNI mal digitado).</li>
+    <li>Confirma. El cambio se aplica a <b>todos los meses</b> del trabajador en esa planilla:
+        el histórico completo queda corregido.</li>
+  </ol>
+  <img class="shot" src="assets/editor-corregir.png" alt="Corregir datos fijos" />
+  <p class="cap">Ventana «Corregir datos fijos»: la corrección se aplica a todos los meses del trabajador.</p>
+  <div class="warn"><b>Úsalo solo para errores reales de identidad.</b> Si lo que necesitas es
+  actualizar un monto del mes, usa la edición normal (sección 13). Piensa en esta función como una
+  «fe de erratas» del expediente del trabajador.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 16</span></div>
+</section>
+
+<!-- ══════════ 15 · ELIMINAR ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">15</span>Eliminar un registro</h2>
+  <p>Eliminar retira al trabajador de la planilla <b>del mes abierto</b>. Los meses anteriores
+  (cerrados) no se tocan: su histórico se conserva.</p>
+  <ol class="steps">
+    <li>Abre la planilla en su mes abierto y ubica al trabajador.</li>
+    <li>Pulsa <b class="ui">Eliminar</b> en su fila.</li>
+    <li>Lee con atención la ventana de confirmación: indica el <b>nombre</b>, el <b>DNI</b> y el
+        <b>mes</b> del registro a eliminar.</li>
+    <li>Pulsa <b class="ui">Confirmar</b> solo si estás seguro, o <b class="ui">Cancelar</b> para desistir.</li>
+  </ol>
+  <img class="shot" src="assets/editor-eliminar.png" alt="Confirmación de eliminación" />
+  <p class="cap">Confirmación de eliminación: verifica nombre, DNI y mes antes de confirmar.</p>
+  <div class="warn"><b>La acción no se puede deshacer.</b> Si eliminas por error, tendrás que volver
+  a crear el registro y digitar sus montos. Toda eliminación queda registrada en la auditoría del
+  sistema con tu usuario, fecha y hora.</div>
+  <div class="info"><b>¿Cesó un trabajador?</b> No borres sus meses anteriores. Simplemente
+  elimínalo del mes abierto (o no lo copies al generar el mes siguiente): su historial de pagos
+  anteriores debe conservarse.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 17</span></div>
+</section>
+
+<!-- ══════════ 16 · EXCEL MASIVO ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">16</span>Actualizar una columna con Excel (carga masiva)</h2>
+  <p>La herramienta más poderosa del editor: aplicar de una sola vez los valores de una columna
+  (por ejemplo, un descuento judicial o una bonificación) a decenas de trabajadores, emparejando
+  <b>por DNI</b>. Reemplaza el antiguo copiado manual dato por dato.</p>
+  <ol class="steps">
+    <li>Abre la planilla en su mes abierto y pulsa <b class="ui">Actualizar columna</b>.</li>
+    <li>En la ventana, elige la <b>columna a actualizar</b> (los totales automáticos no aparecen:
+        los calcula el sistema).</li>
+    <li>Pulsa <b class="ui">Descargar plantilla</b>: obtienes un Excel con el DNI y nombre de
+        <b>todos</b> los trabajadores del mes y una columna vacía para el valor.</li>
+    <li>Llena la columna de valores en Excel (deja en blanco o quita las filas que no cambien)
+        y guarda el archivo.</li>
+    <li>Vuelve al sistema y pulsa <b class="ui">Subir Excel</b>; selecciona tu archivo.</li>
+    <li>Revisa la <b>vista previa</b> en tres contadores:
+        <b style="color:var(--ok)">Se actualizarán</b> (DNIs encontrados),
+        <b style="color:var(--warn)">DNI no encontrados</b> (no existen en esta planilla este mes) e
+        <b style="color:var(--bad)">DNI inválidos</b> (celdas con error). Debajo verás la lista
+        detallada de los registros a actualizar.</li>
+    <li>Si todo está conforme pulsa <b class="ui">Confirmar (N)</b>. El sistema aplica los N
+        valores de un solo golpe y muestra el resultado.</li>
+  </ol>
+  <img class="shot" src="assets/editor-excel.png" alt="Actualizar columna por Excel" />
+  <p class="cap">Ventana «Actualizar columna por Excel» con la columna «R. Básica» elegida:
+  plantilla descargable y carga del archivo.</p>
+  <div class="tip"><b>Formato flexible:</b> tu Excel solo necesita una columna <b>DNI</b> y otra con
+  el valor (acepta como cabecera el nombre de la columna o simplemente «VALOR»). Los DNI repetidos
+  en el archivo se toman una sola vez.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 18</span></div>
+</section>
+
+<!-- ══════════ 17 · RECALCULAR ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">17</span>Recalcular totales</h2>
+  <p>Los totales de cada trabajador (<b>T. Ingreso</b> = suma de ingresos, <b>T. Descuentos</b> =
+  suma de descuentos, <b>T. Líquido</b> = ingresos − descuentos) los calcula automáticamente el
+  sistema cada vez que guardas un registro. El botón <b class="ui">Recalcular totales</b> fuerza
+  ese cálculo para <b>todos los registros del mes</b> a la vez.</p>
+  <h3>Cuándo usarlo</h3>
+  <ul class="b">
+    <li>Después de una o varias <b>cargas masivas por Excel</b> (sección 16), para asegurar que
+        los tres totales reflejen los nuevos valores.</li>
+    <li>Si observas un total que no cuadra con las columnas visibles (por ejemplo, tras una
+        corrección de datos).</li>
+  </ul>
+  <h3>Cómo usarlo</h3>
+  <ol class="steps">
+    <li>Abre la planilla en su mes abierto.</li>
+    <li>Pulsa <b class="ui">Recalcular totales</b> (botón ámbar de la barra).</li>
+    <li>Espera unos segundos: el aviso confirmará cuántos registros fueron recalculados y la
+        tabla se refresca sola.</li>
+  </ol>
+  <div class="info"><b>Es seguro:</b> recalcular no altera los montos que digitaste — solo
+  vuelve a sumar y restar. Puedes usarlo cuantas veces necesites.</div>
+  <div class="tip"><b>Alertas de la tabla:</b> si una fila muestra un indicador de alerta
+  (líquido negativo o total descuadrado), recalcular suele ser el primer paso para normalizarla;
+  si persiste, revisa los montos de esa fila con Editar.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 19</span></div>
+</section>
+
+<!-- ══════════ 18 · GENERAR MES ══════════ -->
+<section class="page">
+  <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
+  <h2><span class="num">18</span>Generar el mes siguiente</h2>
+  <p>Al cerrar un ciclo de pago, el editor crea la planilla del mes próximo. El sistema copia la
+  <b>identidad</b> de todos los trabajadores (DNI, nombres, fecha de ingreso, S.N.P., tipo de acto)
+  y deja los <b>montos en blanco</b> para el nuevo ciclo.</p>
+  <ol class="steps">
+    <li>Abre la planilla en su mes abierto (el más reciente).</li>
+    <li>Pulsa <b class="ui">Generar mes siguiente</b> (botón azul de la barra).</li>
+    <li>Lee la ventana de confirmación: indica qué mes se creará, desde qué mes se copiarán los
+        trabajadores y que el mes actual quedará como <b>histórico de solo lectura</b>.</li>
+    <li>Pulsa <b class="ui">Confirmar</b>. El sistema crea el nuevo mes y te posiciona en él.</li>
+    <li>Completa los montos del nuevo mes: por <b>Excel masivo</b> (sección 16) para las columnas
+        repetitivas y con <b>Editar</b> (sección 13) para los casos individuales.</li>
+  </ol>
+  <img class="shot" src="assets/editor-generarmes.png" alt="Confirmación de generar mes siguiente" />
+  <p class="cap">Confirmación de «Generar mes siguiente»: Agosto 2026 se creará copiando la identidad
+  de los trabajadores de Julio 2026.</p>
+  <div class="warn"><b>Hazlo una sola vez por mes y por planilla.</b> Tras generar el nuevo mes,
+  el anterior queda cerrado (solo lectura). Si un trabajador ya no continúa, elimínalo del nuevo
+  mes (sección 15); si ingresó uno nuevo, créalo con el asistente (sección 12).</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 20</span></div>
+</section>
+
+<!-- ══════════ 19 · LÍMITES + FAQ ══════════ -->
+<section class="page">
+  <div class="kicker">Cierre</div>
+  <h2><span class="num">19</span>Límites de cada rol y preguntas frecuentes</h2>
+  <h3>Lo que tu rol NO puede hacer</h3>
+  <table>
+    <thead><tr><th style="width:110px">Rol</th><th>Fuera de su alcance</th></tr></thead>
+    <tbody>
+      <tr><td><b>Consultor</b></td><td>Crear, editar o eliminar registros; cargas masivas por Excel; recalcular;
+        generar meses; gestionar usuarios; ver auditoría. Su menú no muestra «Nuevo registro» y las
+        planillas no le muestran botones de edición.</td></tr>
+      <tr><td><b>Editor</b></td><td>Gestionar usuarios (crear cuentas, cambiar roles o contraseñas de otros) y
+        ver la auditoría de cambios — ambas exclusivas del administrador. Tampoco puede modificar
+        meses cerrados.</td></tr>
+    </tbody>
+  </table>
+  <h3>Preguntas frecuentes</h3>
+  <table>
+    <thead><tr><th style="width:44%">Pregunta</th><th>Respuesta</th></tr></thead>
+    <tbody>
+      <tr><td>No veo los botones de edición y soy editor.</td>
+          <td>Verifica el <b>mes seleccionado</b>: en meses cerrados (aviso ámbar) la planilla es de
+          solo lectura para todos. Vuelve al mes más reciente.</td></tr>
+      <tr><td>Subí mi Excel y salieron «DNI no encontrados».</td>
+          <td>Esos DNI no existen en <b>esa planilla y ese mes</b>. Verifica que sea la planilla
+          correcta y que el trabajador esté registrado en el mes abierto.</td></tr>
+      <tr><td>¿Puedo deshacer una eliminación?</td>
+          <td>No. Deberás crear el registro de nuevo. Toda eliminación queda registrada en la
+          auditoría del administrador.</td></tr>
+      <tr><td>El total líquido de una fila sale negativo.</td>
+          <td>La tabla lo marca como alerta: los descuentos superan los ingresos. Revisa los montos
+          de esa fila con Editar y usa Recalcular totales.</td></tr>
+      <tr><td>¿Los cambios de otros usuarios se ven al instante?</td>
+          <td>Sí. La planilla se actualiza en tiempo real; también puedes pulsar «Recargar».</td></tr>
+      <tr><td>Necesito un rol distinto o una cuenta nueva.</td>
+          <td>Solicítalo al <b>administrador</b> del sistema — es el único que gestiona cuentas y roles.</td></tr>
+    </tbody>
+  </table>
+  <div class="info" style="margin-top:14px"><b>Soporte:</b> ante cualquier situación no cubierta por este
+  manual, contacta al administrador del sistema en la Gerencia de Administración.</div>
+  <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 21 · fin del documento</span></div>
+</section>
+
+</body>
+</html>
