@@ -1,4 +1,4 @@
-# Mapeo General — Reporte de Planillas (MPI)
+# Mapeo General — Muni Sheets (MPI)
 
 > Documento de referencia que explica **todo lo que está creado e implementado** en el
 > proyecto. Generado a partir de una revisión completa del código fuente.

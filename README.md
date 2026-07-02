@@ -1,4 +1,4 @@
-# Reporte de Planillas — Municipalidad Provincial de Ica
+# Muni Sheets — Municipalidad Provincial de Ica
 
 Sistema web para centralizar, consultar y gestionar **19 planillas de pago**
 (remuneraciones) de distintos regímenes laborales (Obreros, Empleados, CAS,
