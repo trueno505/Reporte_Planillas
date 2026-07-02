@@ -17,6 +17,16 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Reglas nuevas del React Compiler (preview) que trae eslint-plugin-react-hooks v7
+      // en su config "recommended". Marcan patrones idiomáticos y correctos de este
+      // proyecto —resetear/cargar estado dentro de efectos de fetch, y APIs de terceros
+      // como TanStack Table que devuelven funciones no memoizables— que NO son defectos.
+      // Se desactivan para mantener el análisis enfocado en errores reales; las reglas
+      // núcleo (rules-of-hooks, exhaustive-deps) siguen activas.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/incompatible-library': 'off',
+    },
   },
   // Archivos que corren en Node (config de build/test, e2e de Playwright).
   {

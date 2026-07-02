@@ -31,6 +31,10 @@ const SESSION = {
 
 const PERFIL = { id: USER_ID, nombre: 'Admin Test', rol: 'administrador' }
 
+// Mes "abierto" (editable) que devuelve el RPC periodos_planilla en los tests.
+// Al ser el único/más reciente, PlanillaPage lo marca como editable.
+const PERIODO_ABIERTO = '2026-06-01'
+
 // Filas por defecto de la planilla cas_general (solo lo que usa la UI).
 export const DEFAULT_ROWS = [
   { id: 1, dni: 111, apellidos_y_nombres: 'PEREZ JUAN', r_basica: 100, t_ingreso: 100, t_dsctos: 0, t_liquido: 100 },
@@ -106,6 +110,13 @@ export async function mockSupabase(page, { tabla = 'cas_general', rows = DEFAULT
     try { rpcCalls.push(JSON.parse(route.request().postData() || '{}')) } catch { /* noop */ }
     return route.fulfill(json(rpcCalls[rpcCalls.length - 1]?.p_valores?.length ?? 0))
   })
+
+  // 2b) RPC de meses (histórico mensual). PlanillaPage lo llama al montar para
+  //     poblar el selector de periodo. Devolvemos un único mes: al ser el más
+  //     reciente queda "abierto" (editable), habilitando los botones de edición.
+  await page.route('**/rest/v1/rpc/periodos_planilla**', (route) =>
+    preflight(route, json([{ periodo: PERIODO_ABIERTO }]))
+  )
 
   // 3) Perfil del usuario (.single() → objeto).
   await page.route('**/rest/v1/perfiles**', (route) => preflight(route, json(PERFIL)))

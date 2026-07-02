@@ -63,18 +63,20 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
     setForm((prev) => ({ ...prev, snp: val === 'ONP' ? 'ONP' : '' }))
   }
 
+  // Firma de los campos observados (ingresos + descuentos) serializada en una
+  // sola dependencia estable: evita el spread en el array de deps y recalcula
+  // los totales solo cuando cambia alguno de esos montos.
+  const observados = secciones
+    ? [...secciones.ingresoKeys, ...secciones.descuentoKeys].map((k) => form[k]).join('|')
+    : ''
+
   // Recalcula totales automáticamente cuando cambia cualquier ingreso/descuento
   useEffect(() => {
     if (!secciones) return
     const totales = calcularTotales(planilla, form)
     setForm((prev) => ({ ...prev, ...totales }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Observar solo los campos de ingresos y descuentos
-    ...(secciones
-      ? [...secciones.ingresoKeys, ...secciones.descuentoKeys].map((k) => form[k])
-      : []),
-  ])
+  }, [observados])
 
   const handleChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
 
