@@ -127,6 +127,7 @@ describe('ExcelActualizarColumna', () => {
     await waitFor(() => expect(supabase.rpc).toHaveBeenCalledTimes(1))
     expect(supabase.rpc).toHaveBeenCalledWith('actualizar_columna_planilla', {
       p_tabla: 'cas_general',
+      p_periodo: null,
       p_columna: 'r_basica',
       p_valores: [
         { dni: 111, valor: 500 },
@@ -150,6 +151,7 @@ describe('ExcelActualizarColumna', () => {
     await waitFor(() => expect(supabase.rpc).toHaveBeenCalled())
     expect(supabase.rpc).toHaveBeenCalledWith('actualizar_columna_planilla', {
       p_tabla: 'cas_general',
+      p_periodo: null,
       p_columna: 'snp',
       p_valores: [{ dni: 222, valor: 33.33 }],
     })
