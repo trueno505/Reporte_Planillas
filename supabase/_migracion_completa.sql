@@ -1,5 +1,5 @@
 -- =====================================================================
--- MIGRACIÓN COMPLETA — Reporte_Planillas
+-- MIGRACIÓN COMPLETA — Muni Sheets
 -- Pega TODO este archivo en el SQL Editor de Supabase y ejecútalo una vez.
 -- Generado concatenando 01..13 en orden.
 -- =====================================================================

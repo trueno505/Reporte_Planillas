@@ -1,4 +1,4 @@
-# Tecnologías del proyecto — Reporte de Planillas
+# Tecnologías del proyecto — Muni Sheets
 
 Aplicación web para la gestión y reporte de planillas de la **Municipalidad
 Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
