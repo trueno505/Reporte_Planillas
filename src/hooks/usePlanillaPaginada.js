@@ -16,9 +16,9 @@ const ORDEN_INICIAL = { key: 'apellidos_y_nombres', ascending: true }
  *   refrescar en vivo sin recargar la app.
  *
  * @param {string} tabla
- * @param {{ pageSize?: number, periodo?: string|null }} [opts]
+ * @param {{ pageSize?: number, periodo?: string|null, area?: string }} [opts]
  */
-export function usePlanillaPaginada(tabla, { pageSize = PAGE_SIZE, periodo = null } = {}) {
+export function usePlanillaPaginada(tabla, { pageSize = PAGE_SIZE, periodo = null, area = '' } = {}) {
   const [filas, setFilas] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -52,6 +52,7 @@ export function usePlanillaPaginada(tabla, { pageSize = PAGE_SIZE, periodo = nul
         orderBy: sort.key,
         ascending: sort.ascending,
         periodo,
+        area,
       })
       if (id !== reqRef.current) return // llegó una respuesta más nueva
       setFilas(res.filas)
@@ -63,7 +64,7 @@ export function usePlanillaPaginada(tabla, { pageSize = PAGE_SIZE, periodo = nul
       setTotal(0)
     }
     if (id === reqRef.current) setLoading(false)
-  }, [tabla, pageSize, page, search, sort, periodo])
+  }, [tabla, pageSize, page, search, sort, periodo, area])
 
   // Recarga al cambiar de planilla, página, búsqueda, orden o periodo.
   useEffect(() => { fetch() }, [fetch])
@@ -75,8 +76,8 @@ export function usePlanillaPaginada(tabla, { pageSize = PAGE_SIZE, periodo = nul
     setSortState(ORDEN_INICIAL)
   }, [tabla])
 
-  // Al cambiar de mes, vuelve a la primera página (conserva búsqueda y orden).
-  useEffect(() => { setPage(1) }, [periodo])
+  // Al cambiar de mes o de área, vuelve a la primera página (conserva búsqueda y orden).
+  useEffect(() => { setPage(1) }, [periodo, area])
 
   // Si el total cae por debajo de la página actual (borrados), reajusta.
   useEffect(() => {

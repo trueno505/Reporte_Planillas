@@ -121,12 +121,28 @@ export function generarBoletaPdf(planilla, fila) {
   doc.text('TOTAL LÍQUIDO A PAGAR:', 18, finalY + 8)
   doc.text(`S/ ${fmt(fila.t_liquido)}`, 180, finalY + 8, { align: 'right' })
 
+  let notaY = finalY + 18
+
+  // ─── Conceptos informativos (no suman al líquido: excluirCalculo) ────────────
+  const infoKeys = (planilla.excluirCalculo ?? []).filter(
+    (k) => fila[k] != null && parseFloat(fila[k]) !== 0
+  )
+  if (infoKeys.length > 0) {
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'italic')
+    for (const k of infoKeys) {
+      doc.text(`${colMap[k] ?? k} (informativo, no suma al total): S/ ${fmt(fila[k])}`, 14, notaY)
+      notaY += 5
+    }
+  }
+
   // ─── Tipo de acto administrativo ─────────────────────────────────────────────
   if (fila.tipo_acto_administrativo) {
     doc.setTextColor(80, 80, 80)
     doc.setFontSize(8)
     doc.setFont('helvetica', 'italic')
-    doc.text(`Tipo de acto administrativo: ${fila.tipo_acto_administrativo}`, 14, finalY + 18)
+    doc.text(`Tipo de acto administrativo: ${fila.tipo_acto_administrativo}`, 14, notaY)
   }
 
   // ─── Pie ─────────────────────────────────────────────────────────────────────

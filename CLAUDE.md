@@ -25,7 +25,9 @@ VITE_SUPABASE_ANON_KEY=...
 
 ### Single source of truth: `src/config/planillas.js`
 
-Every planilla (pay-roll table) is defined here as an object with `{ slug, tabla, label, grupo, columnas[], sinAutoTotales?, excluirCalculo? }`. Each column has `{ key, label, type, required? }` where type is one of `'dni' | 'text' | 'date' | 'int' | 'money'`.
+Every planilla (pay-roll table) is defined here as an object with `{ slug, tabla, label, grupo, columnas[], sinAutoTotales?, excluirCalculo?, areas? }`. Each column has `{ key, label, type, required? }` where type is one of `'dni' | 'text' | 'date' | 'int' | 'money'`.
+
+**`areas`** (optional): list of activity names that divide the planilla. 9 planillas have it (the 5 obreros, `empleados-permanentes`, `cas-general`, `gerente-municipal`, `alcalde`); those also carry an `area` column (text, identity). Drives: the área `<select>` in RecordForm/NuevoRegistro and CorregirIdentidad, and the server-side área filter in PlanillaPage (`usePlanillaPaginada` → `db.js fetchPagina .eq('area', …)`).
 
 **Adding or renaming a column** = edit `planillas.js`, run `node scripts/genSql.mjs` to regenerate the table SQL, fold the change into `supabase/_migracion_completa.sql`, and run it in the Supabase SQL Editor.
 
@@ -42,18 +44,20 @@ The same config object drives:
 - `getPlanillaByTabla(tabla)` — lookup by table name
 - `getSeccionesCalculo(planilla)` — returns ingresos/descuentos/totales sections
 - `getColumnasIdentidad(planilla)` — returns the fixed identity columns (see below) that exist in that planilla
-- `esColumnaIdentidad(key)` — true if the column is an identity field (`dni`, `apellidos_y_nombres`, `f_ingreso`/`fecha_ing`, `snp`, `tipo_acto_administrativo`)
+- `esColumnaIdentidad(key)` — true if the column is an identity field (`dni`, `apellidos_y_nombres`, `f_ingreso`/`fecha_ing`, `snp`, `area`, `tipo_acto_administrativo`)
 - `GRUPOS` — array of unique group names
 
 ### Shared column sets
 
-`CAS_COLS` and `EMPL_PI_COLS` are local constants in `planillas.js` shared by multiple planilla definitions (7 CAS tables share identical columns; `empleados_contrato_provisional` mirrors `empleados_contrato_plazo_indet`). Edit those constants to update all affected planillas at once.
+`CAS_COLS` and `EMPL_PI_COLS` are local constants in `planillas.js` shared by multiple planilla definitions (`cas_general` uses `CAS_COLS`; `empleados_contrato_provisional` mirrors `empleados_contrato_plazo_indet`). Edit those constants to update all affected planillas at once.
 
-### 19 Planillas defined
+### 13 Planillas defined
 
 Groups: Obreros, Empleados, CAS, Pensionistas, Autoridades.
 
-Slugs: `obreros-permanentes`, `obreros-plazo-indeterminado`, `obreros-mandato-judicial`, `obreros-concurso`, `obreros-necesidad-mercado`, `empleados-permanentes`, `empleados-contrato-plazo-indet`, `empleados-contrato-provisional`, `empleados-mandato-judicial`, `cas-general`, `cas-choferes`, `cas-i-2025`, `cas-ii-2023`, `cas-ii-2024`, `cas-iii-2025`, `cas-funcional`, `cesantes-pensionistas`, `gerente-municipal`, `alcalde`.
+Slugs: `obreros-permanentes`, `obreros-plazo-indeterminado`, `obreros-mandato-judicial`, `obreros-concurso`, `obreros-necesidad-mercado`, `empleados-permanentes`, `empleados-contrato-plazo-indet`, `empleados-contrato-provisional`, `empleados-mandato-judicial`, `cas-general`, `cesantes-pensionistas`, `gerente-municipal`, `alcalde`.
+
+> **CAS**: originalmente había 7 subplanillas CAS; se eliminaron 6 (`cas-choferes`, `cas-i-2025`, `cas-ii-2023`, `cas-ii-2024`, `cas-iii-2025`, `cas-funcional`) dejando solo `cas-general`. Ver `supabase/migracion_eliminar_cas_subplanillas.sql`.
 
 ### Data flow per planilla page
 
@@ -96,9 +100,9 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 
 **Dashboard** shows KPIs, a bar chart (Recharts) of total líquido by group, a summary table per planilla, and a button to generate a consolidated Excel report (`reporteConsolidado.js`).
 
-**NuevoRegistro** is a 3-step wizard (grupo → planilla → datos) that reuses `RecordForm` in `soloBasicos` mode — only **DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P., Tipo de acto administrativo** are shown, all required. S.N.P. is an ONP/AFP selector (AFP reveals a second select with the 4 AFPs; the full AFP name is stored in `snp`). Gated by `puedeEditar`; relies on `AuthContext.loading` staying true until the profile/role resolves (otherwise a direct URL load would bounce to `/dashboard`).
+**NuevoRegistro** is a 3-step wizard (grupo → planilla → datos) that reuses `RecordForm` in `soloBasicos` mode — only **DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P., Área (select, only in planillas with `areas`), Tipo de acto administrativo** are shown, all required. S.N.P. is an ONP/AFP selector (AFP reveals a second select with the 4 AFPs; the full AFP name is stored in `snp`). Gated by `puedeEditar`; relies on `AuthContext.loading` staying true until the profile/role resolves (otherwise a direct URL load would bounce to `/dashboard`).
 
-**BusquedaGlobal** searches all 19 planillas by DNI (exact) or name (ILIKE) via the `buscar_trabajador(termino, p_periodo)` RPC, for the month/year picked in the `<input type="month">`. Each result row has an **Imprimir** (boleta PDF) button: since the search RPC returns only DNI, name and `t_liquido`, the button first fetches the **full row** from that worker's own table (`getPlanillaByTabla(tabla)` → `supabase.from(tabla).select('*').eq('dni', …).eq('periodo', …).single()`) and then calls `generarBoletaPdf(planilla, fila)` — so the boleta can be printed without navigating to the planilla. A per-row spinner (`boletaCargando` keyed by `tabla-dni`) disables that button while it loads; errors surface via `react-hot-toast`.
+**BusquedaGlobal** searches all 13 planillas by DNI (exact) or name (ILIKE) via the `buscar_trabajador(termino, p_periodo)` RPC, for the month/year picked in the `<input type="month">`. Each result row has an **Imprimir** (boleta PDF) button: since the search RPC returns only DNI, name and `t_liquido`, the button first fetches the **full row** from that worker's own table (`getPlanillaByTabla(tabla)` → `supabase.from(tabla).select('*').eq('dni', …).eq('periodo', …).single()`) and then calls `generarBoletaPdf(planilla, fila)` — so the boleta can be printed without navigating to the planilla. A per-row spinner (`boletaCargando` keyed by `tabla-dni`) disables that button while it loads; errors surface via `react-hot-toast`.
 
 **Auditoria** shows the change log from `public.auditoria` with filters by table and action (INSERT/UPDATE/DELETE), joined with `perfiles`.
 
@@ -116,12 +120,12 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 | `ProtectedRoute.jsx` | Redirects unauthenticated users to `/login` |
 | `PlanillaTable.jsx` | Data table for the current page (50 rows) with controlled server-side sort/search, inline edit, row alerts, PDF boleta download, edit/delete actions; renders `<Paginacion>` |
 | `Paginacion.jsx` | Reusable Tailwind pagination control (« Anterior \| 1 … 4 5 6 … 20 \| Siguiente »), current page highlighted, ellipsis for large ranges, prev/next disabled at ends; hidden when ≤1 page |
-| `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI, Apellidos y Nombres, the **date column(s)** (`type === 'date'`, typically F. Ingreso), S.N.P. and Tipo de acto administrativo, makes them required, and renders S.N.P. as an ONP/AFP selector. **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
+| `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI, Apellidos y Nombres, the **date column(s)** (`type === 'date'`, typically F. Ingreso), S.N.P., Área and Tipo de acto administrativo, makes them required, renders S.N.P. as an ONP/AFP selector and Área as a `<select>` from `planilla.areas` (also on normal create; read-only identity on edit). **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
 | `ExcelActualizarColumna.jsx` | Pick one column → upload Excel (DNI + value) → preview (matched/not-found/invalid) → atomic single-column UPDATE by DNI via `actualizar_columna_planilla` RPC; also downloads a fill-in template |
 | `ExcelExport.jsx` | Download current rows as `.xlsx` |
 | `ConfirmDialog.jsx` | Reusable confirm modal; `danger` prop for red styling |
 | `PeriodoSelector.jsx` | Month/period selector dropdown (populated from `periodos_planilla`); used by `PlanillaPage` to switch between historical months |
-| `CorregirIdentidad.jsx` | Modal that corrects the 5 fixed identity fields (DNI, Apellidos y Nombres, Fecha, S.N.P., Tipo de acto) across **all** months of a worker via the `corregir_identidad` RPC |
+| `CorregirIdentidad.jsx` | Modal that corrects the fixed identity fields (Apellidos y Nombres, Fecha, S.N.P., Área — select when the planilla has `areas` —, Tipo de acto) across **all** months of a worker via the `corregir_identidad` RPC |
 
 ### Hooks
 
@@ -158,7 +162,7 @@ The context is split into two files for React Fast Refresh compatibility: `conte
 - **Creating users from the app** is done by the `crear-usuario` Edge Function (`supabase/functions/crear-usuario/index.ts`). It needs the **service_role key** (Admin API `auth.admin.createUser`), which can never live in the frontend — that's the whole reason it's an Edge Function. The function: ① reads the caller's JWT, ② confirms the caller's `perfiles.rol = 'administrador'` (using a service-role client), ③ creates the user `email_confirm: true`, ④ upserts `nombre` + `rol` into `perfiles`. Deploy with `npx supabase functions deploy crear-usuario --project-ref <ref>`. `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically into the function runtime — no secrets are copied into the repo or Vercel.
 - **Resetting passwords, (de)activating accounts, and listing emails/status from the app** is done by the `admin-usuarios` Edge Function (`supabase/functions/admin-usuarios/index.ts`) — the sibling of `crear-usuario`, sharing the same admin-verification boilerplate. It dispatches on `accion`: `'listar'` (no args → `auth.admin.listUsers`, paginated, returns `[{ id, email, banned_until }]`), `'cambiar_password'` (`{ userId, password }` → `auth.admin.updateUserById`), `'desactivar'` (`{ userId }` → `updateUserById` with `ban_duration: '876000h'`; refuses to ban the caller's own account), and `'activar'` (`{ userId }` → `ban_duration: 'none'`). **No delete action** — accounts are banned, not removed. Deploy with `npx supabase functions deploy admin-usuarios --project-ref <ref>`. The `/usuarios` list shows each user's **Correo** and **Estado** (Activa/Desactivada, derived from `banned_until`) by merging the `'listar'` result into the `perfiles` rows by `id`.
 - `perfiles` columns: `id`, `nombre`, `celular`, `rol`, `created_at`. Users self-edit `nombre`/`celular` from `/perfil`; the `proteger_rol` BEFORE UPDATE trigger blocks non-admins from changing `rol`.
-- The whole schema (including the `editor` role) lives in the single file `supabase/_migracion_completa.sql` — the source of truth for a **fresh install**, into which every schema change is also folded. For changes against a **live DB with data**, apply a targeted, idempotent patch instead of reinstalling (e.g. `supabase/migracion_rename_observaciones.sql`, which renames `observaciones → tipo_acto_administrativo` across the 19 tables via `ALTER TABLE … RENAME COLUMN`).
+- The whole schema (including the `editor` role) lives in the single file `supabase/_migracion_completa.sql` — the source of truth for a **fresh install**, into which every schema change is also folded. For changes against a **live DB with data**, apply a targeted, idempotent patch instead of reinstalling (e.g. `supabase/migracion_rename_observaciones.sql`, which renames `observaciones → tipo_acto_administrativo` across the 13 tables via `ALTER TABLE … RENAME COLUMN`).
 
 ### Database setup — un solo archivo
 
@@ -173,16 +177,16 @@ El consolidado contiene, en orden:
 |---|---|
 | Extensiones | `moddatetime` y `pg_trgm` |
 | `perfiles` | tabla + trigger `handle_new_user` |
-| 19 planillas | tablas (generadas desde `planillas.js`; `dni INTEGER UNIQUE NOT NULL`) |
+| 13 planillas | tablas (generadas desde `planillas.js`; `dni INTEGER UNIQUE NOT NULL`) |
 | RLS | `get_my_rol()` + políticas (envueltas en `(select …)` por rendimiento) |
-| Realtime | habilita Realtime + `REPLICA IDENTITY FULL` en las 19 tablas |
-| `auditoria` | tabla (`usuario_id` FK → `public.perfiles.id` para poder embeber `perfiles(nombre)`) + trigger en las 19 tablas |
+| Realtime | habilita Realtime + `REPLICA IDENTITY FULL` en las 13 tablas |
+| `auditoria` | tabla (`usuario_id` FK → `public.perfiles.id` para poder embeber `perfiles(nombre)`) + trigger en las 13 tablas |
 | Funciones | RPCs `resumen_planillas()` y `buscar_trabajador(termino)` |
 | Admin | políticas extra para que el admin gestione todos los `perfiles` |
-| Totales | triggers BEFORE INSERT/UPDATE que calculan `t_ingreso/t_dsctos/t_liquido` (18 planillas — no `obreros_necesidad_mercado`) |
+| Totales | triggers BEFORE INSERT/UPDATE que calculan `t_ingreso/t_dsctos/t_liquido` (13 planillas — todas las que tienen columnas `t_*`) |
 | Índices | GIN trigram sobre `apellidos_y_nombres` para búsqueda por nombre |
 | Operaciones | RPCs atómicas `recalcular_totales(p_tabla)` y `actualizar_columna_planilla(p_tabla, p_columna, p_valores)` (solo admin, whitelist de tablas) |
-| DNI único global | `dni_registro` (PK en `dni`) + vista `vw_dni_todos` (`security_invoker`) + trigger `sync_dni_registro` en las 19 tablas |
+| DNI único global | `dni_registro` (PK en `dni`) + vista `vw_dni_todos` (`security_invoker`) + trigger `sync_dni_registro` en las 13 tablas |
 
 > El consolidado se generó concatenando los antiguos archivos `01..13`. Si en el
 > futuro editas el esquema (p. ej. una columna vía `planillas.js` + `genSql.mjs`),
@@ -198,15 +202,15 @@ cliente es sobrescrito por el trigger al escribir.
 Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
 `periodo DATE` = primer día del mes. Los datos **no se sobrescriben** mes a mes.
 
-- **Columna `periodo`** en las 19 tablas (`DATE NOT NULL DEFAULT date_trunc('month', now())`),
+- **Columna `periodo`** en las 13 tablas (`DATE NOT NULL DEFAULT date_trunc('month', now())`),
   con `UNIQUE (dni, periodo)` (reemplaza la antigua `dni UNIQUE`) e índice `idx_<tabla>_periodo`.
   El histórico arranca en **junio 2026** (las filas previas se backfillearon a `2026-06-01`).
 - **Identidad fija**: al generar un mes, se copian `dni` + las que existan de
-  `{apellidos_y_nombres, f_ingreso/fecha_ing, snp, tipo_acto_administrativo}`; el resto de
+  `{apellidos_y_nombres, f_ingreso/fecha_ing, snp, area, tipo_acto_administrativo}`; el resto de
   columnas (montos, faltas, cargo…) quedan en blanco. En el front, `getColumnasIdentidad(planilla)`
   (en `planillas.js`) devuelve esas columnas; `RecordForm` las muestra **solo lectura** al editar.
 - **Mes abierto vs cerrado**: el mes editable es `MAX(periodo)` de cada tabla; los anteriores son
-  **solo lectura**, impuesto por el trigger `proteger_periodo_cerrado` (BEFORE I/U/D en las 19
+  **solo lectura**, impuesto por el trigger `proteger_periodo_cerrado` (BEFORE I/U/D en las 13
   tablas). Se salta con el GUC de sesión `app.bypass_periodo='1'` (lo usa solo `corregir_identidad`).
 - **DNI único por periodo**: `dni_registro` pasa a PK `(dni, periodo)`; `vw_dni_todos` y
   `sync_dni_registro` incluyen `periodo` (un DNI no puede estar en dos planillas el **mismo mes**).
@@ -215,7 +219,7 @@ Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
   `actualizar_columna_planilla(p_tabla, p_periodo, p_columna, p_valores)`. Nuevas:
   `abrir_periodo(p_tabla, p_periodo)` (genera el mes clonando identidad; admin/editor),
   `periodos_planilla(p_tabla)` (lista de meses para el selector), `corregir_identidad(p_tabla,
-  p_dni, p_datos)` (corrige los 5 campos fijos en **todos** los meses, vía el bypass).
+  p_dni, p_datos)` (corrige los campos fijos —incluida `area`— en **todos** los meses, vía el bypass).
 - **Frontend**: `src/lib/periodo.js` (helpers `formatPeriodo`/`periodoActual`/`siguientePeriodo`/`aPrimerDiaMes`),
   `PeriodoSelector.jsx`, y `periodo` enhebrado por `usePlanillaPaginada` → `db.js`
   (`fetchPagina`/`fetchAllRows` filtran `.eq('periodo', …)`). `PlanillaPage` tiene el selector de

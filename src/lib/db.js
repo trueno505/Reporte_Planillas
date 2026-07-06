@@ -41,19 +41,21 @@ export async function fetchAllRows(tabla, { order = 'apellidos_y_nombres', perio
  *   search?: string,      // filtra por apellidos/nombres (ILIKE) y DNI si es numérico
  *   orderBy?: string,
  *   ascending?: boolean,
+ *   area?: string,        // filtra por área exacta ('' = todas)
  * }} [opts]
  * @returns {Promise<{ filas: Array, total: number }>}
  * @throws si Supabase devuelve un error
  */
 export async function fetchPagina(
   tabla,
-  { page = 1, pageSize = 50, search = '', orderBy = 'apellidos_y_nombres', ascending = true, periodo = null } = {}
+  { page = 1, pageSize = 50, search = '', orderBy = 'apellidos_y_nombres', ascending = true, periodo = null, area = '' } = {}
 ) {
   const desde = (page - 1) * pageSize
   const hasta = desde + pageSize - 1
 
   let query = supabase.from(tabla).select('*', { count: 'exact' })
   if (periodo) query = query.eq('periodo', periodo)
+  if (area) query = query.eq('area', area)
 
   const term = String(search ?? '').trim()
   if (term) {
