@@ -33,13 +33,14 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
   const esFijaBloqueada = (key) => isEdit && !soloBasicos && esColumnaIdentidad(key)
 
   // En el alta rápida solo se piden DNI, Apellidos y Nombres, Fecha de Ingreso,
-  // S.N.P. y Tipo de acto administrativo.
+  // S.N.P., Área (si la planilla tiene áreas) y Tipo de acto administrativo.
   const columnasVisibles = soloBasicos
     ? columnas.filter(
         (c) =>
           c.key === 'dni' ||
           c.key === 'apellidos_y_nombres' ||
           c.key === 'snp' ||
+          c.key === 'area' ||
           c.key === 'tipo_acto_administrativo' ||
           c.type === 'date'
       )
@@ -109,6 +110,8 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
         faltan.push('Apellidos y Nombres')
       if (dateCol && !form[dateCol.key]) faltan.push('Fecha de Ingreso')
       if (has('snp') && !form.snp) faltan.push('S.N.P.')
+      if (has('area') && planilla.areas?.length && !String(form.area ?? '').trim())
+        faltan.push('Área')
       if (has('tipo_acto_administrativo') && !String(form.tipo_acto_administrativo ?? '').trim())
         faltan.push('Tipo de acto administrativo')
       if (faltan.length) {
@@ -192,6 +195,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             const autoTotal = isAutoTotal(col.key)
             const requerido = esRequerido(col)
             const esSnpBasico = soloBasicos && col.key === 'snp'
+            const esAreaSelect = col.key === 'area' && (planilla.areas?.length ?? 0) > 0
             const fijaBloqueada = esFijaBloqueada(col.key)
             return (
               <div key={col.key}>
@@ -237,6 +241,20 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
                       </select>
                     )}
                   </div>
+                ) : esAreaSelect ? (
+                  <select
+                    value={form.area ?? ''}
+                    onChange={(e) => handleChange('area', e.target.value)}
+                    required={requerido}
+                    className={inputClass}
+                  >
+                    <option value="">Seleccione área…</option>
+                    {planilla.areas.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
                 ) : col.type === 'text' ? (
                   <input
                     type="text"
@@ -282,7 +300,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             <button
               onClick={() => setCorregirOpen(true)}
               className="mr-auto flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-amber-700 border border-amber-300 hover:bg-amber-50 transition"
-              title="Cambia DNI/nombres/fecha/S.N.P./tipo de acto en todos los meses"
+              title="Cambia nombres/fecha/S.N.P./área/tipo de acto en todos los meses"
             >
               <ShieldAlert size={14} /> Corregir datos fijos
             </button>

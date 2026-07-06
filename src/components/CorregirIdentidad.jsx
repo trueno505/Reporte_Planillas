@@ -54,12 +54,27 @@ export default function CorregirIdentidad({ planilla, record, onClose, onSaved }
           {cols.map((c) => (
             <div key={c.key}>
               <label className="block text-xs font-medium text-gray-600 mb-1">{c.label}</label>
-              <input
-                type={c.type === 'date' ? 'date' : 'text'}
-                value={form[c.key] ?? ''}
-                onChange={(e) => setForm((p) => ({ ...p, [c.key]: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
+              {c.key === 'area' && (planilla.areas?.length ?? 0) > 0 ? (
+                <select
+                  value={form.area ?? ''}
+                  onChange={(e) => setForm((p) => ({ ...p, area: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <option value="">Seleccione área…</option>
+                  {planilla.areas.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={c.type === 'date' ? 'date' : 'text'}
+                  value={form[c.key] ?? ''}
+                  onChange={(e) => setForm((p) => ({ ...p, [c.key]: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              )}
             </div>
           ))}
 

@@ -27,10 +27,14 @@ export default function PlanillaPage() {
   const [periodosReales, setPeriodosReales] = useState([])
   const [periodo, setPeriodo] = useState(null)
 
+  // Filtro por área (solo planillas con `areas`); '' = todas.
+  const [area, setArea] = useState('')
+
   // Al cambiar de planilla, recarga los meses y selecciona el abierto.
   useEffect(() => {
     setPeriodo(null)
     setPeriodosReales([])
+    setArea('')
     if (!planilla?.tabla) return
     supabase.rpc('periodos_planilla', { p_tabla: planilla.tabla }).then(({ data, error }) => {
       if (error) { toast.error(`No se pudieron cargar los meses: ${error.message}`); return }
@@ -49,7 +53,7 @@ export default function PlanillaPage() {
     filas, total, loading, error, refetch,
     page, setPage, pageCount, pageSize,
     search, setSearch, sort, setSort,
-  } = usePlanillaPaginada(planilla?.tabla, { periodo })
+  } = usePlanillaPaginada(planilla?.tabla, { periodo, area })
 
   const [formRecord, setFormRecord] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -141,6 +145,22 @@ export default function PlanillaPage() {
               value={periodo}
               onChange={setPeriodo}
             />
+
+            {(planilla.areas?.length ?? 0) > 0 && (
+              <select
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+                title="Filtrar por área (actividad)"
+                className="max-w-[16rem] truncate px-3 py-2 rounded-lg text-sm text-gray-700 border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+              >
+                <option value="">Todas las áreas</option>
+                {planilla.areas.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            )}
 
             <button
               onClick={refetch}
@@ -245,7 +265,7 @@ export default function PlanillaPage() {
       {generarOpen && (
         <ConfirmDialog
           title={`Generar planilla de ${formatPeriodo(nuevoMes)}`}
-          message={`Se creará el mes ${formatPeriodo(nuevoMes)} copiando a los trabajadores de ${formatPeriodo(periodoAbierto)} (DNI, nombres, fecha de ingreso, S.N.P. y tipo de acto administrativo). Los montos quedarán en blanco para llenarlos. ${formatPeriodo(periodoAbierto)} quedará como histórico de solo lectura.`}
+          message={`Se creará el mes ${formatPeriodo(nuevoMes)} copiando a los trabajadores de ${formatPeriodo(periodoAbierto)} (DNI, nombres, fecha de ingreso, S.N.P., área y tipo de acto administrativo). Los montos quedarán en blanco para llenarlos. ${formatPeriodo(periodoAbierto)} quedará como histórico de solo lectura.`}
           loading={generando}
           onConfirm={handleGenerarMes}
           onCancel={() => setGenerarOpen(false)}

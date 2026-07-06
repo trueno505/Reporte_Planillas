@@ -1534,7 +1534,7 @@ CREATE TRIGGER calc_totales_obreros_concurso_trg
 CREATE OR REPLACE FUNCTION public.calc_totales_empleados_permanentes()
 RETURNS TRIGGER LANGUAGE plpgsql AS $func$
 BEGIN
-  NEW.t_ingreso := ROUND((COALESCE(NEW.vacaciones, 0) + COALESCE(NEW.r_basica, 0) + COALESCE(NEW.r_reunif, 0) + COALESCE(NEW.b_familiar, 0) + COALESCE(NEW.b_pers, 0) + COALESCE(NEW.inc_neg_col_ds320_22, 0) + COALESCE(NEW.memo_159_2025_ogrrhh_mpi, 0) + COALESCE(NEW.c_vida_tph, 0) + COALESCE(NEW.reaj_c_vida_10, 0) + COALESCE(NEW.reaj_c_vida_7, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.m_jud_inc_ref_mov, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0) + COALESCE(NEW.inc_3_3, 0) + COALESCE(NEW.inc_10_23, 0) + COALESCE(NEW.inc_3, 0) + COALESCE(NEW.bonif_dif, 0) + COALESCE(NEW.reinteg, 0) + COALESCE(NEW.ref_mov, 0))::numeric, 2);
+  NEW.t_ingreso := ROUND((COALESCE(NEW.r_basica, 0) + COALESCE(NEW.r_reunif, 0) + COALESCE(NEW.b_familiar, 0) + COALESCE(NEW.b_pers, 0) + COALESCE(NEW.inc_neg_col_ds320_22, 0) + COALESCE(NEW.memo_159_2025_ogrrhh_mpi, 0) + COALESCE(NEW.c_vida_tph, 0) + COALESCE(NEW.reaj_c_vida_10, 0) + COALESCE(NEW.reaj_c_vida_7, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.m_jud_inc_ref_mov, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0) + COALESCE(NEW.inc_3_3, 0) + COALESCE(NEW.inc_10_23, 0) + COALESCE(NEW.inc_3, 0) + COALESCE(NEW.bonif_dif, 0) + COALESCE(NEW.reinteg, 0) + COALESCE(NEW.ref_mov, 0))::numeric, 2);
   NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.fdo_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.coop_la_rehabilitad, 0) + COALESCE(NEW.bco_pichincha, 0) + COALESCE(NEW.coop_s_cristobal, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.dsct_autorizado, 0) + COALESCE(NEW.coop_maria_magdalena, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.cuota_sindical, 0) + COALESCE(NEW.coop_virgen_nieves, 0) + COALESCE(NEW.descuento_sitramun, 0) + COALESCE(NEW.regularizacion, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
   NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
   RETURN NEW;
@@ -2433,4 +2433,232 @@ CREATE POLICY dni_registro_select ON public.dni_registro
 -- Tras ejecutar todo el archivo, PostgREST recarga su caché para exponer
 -- de inmediato las funciones/columnas nuevas en la API REST.
 -- =====================================================================
+NOTIFY pgrst, 'reload schema';
+
+
+-- =====================================================================
+-- LIMPIEZA: eliminar 6 subplanillas CAS (conservar solo cas_general)
+-- Integrado desde supabase/migracion_eliminar_cas_subplanillas.sql
+-- Se ejecuta al final: las tablas se crean arriba y aquí se eliminan las 6,
+-- dejando el esquema final con 13 planillas. Recrea whitelist/RPCs/vista.
+-- =====================================================================
+-- El mismo bloque está integrado al final de _migracion_completa.sql.
+-- Ejecutar una sola vez en el SQL Editor de Supabase.
+-- ================================================================
+
+-- 1) Whitelist de tablas (sin las 6)
+CREATE OR REPLACE FUNCTION public._es_tabla_planilla(p_tabla text)
+RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path TO 'public' AS $function$
+  SELECT p_tabla IN (
+    'obreros_permanentes','obreros_plazo_indeterminado','obreros_mandato_judicial',
+    'obreros_concurso','obreros_necesidad_mercado','empleados_permanentes',
+    'empleados_contrato_plazo_indet','empleados_contrato_provisional',
+    'empleados_mandato_judicial_24041','cas_general',
+    'cesantes_pensionistas','gerente_municipal','alcalde'
+  );
+$function$;
+
+-- 2) resumen_planillas (sin las 6)
+CREATE OR REPLACE FUNCTION public.resumen_planillas(p_periodo date)
+RETURNS TABLE(tabla text, n_registros bigint, suma_ingreso numeric, suma_dsctos numeric, suma_liquido numeric)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
+  SELECT 'obreros_permanentes',            COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.obreros_permanentes           WHERE periodo = p_periodo
+  UNION ALL SELECT 'obreros_plazo_indeterminado',    COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.obreros_plazo_indeterminado   WHERE periodo = p_periodo
+  UNION ALL SELECT 'obreros_mandato_judicial',       COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.obreros_mandato_judicial      WHERE periodo = p_periodo
+  UNION ALL SELECT 'obreros_concurso',               COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.obreros_concurso              WHERE periodo = p_periodo
+  UNION ALL SELECT 'obreros_necesidad_mercado',      COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.obreros_necesidad_mercado     WHERE periodo = p_periodo
+  UNION ALL SELECT 'empleados_permanentes',          COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.empleados_permanentes         WHERE periodo = p_periodo
+  UNION ALL SELECT 'empleados_contrato_plazo_indet', COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.empleados_contrato_plazo_indet WHERE periodo = p_periodo
+  UNION ALL SELECT 'empleados_contrato_provisional', COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.empleados_contrato_provisional WHERE periodo = p_periodo
+  UNION ALL SELECT 'empleados_mandato_judicial_24041',COUNT(*),COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.empleados_mandato_judicial_24041 WHERE periodo = p_periodo
+  UNION ALL SELECT 'cas_general',                    COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.cas_general                   WHERE periodo = p_periodo
+  UNION ALL SELECT 'cesantes_pensionistas',          COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.cesantes_pensionistas         WHERE periodo = p_periodo
+  UNION ALL SELECT 'gerente_municipal',              COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.gerente_municipal             WHERE periodo = p_periodo
+  UNION ALL SELECT 'alcalde',                        COUNT(*), COALESCE(SUM(t_ingreso),0), COALESCE(SUM(t_dsctos),0), COALESCE(SUM(t_liquido),0) FROM public.alcalde                       WHERE periodo = p_periodo;
+$function$;
+
+-- 3) buscar_trabajador (sin las 6)
+CREATE OR REPLACE FUNCTION public.buscar_trabajador(termino text, p_periodo date)
+RETURNS TABLE(tabla text, slug text, dni integer, apellidos_y_nombres text, t_liquido numeric)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
+DECLARE
+  patron  TEXT    := '%' || replace(replace(replace(termino, '\', '\\'), '%', '\%'), '_', '\_') || '%';
+  es_dni  BOOLEAN := termino ~ '^\d{1,9}$';
+  dni_num INTEGER := CASE WHEN termino ~ '^\d{1,9}$' THEN termino::INTEGER ELSE NULL END;
+BEGIN
+  RETURN QUERY
+  SELECT 'obreros_permanentes'::text, 'obreros-permanentes'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.obreros_permanentes t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'obreros_plazo_indeterminado'::text, 'obreros-plazo-indeterminado'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.obreros_plazo_indeterminado t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'obreros_mandato_judicial'::text, 'obreros-mandato-judicial'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.obreros_mandato_judicial t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'obreros_concurso'::text, 'obreros-concurso'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.obreros_concurso t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'obreros_necesidad_mercado'::text, 'obreros-necesidad-mercado'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.obreros_necesidad_mercado t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'empleados_permanentes'::text, 'empleados-permanentes'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.empleados_permanentes t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'empleados_contrato_plazo_indet'::text, 'empleados-contrato-plazo-indet'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.empleados_contrato_plazo_indet t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'empleados_contrato_provisional'::text, 'empleados-contrato-provisional'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.empleados_contrato_provisional t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'empleados_mandato_judicial_24041'::text, 'empleados-mandato-judicial'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.empleados_mandato_judicial_24041 t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'cas_general'::text, 'cas-general'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.cas_general t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'cesantes_pensionistas'::text, 'cesantes-pensionistas'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.cesantes_pensionistas t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'gerente_municipal'::text, 'gerente-municipal'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.gerente_municipal t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  UNION ALL SELECT 'alcalde'::text, 'alcalde'::text, t.dni, t.apellidos_y_nombres, t.t_liquido FROM public.alcalde t WHERE t.periodo = p_periodo AND ((es_dni AND t.dni = dni_num) OR t.apellidos_y_nombres ILIKE patron)
+  ORDER BY 4;
+END
+$function$;
+
+-- 4) vw_dni_todos (sin las 6), preservando security_invoker
+CREATE OR REPLACE VIEW public.vw_dni_todos WITH (security_invoker=on) AS
+  SELECT dni, periodo, id AS registro_id, 'obreros_permanentes'::text AS tabla FROM public.obreros_permanentes
+  UNION ALL SELECT dni, periodo, id, 'obreros_plazo_indeterminado'::text FROM public.obreros_plazo_indeterminado
+  UNION ALL SELECT dni, periodo, id, 'obreros_mandato_judicial'::text FROM public.obreros_mandato_judicial
+  UNION ALL SELECT dni, periodo, id, 'obreros_concurso'::text FROM public.obreros_concurso
+  UNION ALL SELECT dni, periodo, id, 'obreros_necesidad_mercado'::text FROM public.obreros_necesidad_mercado
+  UNION ALL SELECT dni, periodo, id, 'empleados_permanentes'::text FROM public.empleados_permanentes
+  UNION ALL SELECT dni, periodo, id, 'empleados_contrato_plazo_indet'::text FROM public.empleados_contrato_plazo_indet
+  UNION ALL SELECT dni, periodo, id, 'empleados_contrato_provisional'::text FROM public.empleados_contrato_provisional
+  UNION ALL SELECT dni, periodo, id, 'empleados_mandato_judicial_24041'::text FROM public.empleados_mandato_judicial_24041
+  UNION ALL SELECT dni, periodo, id, 'cas_general'::text FROM public.cas_general
+  UNION ALL SELECT dni, periodo, id, 'cesantes_pensionistas'::text FROM public.cesantes_pensionistas
+  UNION ALL SELECT dni, periodo, id, 'gerente_municipal'::text FROM public.gerente_municipal
+  UNION ALL SELECT dni, periodo, id, 'alcalde'::text FROM public.alcalde;
+
+-- 5) Eliminar las 6 tablas (arrastra triggers, políticas, índices y publicación realtime)
+DROP TABLE IF EXISTS public.cas_choferes  CASCADE;
+DROP TABLE IF EXISTS public.cas_i_2025    CASCADE;
+DROP TABLE IF EXISTS public.cas_ii_2023   CASCADE;
+DROP TABLE IF EXISTS public.cas_ii_2024   CASCADE;
+DROP TABLE IF EXISTS public.cas_iii_2025  CASCADE;
+DROP TABLE IF EXISTS public.cas_funcional CASCADE;
+
+-- 6) Eliminar funciones de totales huérfanas
+DROP FUNCTION IF EXISTS public.calc_totales_cas_choferes();
+DROP FUNCTION IF EXISTS public.calc_totales_cas_i_2025();
+DROP FUNCTION IF EXISTS public.calc_totales_cas_ii_2023();
+DROP FUNCTION IF EXISTS public.calc_totales_cas_ii_2024();
+DROP FUNCTION IF EXISTS public.calc_totales_cas_iii_2025();
+DROP FUNCTION IF EXISTS public.calc_totales_cas_funcional();
+
+NOTIFY pgrst, 'reload schema';
+
+
+-- =====================================================================
+-- REDISEÑO: columnas detalladas de obreros_necesidad_mercado + totales auto
+-- Integrado desde supabase/migracion_necesidad_mercado_columnas.sql
+-- Aditivo e idempotente; se ejecuta al final del consolidado.
+-- =====================================================================
+-- 1) Nuevas columnas
+ALTER TABLE public.obreros_necesidad_mercado
+  ADD COLUMN IF NOT EXISTS rem_bas               NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS rem                   NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS rem_contrato          NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS p_pacto               NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS ds311_2022_ef         NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS ds313_2023_ef         NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS ds265_2024ef          NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS ds279_2024ef          NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS ds325_2024ef          NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS reintegro             NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS riesgo_salud          NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS f_pens                NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS p_seg                 NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS c_var                 NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS mas_vida              NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS fe_salud              NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS rimac_seg             NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS interseguro           NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS la_positiva_seguros   NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS faltas                INTEGER,
+  ADD COLUMN IF NOT EXISTS r_jud                 NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS autorizado_ii_suarez  NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS coop_san_miguel       NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS coop_san_ch           NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS coop_sta_mm           NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS ir_5ta_cat            NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS cuota_sindical        NUMERIC(12,2);
+
+-- 2) Función de totales (11 ingresos → t_ingreso, 15 descuentos → t_dsctos; faltas es int, no suma)
+CREATE OR REPLACE FUNCTION public.calc_totales_obreros_necesidad_mercado()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.rem_bas, 0) + COALESCE(NEW.rem, 0) + COALESCE(NEW.rem_contrato, 0) + COALESCE(NEW.p_pacto, 0) + COALESCE(NEW.ds311_2022_ef, 0) + COALESCE(NEW.ds313_2023_ef, 0) + COALESCE(NEW.ds265_2024ef, 0) + COALESCE(NEW.ds279_2024ef, 0) + COALESCE(NEW.ds325_2024ef, 0) + COALESCE(NEW.reintegro, 0) + COALESCE(NEW.riesgo_salud, 0))::numeric, 2);
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.la_positiva_seguros, 0) + COALESCE(NEW.r_jud, 0) + COALESCE(NEW.autorizado_ii_suarez, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.cuota_sindical, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+-- 3) Trigger BEFORE INSERT/UPDATE
+DROP TRIGGER IF EXISTS calc_totales_obreros_necesidad_mercado_trg ON public.obreros_necesidad_mercado;
+CREATE TRIGGER calc_totales_obreros_necesidad_mercado_trg
+  BEFORE INSERT OR UPDATE ON public.obreros_necesidad_mercado
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_obreros_necesidad_mercado();
+
+NOTIFY pgrst, 'reload schema';
+
+
+-- =====================================================================
+-- ÁREAS: columna area en 9 planillas + identidad (abrir_periodo/corregir)
+-- Integrado desde supabase/migracion_areas_planillas.sql
+-- Idempotente; se ejecuta al final del consolidado.
+-- =====================================================================
+
+-- 1) Columna area en las 9 tablas con áreas
+ALTER TABLE public.obreros_permanentes         ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.obreros_plazo_indeterminado ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.obreros_mandato_judicial    ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.obreros_concurso            ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.obreros_necesidad_mercado   ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.empleados_permanentes       ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.cas_general                 ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.gerente_municipal           ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.alcalde                     ADD COLUMN IF NOT EXISTS area TEXT;
+
+-- 2) abrir_periodo: copiar también 'area' al generar el mes siguiente
+CREATE OR REPLACE FUNCTION public.abrir_periodo(p_tabla text, p_periodo date)
+RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
+DECLARE v_src DATE; v_cols TEXT; n INTEGER;
+BEGIN
+  IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN RAISE EXCEPTION 'No autorizado'; END IF;
+  IF NOT public._es_tabla_planilla(p_tabla) THEN RAISE EXCEPTION 'Tabla no permitida: %', p_tabla; END IF;
+  p_periodo := date_trunc('month', p_periodo)::date;
+  EXECUTE format('SELECT MAX(periodo) FROM public.%I', p_tabla) INTO v_src;
+  IF v_src IS NULL THEN RAISE EXCEPTION 'La planilla no tiene datos del mes anterior para generar el nuevo mes.'; END IF;
+  IF p_periodo <= v_src THEN RAISE EXCEPTION 'El mes a generar (%) debe ser posterior al mes actual (%).', to_char(p_periodo, 'YYYY-MM'), to_char(v_src, 'YYYY-MM'); END IF;
+  SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position) INTO v_cols
+    FROM information_schema.columns
+   WHERE table_schema = 'public' AND table_name = p_tabla
+     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo');
+  EXECUTE format('INSERT INTO public.%I (periodo, %s) SELECT $1, %s FROM public.%I WHERE periodo = $2', p_tabla, v_cols, v_cols, p_tabla) USING p_periodo, v_src;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  RETURN n;
+END
+$function$;
+
+-- 3) corregir_identidad: permitir corregir también 'area'
+CREATE OR REPLACE FUNCTION public.corregir_identidad(p_tabla text, p_dni integer, p_datos jsonb)
+RETURNS INTEGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $cor$
+DECLARE
+  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo'];
+  v_cols TEXT[]; v_key TEXT; v_set TEXT := ''; n INTEGER;
+BEGIN
+  IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN RAISE EXCEPTION 'No autorizado'; END IF;
+  IF NOT public._es_tabla_planilla(p_tabla) THEN RAISE EXCEPTION 'Tabla no permitida: %', p_tabla; END IF;
+  SELECT array_agg(column_name) INTO v_cols FROM information_schema.columns WHERE table_schema = 'public' AND table_name = p_tabla;
+  FOR v_key IN SELECT jsonb_object_keys(p_datos) LOOP
+    IF NOT (v_key = ANY(v_allowed)) THEN RAISE EXCEPTION 'Campo no editable: %', v_key; END IF;
+    IF NOT (v_key = ANY(v_cols)) THEN CONTINUE; END IF;
+    IF v_set <> '' THEN v_set := v_set || ', '; END IF;
+    IF v_key IN ('f_ingreso','fecha_ing') THEN
+      v_set := v_set || format('%I = NULLIF($1->>%L, '''')::date', v_key, v_key);
+    ELSE
+      v_set := v_set || format('%I = $1->>%L', v_key, v_key);
+    END IF;
+  END LOOP;
+  IF v_set = '' THEN RETURN 0; END IF;
+  PERFORM set_config('app.bypass_periodo', '1', true);
+  EXECUTE format('UPDATE public.%I SET %s WHERE dni = $2', p_tabla, v_set) USING p_datos, p_dni;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  PERFORM set_config('app.bypass_periodo', '0', true);
+  RETURN n;
+END
+$cor$;
+
 NOTIFY pgrst, 'reload schema';
