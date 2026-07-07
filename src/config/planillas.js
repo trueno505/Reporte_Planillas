@@ -55,6 +55,7 @@ const EMPL_PI_COLS = [
   { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
   { key: 'cargo', label: 'Cargo', type: 'text' },
   { key: 'snp', label: 'S.N.P.', type: 'text' },
+  { key: 'area', label: 'ÁREA', type: 'text' },
   { key: 'rem_cont', label: 'Rem. Cont.', type: 'money' },
   { key: 'neg_cent_2024', label: 'Neg. Cent. 2024', type: 'money' },
   { key: 'otros_r', label: 'Otros R.', type: 'money' },
@@ -94,6 +95,7 @@ export const PLANILLAS = [
     slug: 'obreros-permanentes',
     tabla: 'obreros_permanentes',
     label: 'Obreros Permanentes',
+    titulo: 'PLANILLA ÚNICA DE PAGO DEL PERSONAL OBREROS PERMANENTES',
     grupo: 'Obreros',
     areas: [
       'SERVICIO DE LIMPIEZA PÚBLICA',
@@ -170,6 +172,7 @@ export const PLANILLAS = [
     slug: 'obreros-plazo-indeterminado',
     tabla: 'obreros_plazo_indeterminado',
     label: 'Obreros Plazo Indeterminado',
+    titulo: 'PLANILLA DE PAGO DE SALARIOS DE OBREROS POR CONTRATO DE TRABAJO A PLAZO INDETERMINADO',
     grupo: 'Obreros',
     areas: [
       'MANTENIMIENTO DE PARQUES Y JARDINES',
@@ -244,6 +247,7 @@ export const PLANILLAS = [
     slug: 'obreros-mandato-judicial',
     tabla: 'obreros_mandato_judicial',
     label: 'Obreros Mandato Judicial',
+    titulo: 'PLANILLA ADICIONAL DE PAGO DE SALARIOS DE OBREROS INCORPORADOS POR MANDATO JUDICIAL - CONTRATADOS A PLAZO INDETERMINADO',
     grupo: 'Obreros',
     areas: [
       'MANTENIMIENTO DE PARQUES Y JARDINES',
@@ -294,6 +298,7 @@ export const PLANILLAS = [
     slug: 'obreros-concurso',
     tabla: 'obreros_concurso',
     label: 'Obreros Concurso',
+    titulo: 'PLANILLA DE PAGO DE REMUNERACIONES DE OBREROS CONTRATADOS A PLAZO INDETERMINADO, D. LEG. N° 728 - CONCURSO 2024-I Y 2025-I',
     grupo: 'Obreros',
     areas: [
       'RECOLECCIÓN Y TRANSPORTE DE RESIDUOS SÓLIDOS MUNICIPALES - L.P',
@@ -347,6 +352,7 @@ export const PLANILLAS = [
     slug: 'obreros-necesidad-mercado',
     tabla: 'obreros_necesidad_mercado',
     label: 'Obreros Necesidad de Mercado',
+    titulo: 'PLANILLA DE PAGO DEL PERSONAL POR CONTRATO SUJETO A MODALIDAD - DECRETO LEGISLATIVO N° 728',
     grupo: 'Obreros',
     areas: [
       'SERENAZGO (SERENOS)',
@@ -399,6 +405,7 @@ export const PLANILLAS = [
     slug: 'empleados-permanentes',
     tabla: 'empleados_permanentes',
     label: 'Empleados Permanentes',
+    titulo: 'PLANILLA ÚNICA DE PAGO DEL PERSONAL EMPLEADOS PERMANENTES - RÉGIMEN LABORAL D. L. N° 276',
     grupo: 'Empleados',
     excluirCalculo: ['vacaciones'], // 'Vacaciones' es informativa; no se suma a t_ingreso
     areas: [
@@ -480,27 +487,34 @@ export const PLANILLAS = [
     slug: 'empleados-contrato-plazo-indet',
     tabla: 'empleados_contrato_plazo_indet',
     label: 'Empleados Contrato Plazo Indeterminado',
+    titulo: 'PLANILLA DE PAGO DE EMPLEADO CONTRATADO A PLAZO INDETERMINADO BAJO EL DECRETO LEGISLATIVO N° 276',
     grupo: 'Empleados',
+    areas: ['GESTION ADMINISTRATIVA'],
     columnas: EMPL_PI_COLS,
   },
   {
     slug: 'empleados-contrato-provisional',
     tabla: 'empleados_contrato_provisional',
     label: 'Empleados Contrato Provisional',
+    titulo: 'PLANILLA DE PAGO DE EMPLEADO CON CONTRATO PROVISIONAL A PLAZO INDETERMINADO BAJO EL DECRETO LEGISLATIVO N° 276',
     grupo: 'Empleados',
+    areas: ['GESTION ADMINISTRATIVA'],
     columnas: EMPL_PI_COLS,
   },
   {
     slug: 'empleados-mandato-judicial',
     tabla: 'empleados_mandato_judicial_24041',
     label: 'Empleados Mandato Judicial (24041)',
+    titulo: 'PLANILLA DE PAGO DE SERVIDORES INCORPORADOS POR MANDATO JUDICIAL DE ACUERDO A LA LEY N° 24041',
     grupo: 'Empleados',
+    areas: ['GESTION ADMINISTRATIVA'],
     columnas: [
       { key: 'dni', label: 'DNI', type: 'dni' },
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'cargo', label: 'Cargo', type: 'text' },
       { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'rem_cont', label: 'Rem. Cont.', type: 'money' },
       { key: 'inc_neg_col_ds314_23', label: 'Inc. DS314-23', type: 'money' },
       { key: 'inc_neg_col_ds268_24', label: 'Inc. DS268-24', type: 'money' },
@@ -536,6 +550,7 @@ export const PLANILLAS = [
     slug: 'cas-general',
     tabla: 'cas_general',
     label: 'CAS General',
+    titulo: 'PLANILLA ÚNICA DE PAGO DEL PERSONAL POR CONTRATO ADMINISTRATIVO DE SERVICIOS (CAS) - DECRETO LEGISLATIVO N° 1057',
     grupo: 'CAS',
     areas: [
       'Conduccion y orientacion superior',
@@ -560,6 +575,7 @@ export const PLANILLAS = [
     slug: 'cesantes-pensionistas',
     tabla: 'cesantes_pensionistas',
     label: 'Cesantes y Pensionistas',
+    titulo: 'PLANILLA DE PAGO DE CESANTES, JUBILADOS Y PENSIONISTAS - DECRETO LEY N° 20530',
     grupo: 'Pensionistas',
     columnas: [
       { key: 'dni', label: 'DNI', type: 'dni' },
@@ -604,6 +620,7 @@ export const PLANILLAS = [
     slug: 'gerente-municipal',
     tabla: 'gerente_municipal',
     label: 'Gerente Municipal',
+    titulo: 'PLANILLA DE PAGO DE COMPENSACIÓN ECONÓMICA SEGÚN DECRETO SUPREMO N° 044-2023-EF, EN EL MARCO DE LA LEY N° 30057',
     grupo: 'Autoridades',
     areas: [
       'DESARROLLAR EL PLANEAMIENTO DE LA GESTION - C.O.S',
@@ -648,6 +665,7 @@ export const PLANILLAS = [
     slug: 'alcalde',
     tabla: 'alcalde',
     label: 'Alcalde',
+    titulo: 'PLANILLA DE PAGO DE COMPENSACIÓN ECONÓMICA SEGÚN DECRETO SUPREMO N° 413-2019-EF, EN EL MARCO DE LA LEY N° 30057',
     grupo: 'Autoridades',
     excluirCalculo: ['base'], // 'base' no es descuento; excluir del auto-cálculo
     areas: [
