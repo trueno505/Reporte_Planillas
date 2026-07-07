@@ -3,7 +3,7 @@ import XLSX from 'xlsx-js-style'
 import { Download } from 'lucide-react'
 import { fetchAllRows } from '../lib/db'
 import { formatPeriodo } from '../lib/periodo'
-import { construirHojaPlanilla } from '../lib/excelEncabezado'
+import { construirHojaPlanilla, construirHojaResumenAreas } from '../lib/excelEncabezado'
 import toast from 'react-hot-toast'
 
 export default function ExcelExport({ planilla, periodo = null }) {
@@ -26,6 +26,8 @@ export default function ExcelExport({ planilla, periodo = null }) {
     const ws = construirHojaPlanilla(planilla, filas, periodo)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, label.slice(0, 31))
+    const wsResumen = construirHojaResumenAreas(planilla, filas, periodo)
+    if (wsResumen) XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen por áreas'.slice(0, 31))
     const sufijo = periodo ? `_${formatPeriodo(periodo).replace(' ', '_')}` : ''
     XLSX.writeFile(wb, `${label}${sufijo}.xlsx`)
     setLoading(false)
