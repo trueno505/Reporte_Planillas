@@ -2595,12 +2595,12 @@ NOTIFY pgrst, 'reload schema';
 
 
 -- =====================================================================
--- ÁREAS: columna area en 9 planillas + identidad (abrir_periodo/corregir)
+-- ÁREAS: columna area en 12 planillas + identidad (abrir_periodo/corregir)
 -- Integrado desde supabase/migracion_areas_planillas.sql
 -- Idempotente; se ejecuta al final del consolidado.
 -- =====================================================================
 
--- 1) Columna area en las 9 tablas con áreas
+-- 1) Columna area en las 12 tablas con áreas
 ALTER TABLE public.obreros_permanentes         ADD COLUMN IF NOT EXISTS area TEXT;
 ALTER TABLE public.obreros_plazo_indeterminado ADD COLUMN IF NOT EXISTS area TEXT;
 ALTER TABLE public.obreros_mandato_judicial    ADD COLUMN IF NOT EXISTS area TEXT;
@@ -2610,6 +2610,10 @@ ALTER TABLE public.empleados_permanentes       ADD COLUMN IF NOT EXISTS area TEX
 ALTER TABLE public.cas_general                 ADD COLUMN IF NOT EXISTS area TEXT;
 ALTER TABLE public.gerente_municipal           ADD COLUMN IF NOT EXISTS area TEXT;
 ALTER TABLE public.alcalde                     ADD COLUMN IF NOT EXISTS area TEXT;
+-- + 3 planillas de empleados que reciben el area "GESTION ADMINISTRATIVA"
+ALTER TABLE public.empleados_contrato_plazo_indet   ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.empleados_contrato_provisional   ADD COLUMN IF NOT EXISTS area TEXT;
+ALTER TABLE public.empleados_mandato_judicial_24041 ADD COLUMN IF NOT EXISTS area TEXT;
 
 -- 2) abrir_periodo: copiar también 'area' al generar el mes siguiente
 CREATE OR REPLACE FUNCTION public.abrir_periodo(p_tabla text, p_periodo date)

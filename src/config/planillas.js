@@ -55,6 +55,7 @@ const EMPL_PI_COLS = [
   { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
   { key: 'cargo', label: 'Cargo', type: 'text' },
   { key: 'snp', label: 'S.N.P.', type: 'text' },
+  { key: 'area', label: 'ÁREA', type: 'text' },
   { key: 'rem_cont', label: 'Rem. Cont.', type: 'money' },
   { key: 'neg_cent_2024', label: 'Neg. Cent. 2024', type: 'money' },
   { key: 'otros_r', label: 'Otros R.', type: 'money' },
@@ -481,6 +482,7 @@ export const PLANILLAS = [
     tabla: 'empleados_contrato_plazo_indet',
     label: 'Empleados Contrato Plazo Indeterminado',
     grupo: 'Empleados',
+    areas: ['GESTION ADMINISTRATIVA'],
     columnas: EMPL_PI_COLS,
   },
   {
@@ -488,6 +490,7 @@ export const PLANILLAS = [
     tabla: 'empleados_contrato_provisional',
     label: 'Empleados Contrato Provisional',
     grupo: 'Empleados',
+    areas: ['GESTION ADMINISTRATIVA'],
     columnas: EMPL_PI_COLS,
   },
   {
@@ -495,12 +498,14 @@ export const PLANILLAS = [
     tabla: 'empleados_mandato_judicial_24041',
     label: 'Empleados Mandato Judicial (24041)',
     grupo: 'Empleados',
+    areas: ['GESTION ADMINISTRATIVA'],
     columnas: [
       { key: 'dni', label: 'DNI', type: 'dni' },
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'cargo', label: 'Cargo', type: 'text' },
       { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'rem_cont', label: 'Rem. Cont.', type: 'money' },
       { key: 'inc_neg_col_ds314_23', label: 'Inc. DS314-23', type: 'money' },
       { key: 'inc_neg_col_ds268_24', label: 'Inc. DS268-24', type: 'money' },
