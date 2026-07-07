@@ -2614,14 +2614,20 @@ ALTER TABLE public.alcalde                     ADD COLUMN IF NOT EXISTS area TEX
 -- 2) abrir_periodo: copiar también 'area' al generar el mes siguiente
 CREATE OR REPLACE FUNCTION public.abrir_periodo(p_tabla text, p_periodo date)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
-DECLARE v_src DATE; v_cols TEXT; n INTEGER;
+DECLARE v_src DATE; v_next DATE; v_cols TEXT; n INTEGER;
 BEGIN
   IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN RAISE EXCEPTION 'No autorizado'; END IF;
   IF NOT public._es_tabla_planilla(p_tabla) THEN RAISE EXCEPTION 'Tabla no permitida: %', p_tabla; END IF;
   p_periodo := date_trunc('month', p_periodo)::date;
   EXECUTE format('SELECT MAX(periodo) FROM public.%I', p_tabla) INTO v_src;
   IF v_src IS NULL THEN RAISE EXCEPTION 'La planilla no tiene datos del mes anterior para generar el nuevo mes.'; END IF;
-  IF p_periodo <= v_src THEN RAISE EXCEPTION 'El mes a generar (%) debe ser posterior al mes actual (%).', to_char(p_periodo, 'YYYY-MM'), to_char(v_src, 'YYYY-MM'); END IF;
+  v_next := (v_src + INTERVAL '1 month')::date;
+  -- Seguridad: solo se puede generar el mes INMEDIATAMENTE siguiente al ultimo
+  -- mes existente (v_src + 1). Impide saltos de meses (p.ej. julio -> diciembre).
+  IF p_periodo <> v_next THEN
+    RAISE EXCEPTION 'Solo se puede generar el mes inmediatamente siguiente (%). Intentaste generar % (ultimo mes existente: %).',
+      to_char(v_next, 'YYYY-MM'), to_char(p_periodo, 'YYYY-MM'), to_char(v_src, 'YYYY-MM');
+  END IF;
   SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position) INTO v_cols
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = p_tabla
