@@ -1,7 +1,8 @@
-import * as XLSX from 'xlsx'
+import XLSX from 'xlsx-js-style'
 import { fetchAllRows } from './db'
 import { PLANILLAS } from '../config/planillas'
 import { formatPeriodo } from './periodo'
+import { construirHojaPlanilla } from './excelEncabezado'
 
 /**
  * Descarga un Excel con una hoja por planilla + hoja de resumen, para un mes.
@@ -44,11 +45,7 @@ export async function generarReporteConsolidado(resumenData, periodo = null) {
       data = []
     }
 
-    const rows = data.map((fila) =>
-      Object.fromEntries(planilla.columnas.map((c) => [c.label, fila[c.key] ?? '']))
-    )
-
-    const ws = XLSX.utils.json_to_sheet(rows)
+    const ws = construirHojaPlanilla(planilla, data, periodo)
     // Nombre de hoja máx 31 chars
     XLSX.utils.book_append_sheet(wb, ws, planilla.label.slice(0, 31))
   }
