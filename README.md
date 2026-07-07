@@ -92,7 +92,8 @@ Cada planilla guarda una fila por **(trabajador, mes)** mediante una columna `pe
   acto administrativo) se mantienen iguales todos los meses; las demás varían.
 - El **mes actual** es editable; los **meses anteriores** quedan en **solo lectura**.
 - En cada planilla, el botón **«Generar mes siguiente»** crea el mes nuevo copiando a los
-  trabajadores (identidad) con los montos en blanco para llenarlos.
+  trabajadores (identidad) con los montos en blanco para llenarlos. Por seguridad solo puede
+  generar el **mes inmediatamente siguiente** al último existente (no se pueden saltar meses).
 - El selector de mes (en la planilla, el dashboard y la búsqueda global) permite consultar
   meses y años anteriores. Para corregir un dato fijo, **«Corregir datos fijos»** lo cambia
   en todos los meses del trabajador.

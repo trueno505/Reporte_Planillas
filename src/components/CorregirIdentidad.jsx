@@ -35,7 +35,7 @@ export default function CorregirIdentidad({ planilla, record, onClose, onSaved }
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl">
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
           <h2 className="flex items-center gap-2 text-lg font-bold text-primary">
             <ShieldAlert size={18} /> Corregir datos fijos
@@ -61,11 +61,13 @@ export default function CorregirIdentidad({ planilla, record, onClose, onSaved }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   <option value="">Seleccione área…</option>
-                  {planilla.areas.map((a) => (
-                    <option key={a} value={a}>
-                      {a}
-                    </option>
-                  ))}
+                  {[...planilla.areas]
+                    .sort((a, b) => a.localeCompare(b, 'es'))
+                    .map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
                 </select>
               ) : (
                 <input

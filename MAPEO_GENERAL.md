@@ -341,11 +341,14 @@ operaciones masivas de Excel / recálculo.
   `t_ingreso`, `t_dsctos` y `t_liquido` (campos de total en solo lectura).
 - Maneja error de DNI duplicado (código `23505`).
 - **Modo alta rápida (`soloBasicos`):** lo usa *Nuevo registro* (`NuevoRegistro.jsx`).
-  Muestra solo **DNI**, **Apellidos y Nombres**, **Fecha de Ingreso**, **S.N.P.** y
-  **Tipo de acto administrativo**, todos **obligatorios** (validados al guardar). El campo **S.N.P.** es un selector
+  Muestra solo **DNI**, **Apellidos y Nombres**, **Fecha de Ingreso**, **S.N.P.**,
+  **Área** (selector, solo en planillas con `areas`) y **Tipo de acto administrativo**, todos
+  **obligatorios** (validados al guardar). El campo **S.N.P.** es un selector
   **ONP / AFP**; si se elige *AFP* aparece un segundo selector con las cuatro AFP
   (*AFP Integra, Prima AFP, AFP Habitat, Profuturo AFP*) y se guarda el **nombre completo**
-  de la AFP en la columna `snp` (o `"ONP"`). El resto de columnas quedan en blanco y los
+  de la AFP en la columna `snp` (o `"ONP"`). El selector de **Área** ordena sus opciones
+  **alfabéticamente** al renderizar (`localeCompare`, es) y ocupa **todo el ancho de la fila**
+  para leer completo el nombre de la actividad. El resto de columnas quedan en blanco y los
   totales los calcula el trigger.
 
 ### 8.2.1 Alta rápida (`NuevoRegistro.jsx`, ruta `/nuevo-registro`)
