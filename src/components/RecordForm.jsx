@@ -198,7 +198,10 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             const esAreaSelect = col.key === 'area' && (planilla.areas?.length ?? 0) > 0
             const fijaBloqueada = esFijaBloqueada(col.key)
             return (
-              <div key={col.key}>
+              <div
+                key={col.key}
+                className={esAreaSelect ? 'sm:col-span-2 lg:col-span-3' : undefined}
+              >
                 <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                   {col.label}
                   {requerido && <span className="text-red-500">*</span>}
@@ -249,11 +252,13 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
                     className={inputClass}
                   >
                     <option value="">Seleccione área…</option>
-                    {planilla.areas.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
-                      </option>
-                    ))}
+                    {[...planilla.areas]
+                      .sort((a, b) => a.localeCompare(b, 'es'))
+                      .map((a) => (
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
+                      ))}
                   </select>
                 ) : col.type === 'text' ? (
                   <input
