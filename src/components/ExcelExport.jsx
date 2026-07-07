@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import * as XLSX from 'xlsx'
+import XLSX from 'xlsx-js-style'
 import { Download } from 'lucide-react'
 import { fetchAllRows } from '../lib/db'
 import { formatPeriodo } from '../lib/periodo'
+import { construirHojaPlanilla } from '../lib/excelEncabezado'
 import toast from 'react-hot-toast'
 
 export default function ExcelExport({ planilla, periodo = null }) {
@@ -11,7 +12,7 @@ export default function ExcelExport({ planilla, periodo = null }) {
   // La tabla en pantalla está paginada (50 filas), pero la exportación debe
   // incluir TODOS los registros del mes: los traemos bajo demanda al hacer clic.
   const handleExport = async () => {
-    const { columnas, label, tabla } = planilla
+    const { label, tabla } = planilla
     setLoading(true)
     let filas
     try {
@@ -22,12 +23,7 @@ export default function ExcelExport({ planilla, periodo = null }) {
       return
     }
 
-    const data = filas.map((fila) =>
-      Object.fromEntries(columnas.map((c) => [c.label, fila[c.key] ?? '']))
-    )
-    const ws = XLSX.utils.json_to_sheet(
-      data.length ? data : [Object.fromEntries(columnas.map((c) => [c.label, '']))]
-    )
+    const ws = construirHojaPlanilla(planilla, filas, periodo)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, label.slice(0, 31))
     const sufijo = periodo ? `_${formatPeriodo(periodo).replace(' ', '_')}` : ''

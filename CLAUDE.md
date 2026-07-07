@@ -25,7 +25,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 ### Single source of truth: `src/config/planillas.js`
 
-Every planilla (pay-roll table) is defined here as an object with `{ slug, tabla, label, grupo, columnas[], sinAutoTotales?, excluirCalculo?, areas? }`. Each column has `{ key, label, type, required? }` where type is one of `'dni' | 'text' | 'date' | 'int' | 'money'`.
+Every planilla (pay-roll table) is defined here as an object with `{ slug, tabla, label, titulo?, grupo, columnas[], sinAutoTotales?, excluirCalculo?, areas? }`. `titulo` is the official long title (e.g. "PLANILLA ÚNICA DE PAGO DEL PERSONAL EMPLEADOS PERMANENTES - RÉGIMEN LABORAL D. L. N° 276") printed as the styled header of the Excel exports (falls back to `label`). Each column has `{ key, label, type, required? }` where type is one of `'dni' | 'text' | 'date' | 'int' | 'money'`.
 
 **`areas`** (optional): list of activity names that divide the planilla. 12 planillas have it (the 5 obreros, `empleados-permanentes`, `empleados-contrato-plazo-indet`, `empleados-contrato-provisional`, `empleados-mandato-judicial`, `cas-general`, `gerente-municipal`, `alcalde`); those also carry an `area` column (text, identity). The three `empleados-contrato-*`/`mandato-judicial` planillas only list a single área (`GESTION ADMINISTRATIVA`). Drives: the área `<select>` in RecordForm/NuevoRegistro and CorregirIdentidad, and the server-side área filter in PlanillaPage (`usePlanillaPaginada` → `db.js fetchPagina .eq('area', …)`). In both the RecordForm and CorregirIdentidad `<select>`s the options are sorted alphabetically at render (`localeCompare(…, 'es')`, `areas` stays unsorted in config) and the field is widened so the long activity names are readable (RecordForm: área row spans full width `sm:col-span-2 lg:col-span-3`; CorregirIdentidad modal is `max-w-2xl`).
 
@@ -122,7 +122,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 | `Paginacion.jsx` | Reusable Tailwind pagination control (« Anterior \| 1 … 4 5 6 … 20 \| Siguiente »), current page highlighted, ellipsis for large ranges, prev/next disabled at ends; hidden when ≤1 page |
 | `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI, Apellidos y Nombres, the **date column(s)** (`type === 'date'`, typically F. Ingreso), S.N.P., Área and Tipo de acto administrativo, makes them required, renders S.N.P. as an ONP/AFP selector and Área as a `<select>` from `planilla.areas` (also on normal create; read-only identity on edit). **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
 | `ExcelActualizarColumna.jsx` | Pick one column → upload Excel (DNI + value) → preview (matched/not-found/invalid) → atomic single-column UPDATE by DNI via `actualizar_columna_planilla` RPC; also downloads a fill-in template |
-| `ExcelExport.jsx` | Download current rows as `.xlsx` |
+| `ExcelExport.jsx` | Download current rows as `.xlsx`, with a styled institutional header (membrete + planilla `titulo` + month + RUC) built by `lib/excelEncabezado.js` using `xlsx-js-style` |
 | `ConfirmDialog.jsx` | Reusable confirm modal; `danger` prop for red styling |
 | `PeriodoSelector.jsx` | Month/period selector dropdown (populated from `periodos_planilla`); used by `PlanillaPage` to switch between historical months |
 | `CorregirIdentidad.jsx` | Modal that corrects the fixed identity fields (Apellidos y Nombres, Fecha, S.N.P., Área — select when the planilla has `areas` —, Tipo de acto) across **all** months of a worker via the `corregir_identidad` RPC |
@@ -147,7 +147,8 @@ The context is split into two files for React Fast Refresh compatibility: `conte
 | `calculos.js` | `calcularTotales(planilla, fila)`, `recalcularFilas(planilla, filas)` |
 | `alertas.js` | `detectarAlertas(planilla, fila)` — detects LIQUIDO_NEGATIVO, TOTAL_DESCUADRADO, FALTAS_EXCESIVAS |
 | `boletaPdf.js` | `generarBoletaPdf(planilla, fila)` — generates and downloads individual pay-slip PDF |
-| `reporteConsolidado.js` | `generarReporteConsolidado(resumenData)` — multi-sheet Excel; `descargarPlantilla(planilla)` — blank template |
+| `reporteConsolidado.js` | `generarReporteConsolidado(resumenData)` — multi-sheet Excel (each planilla sheet uses `excelEncabezado.js` for its styled header/title); `descargarPlantilla(planilla)` — blank template |
+| `excelEncabezado.js` | `construirHojaPlanilla(planilla, filas, periodo)` — builds a styled worksheet (institutional membrete, planilla `titulo`, month in magenta, RUC, column labels + data) via `xlsx-js-style`; shared by `ExcelExport` and `reporteConsolidado`. Note: `xlsx-js-style` is used only for these styled writers; plain `xlsx` (0.20.3) is still used by `ExcelActualizarColumna` for reading uploads/templates |
 
 ### Roles and security
 
