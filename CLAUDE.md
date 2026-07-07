@@ -27,7 +27,7 @@ VITE_SUPABASE_ANON_KEY=...
 
 Every planilla (pay-roll table) is defined here as an object with `{ slug, tabla, label, grupo, columnas[], sinAutoTotales?, excluirCalculo?, areas? }`. Each column has `{ key, label, type, required? }` where type is one of `'dni' | 'text' | 'date' | 'int' | 'money'`.
 
-**`areas`** (optional): list of activity names that divide the planilla. 9 planillas have it (the 5 obreros, `empleados-permanentes`, `cas-general`, `gerente-municipal`, `alcalde`); those also carry an `area` column (text, identity). Drives: the área `<select>` in RecordForm/NuevoRegistro and CorregirIdentidad, and the server-side área filter in PlanillaPage (`usePlanillaPaginada` → `db.js fetchPagina .eq('area', …)`).
+**`areas`** (optional): list of activity names that divide the planilla. 9 planillas have it (the 5 obreros, `empleados-permanentes`, `cas-general`, `gerente-municipal`, `alcalde`); those also carry an `area` column (text, identity). Drives: the área `<select>` in RecordForm/NuevoRegistro and CorregirIdentidad, and the server-side área filter in PlanillaPage (`usePlanillaPaginada` → `db.js fetchPagina .eq('area', …)`). In both the RecordForm and CorregirIdentidad `<select>`s the options are sorted alphabetically at render (`localeCompare(…, 'es')`, `areas` stays unsorted in config) and the field is widened so the long activity names are readable (RecordForm: área row spans full width `sm:col-span-2 lg:col-span-3`; CorregirIdentidad modal is `max-w-2xl`).
 
 **Adding or renaming a column** = edit `planillas.js`, run `node scripts/genSql.mjs` to regenerate the table SQL, fold the change into `supabase/_migracion_completa.sql`, and run it in the Supabase SQL Editor.
 
@@ -217,7 +217,9 @@ Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
 - **RPCs** (todas reciben/filtran por mes): `resumen_planillas(p_periodo)`,
   `buscar_trabajador(termino, p_periodo)`, `recalcular_totales(p_tabla, p_periodo)`,
   `actualizar_columna_planilla(p_tabla, p_periodo, p_columna, p_valores)`. Nuevas:
-  `abrir_periodo(p_tabla, p_periodo)` (genera el mes clonando identidad; admin/editor),
+  `abrir_periodo(p_tabla, p_periodo)` (genera el mes clonando identidad; admin/editor; **solo
+  permite el mes inmediatamente siguiente** al último existente, `MAX(periodo) + 1 mes` —
+  rechaza saltos como julio→diciembre incluso si se llama al RPC directamente),
   `periodos_planilla(p_tabla)` (lista de meses para el selector), `corregir_identidad(p_tabla,
   p_dni, p_datos)` (corrige los campos fijos —incluida `area`— en **todos** los meses, vía el bypass).
 - **Frontend**: `src/lib/periodo.js` (helpers `formatPeriodo`/`periodoActual`/`siguientePeriodo`/`aPrimerDiaMes`),
