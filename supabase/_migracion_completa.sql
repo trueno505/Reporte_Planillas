@@ -13,11 +13,17 @@
 -- 01_extensions.sql
 -- Extensiones requeridas por el proyecto
 
+-- Las extensiones viven en el esquema `extensions` (no en `public`) para no
+-- exponer sus funciones vía la API de PostgREST (lint 0014_extension_in_public).
+CREATE SCHEMA IF NOT EXISTS extensions;
+
 -- Actualiza automáticamente la columna updated_at
-CREATE EXTENSION IF NOT EXISTS moddatetime;
+CREATE EXTENSION IF NOT EXISTS moddatetime WITH SCHEMA extensions;
+ALTER EXTENSION moddatetime SET SCHEMA extensions;
 
 -- Búsqueda por similitud / ILIKE acelerada con índices GIN (ver 10_indices.sql)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
+ALTER EXTENSION pg_trgm SET SCHEMA extensions;
 
 
 -- =====================================================================
@@ -132,7 +138,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_permanentes (
 
 CREATE TRIGGER handle_updated_at_obreros_permanentes
   BEFORE UPDATE ON public.obreros_permanentes
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -200,7 +206,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_plazo_indeterminado (
 
 CREATE TRIGGER handle_updated_at_obreros_plazo_indeterminado
   BEFORE UPDATE ON public.obreros_plazo_indeterminado
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -249,7 +255,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_mandato_judicial (
 
 CREATE TRIGGER handle_updated_at_obreros_mandato_judicial
   BEFORE UPDATE ON public.obreros_mandato_judicial
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -302,7 +308,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_concurso (
 
 CREATE TRIGGER handle_updated_at_obreros_concurso
   BEFORE UPDATE ON public.obreros_concurso
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -325,7 +331,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_necesidad_mercado (
 
 CREATE TRIGGER handle_updated_at_obreros_necesidad_mercado
   BEFORE UPDATE ON public.obreros_necesidad_mercado
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -394,7 +400,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_permanentes (
 
 CREATE TRIGGER handle_updated_at_empleados_permanentes
   BEFORE UPDATE ON public.empleados_permanentes
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -445,7 +451,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_contrato_plazo_indet (
 
 CREATE TRIGGER handle_updated_at_empleados_contrato_plazo_indet
   BEFORE UPDATE ON public.empleados_contrato_plazo_indet
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -496,7 +502,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_contrato_provisional (
 
 CREATE TRIGGER handle_updated_at_empleados_contrato_provisional
   BEFORE UPDATE ON public.empleados_contrato_provisional
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -544,7 +550,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_mandato_judicial_24041 (
 
 CREATE TRIGGER handle_updated_at_empleados_mandato_judicial_24041
   BEFORE UPDATE ON public.empleados_mandato_judicial_24041
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -596,7 +602,7 @@ CREATE TABLE IF NOT EXISTS public.cas_general (
 
 CREATE TRIGGER handle_updated_at_cas_general
   BEFORE UPDATE ON public.cas_general
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -648,7 +654,7 @@ CREATE TABLE IF NOT EXISTS public.cas_choferes (
 
 CREATE TRIGGER handle_updated_at_cas_choferes
   BEFORE UPDATE ON public.cas_choferes
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -700,7 +706,7 @@ CREATE TABLE IF NOT EXISTS public.cas_i_2025 (
 
 CREATE TRIGGER handle_updated_at_cas_i_2025
   BEFORE UPDATE ON public.cas_i_2025
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -752,7 +758,7 @@ CREATE TABLE IF NOT EXISTS public.cas_ii_2023 (
 
 CREATE TRIGGER handle_updated_at_cas_ii_2023
   BEFORE UPDATE ON public.cas_ii_2023
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -804,7 +810,7 @@ CREATE TABLE IF NOT EXISTS public.cas_ii_2024 (
 
 CREATE TRIGGER handle_updated_at_cas_ii_2024
   BEFORE UPDATE ON public.cas_ii_2024
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -856,7 +862,7 @@ CREATE TABLE IF NOT EXISTS public.cas_iii_2025 (
 
 CREATE TRIGGER handle_updated_at_cas_iii_2025
   BEFORE UPDATE ON public.cas_iii_2025
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -908,7 +914,7 @@ CREATE TABLE IF NOT EXISTS public.cas_funcional (
 
 CREATE TRIGGER handle_updated_at_cas_funcional
   BEFORE UPDATE ON public.cas_funcional
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -958,7 +964,7 @@ CREATE TABLE IF NOT EXISTS public.cesantes_pensionistas (
 
 CREATE TRIGGER handle_updated_at_cesantes_pensionistas
   BEFORE UPDATE ON public.cesantes_pensionistas
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -1004,7 +1010,7 @@ CREATE TABLE IF NOT EXISTS public.gerente_municipal (
 
 CREATE TRIGGER handle_updated_at_gerente_municipal
   BEFORE UPDATE ON public.gerente_municipal
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ════════════════════════════════════════
@@ -1056,7 +1062,7 @@ CREATE TABLE IF NOT EXISTS public.alcalde (
 
 CREATE TRIGGER handle_updated_at_alcalde
   BEFORE UPDATE ON public.alcalde
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- =====================================================================
@@ -1782,43 +1788,43 @@ CREATE TRIGGER calc_totales_alcalde_trg
 -- ================================================================
 
 CREATE INDEX IF NOT EXISTS idx_obreros_permanentes_nombre_trgm
-  ON public.obreros_permanentes USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.obreros_permanentes USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_obreros_plazo_indeterminado_nombre_trgm
-  ON public.obreros_plazo_indeterminado USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.obreros_plazo_indeterminado USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_obreros_mandato_judicial_nombre_trgm
-  ON public.obreros_mandato_judicial USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.obreros_mandato_judicial USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_obreros_concurso_nombre_trgm
-  ON public.obreros_concurso USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.obreros_concurso USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_obreros_necesidad_mercado_nombre_trgm
-  ON public.obreros_necesidad_mercado USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.obreros_necesidad_mercado USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_empleados_permanentes_nombre_trgm
-  ON public.empleados_permanentes USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.empleados_permanentes USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_empleados_contrato_plazo_indet_nombre_trgm
-  ON public.empleados_contrato_plazo_indet USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.empleados_contrato_plazo_indet USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_empleados_contrato_provisional_nombre_trgm
-  ON public.empleados_contrato_provisional USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.empleados_contrato_provisional USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_empleados_mandato_judicial_24041_nombre_trgm
-  ON public.empleados_mandato_judicial_24041 USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.empleados_mandato_judicial_24041 USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cas_general_nombre_trgm
-  ON public.cas_general USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.cas_general USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cas_choferes_nombre_trgm
-  ON public.cas_choferes USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.cas_choferes USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cas_i_2025_nombre_trgm
-  ON public.cas_i_2025 USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.cas_i_2025 USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cas_ii_2023_nombre_trgm
-  ON public.cas_ii_2023 USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.cas_ii_2023 USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cas_ii_2024_nombre_trgm
-  ON public.cas_ii_2024 USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.cas_ii_2024 USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cas_iii_2025_nombre_trgm
-  ON public.cas_iii_2025 USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.cas_iii_2025 USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cas_funcional_nombre_trgm
-  ON public.cas_funcional USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.cas_funcional USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_cesantes_pensionistas_nombre_trgm
-  ON public.cesantes_pensionistas USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.cesantes_pensionistas USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_gerente_municipal_nombre_trgm
-  ON public.gerente_municipal USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.gerente_municipal USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_alcalde_nombre_trgm
-  ON public.alcalde USING gin (apellidos_y_nombres gin_trgm_ops);
+  ON public.alcalde USING gin (apellidos_y_nombres extensions.gin_trgm_ops);
 
 
 -- =====================================================================
@@ -2395,6 +2401,8 @@ REVOKE EXECUTE ON FUNCTION public.recalcular_totales(text, date)                
 REVOKE EXECUTE ON FUNCTION public.actualizar_columna_planilla(text, date, text, jsonb) FROM anon, public;
 REVOKE EXECUTE ON FUNCTION public.abrir_periodo(text, date)                            FROM anon, public;
 REVOKE EXECUTE ON FUNCTION public.corregir_identidad(text, integer, jsonb)             FROM anon, public;
+-- get_my_rol() devuelve NULL sin sesión, pero no hay razón para exponerla a anon.
+REVOKE EXECUTE ON FUNCTION public.get_my_rol()                                          FROM anon, public;
 
 GRANT EXECUTE ON FUNCTION public.buscar_trabajador(text, date)                       TO authenticated;
 GRANT EXECUTE ON FUNCTION public.resumen_planillas(date)                              TO authenticated;

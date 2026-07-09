@@ -139,7 +139,7 @@ const indicesHeader = `-- ======================================================
 const indicesParts = PLANILLAS.map(
   (p) =>
     `CREATE INDEX IF NOT EXISTS idx_${p.tabla}_nombre_trgm
-  ON public.${p.tabla} USING gin (apellidos_y_nombres gin_trgm_ops);`
+  ON public.${p.tabla} USING gin (apellidos_y_nombres extensions.gin_trgm_ops);`
 )
 writeFileSync(
   new URL('../supabase/10_indices.sql', import.meta.url),
