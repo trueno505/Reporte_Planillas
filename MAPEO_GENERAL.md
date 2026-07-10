@@ -2,15 +2,16 @@
 
 > Documento de referencia que explica **todo lo que está creado e implementado** en el
 > proyecto. Generado a partir de una revisión completa del código fuente.
-> **Última revisión:** 2026-06-26
+> **Última revisión:** 2026-07-10
 
 ---
 
 ## 1. ¿Qué es este proyecto?
 
 Sistema web para la **Municipalidad Provincial de Ica (MPI)** que centraliza, consulta
-y gestiona **19 planillas de pago** (remuneraciones) de distintos regímenes laborales
-(Obreros, Empleados, CAS, Pensionistas y Autoridades).
+y gestiona **13 planillas de pago** (remuneraciones) de distintos regímenes laborales
+(Obreros, Empleados, CAS, Pensionistas y Autoridades), con **histórico mensual** por
+`periodo`.
 
 Permite:
 - Ver cada planilla en una tabla con **paginación de 50 en 50 del lado del servidor**,
@@ -18,10 +19,13 @@ Permite:
   (Realtime) de la lista y la paginación.
 - Editar / eliminar registros con **cálculo automático de totales**. El **alta** se hace
   únicamente desde *Nuevo registro* (global); las planillas ya no tienen botón de alta propio.
-- **Alta rápida** desde *Nuevo registro* (solo DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P. y Tipo de acto administrativo).
-- Exportar datos en **Excel** y **actualizar una columna** masivamente por Excel.
+- **Alta rápida** desde *Nuevo registro* (solo DNI, Apellidos y Nombres, Fecha de Ingreso,
+  S.N.P., Área — en planillas con `areas` — y Tipo de acto administrativo).
+- Exportar datos en **Excel estilizado** (agrupado por área, con resumen de conceptos,
+  aporte a ESSALUD al 9%, comprobación y **cuadro presupuestal por área** con Nº Siaf
+  pedido al descargar) y **actualizar una columna** masivamente por Excel.
 - Generar **boletas de pago en PDF** por trabajador y un **reporte consolidado** en Excel.
-- Buscar a un trabajador por DNI o nombre en **las 19 planillas a la vez**.
+- Buscar a un trabajador por DNI o nombre en **las 13 planillas a la vez**.
 - Un **dashboard** con KPIs y gráficos.
 - **Edición de datos** disponible para administradores y **editores**; los **consultores** solo leen/exportan.
 - **Auditoría** de cambios y **gestión de usuarios/roles** (solo administradores).
@@ -37,7 +41,7 @@ Permite:
 | Ruteo | **react-router-dom 7** |
 | Estilos | **Tailwind CSS 3** (color institucional `primary #003366`) |
 | Tablas | **@tanstack/react-table 8** |
-| Excel | **xlsx (SheetJS)** |
+| Excel | **xlsx-js-style** (exportes estilizados) + **xlsx (SheetJS)** (lectura de archivos) |
 | PDF | **jspdf** + **jspdf-autotable** |
 | Gráficos | **recharts** |
 | Iconos | **lucide-react** |
@@ -78,12 +82,22 @@ como un objeto:
   slug,            // identificador para la URL (ej. 'cas-general')
   tabla,           // nombre de la tabla en PostgreSQL
   label,           // nombre visible (ej. 'CAS General')
+  titulo,          // título oficial largo (cabecera de los Excel exportados)
   grupo,           // Obreros | Empleados | CAS | Pensionistas | Autoridades
   columnas: [ { key, label, type, required? } ],
+  areas?,          // lista de áreas/actividades que dividen la planilla
   sinAutoTotales?, // true → totales manuales (sin auto-cálculo)
   excluirCalculo?, // claves a ignorar en el auto-cálculo
 }
 ```
+
+Junto a `planillas.js` vive **`src/config/cuadrosPresupuestales.js`**: los datos fijos
+del **cuadro presupuestal** de cada área (Sec. Func., Programa, Función, Meta,
+Finalidad, Fte. Financ., Rubros y Clasificadores) por planilla, usados en la
+exportación Excel. El helper `getCuadroArea(slug, area)` los resuelve tolerando
+diferencias de tildes/mayúsculas; el Nº Siaf no es fijo: se pide al usuario al
+descargar y los montos/fecha del cuadro quedan para llenar a mano (la fecha se
+autocompleta con el día de la descarga).
 
 Cada columna tiene un **tipo** que determina su comportamiento en toda la app:
 
@@ -112,7 +126,7 @@ Cada columna tiene un **tipo** que determina su comportamiento en toda la app:
 > con el parche idempotente `supabase/migracion_rename_observaciones.sql`.
 
 ### Conjuntos de columnas compartidos
-- **`CAS_COLS`** — usado por las 7 planillas CAS (todas comparten columnas idénticas).
+- **`CAS_COLS`** — usado por `cas-general` (quedó de cuando existían 7 subplanillas CAS).
 - **`EMPL_PI_COLS`** — compartido por `empleados-contrato-plazo-indet` y
   `empleados-contrato-provisional`.
 
@@ -130,7 +144,7 @@ Editar esas constantes actualiza todas las planillas afectadas a la vez.
 
 ---
 
-## 4. Las 19 planillas
+## 4. Las 13 planillas
 
 | Grupo | Planilla | slug | tabla |
 |---|---|---|---|
@@ -138,24 +152,26 @@ Editar esas constantes actualiza todas las planillas afectadas a la vez.
 | Obreros | Obreros Plazo Indeterminado | `obreros-plazo-indeterminado` | `obreros_plazo_indeterminado` |
 | Obreros | Obreros Mandato Judicial | `obreros-mandato-judicial` | `obreros_mandato_judicial` |
 | Obreros | Obreros Concurso | `obreros-concurso` | `obreros_concurso` |
-| Obreros | Obreros Necesidad de Mercado* | `obreros-necesidad-mercado` | `obreros_necesidad_mercado` |
-| Empleados | Empleados Permanentes | `empleados-permanentes` | `empleados_permanentes` |
+| Obreros | Obreros Necesidad de Mercado | `obreros-necesidad-mercado` | `obreros_necesidad_mercado` |
+| Empleados | Empleados Permanentes* | `empleados-permanentes` | `empleados_permanentes` |
 | Empleados | Empleados Contrato Plazo Indeterminado | `empleados-contrato-plazo-indet` | `empleados_contrato_plazo_indet` |
 | Empleados | Empleados Contrato Provisional | `empleados-contrato-provisional` | `empleados_contrato_provisional` |
 | Empleados | Empleados Mandato Judicial (24041) | `empleados-mandato-judicial` | `empleados_mandato_judicial_24041` |
 | CAS | CAS General | `cas-general` | `cas_general` |
-| CAS | CAS Choferes | `cas-choferes` | `cas_choferes` |
-| CAS | CAS I 2025 | `cas-i-2025` | `cas_i_2025` |
-| CAS | CAS II 2023 | `cas-ii-2023` | `cas_ii_2023` |
-| CAS | CAS II 2024 | `cas-ii-2024` | `cas_ii_2024` |
-| CAS | CAS III 2025 | `cas-iii-2025` | `cas_iii_2025` |
-| CAS | CAS Funcional | `cas-funcional` | `cas_funcional` |
 | Pensionistas | Cesantes y Pensionistas | `cesantes-pensionistas` | `cesantes_pensionistas` |
 | Autoridades | Gerente Municipal | `gerente-municipal` | `gerente_municipal` |
 | Autoridades | Alcalde** | `alcalde` | `alcalde` |
 
-\* `obreros-necesidad-mercado` tiene `sinAutoTotales: true` → los totales se ingresan a mano.
+\* `empleados-permanentes` usa `excluirCalculo: ['vacaciones']` (columna informativa).
 \** `alcalde` usa `excluirCalculo: ['base']` porque la columna `base` no es un descuento.
+
+> **CAS:** originalmente había 7 subplanillas CAS; se eliminaron 6 (`cas-choferes`,
+> `cas-i-2025`, `cas-ii-2023`, `cas-ii-2024`, `cas-iii-2025`, `cas-funcional`) dejando
+> solo `cas-general` (ver `supabase/migracion_eliminar_cas_subplanillas.sql`).
+>
+> **Áreas:** 12 planillas tienen `areas` (las 5 de obreros, 4 de empleados,
+> `cas-general`, `gerente-municipal` y `alcalde`); dividen la planilla en la
+> exportación Excel y alimentan el selector de Área del alta/corrección.
 
 ---
 
@@ -184,7 +200,8 @@ Reporte_Planillas/
 │   ├── index.css / App.css    Estilos globales
 │   │
 │   ├── config/
-│   │   └── planillas.js       ★ FUENTE ÚNICA DE VERDAD (19 planillas)
+│   │   ├── planillas.js       ★ FUENTE ÚNICA DE VERDAD (13 planillas)
+│   │   └── cuadrosPresupuestales.js  Datos fijos del cuadro presupuestal por planilla/área
 │   │
 │   ├── context/
 │   │   ├── AuthContext.jsx    Proveedor (AuthProvider): sesión, perfil y rol del usuario
@@ -202,7 +219,10 @@ Reporte_Planillas/
 │   │   ├── boletaPdf.js       Boleta de pago individual en PDF
 │   │   ├── periodo.js         Helpers de periodo (formatear, mes actual/siguiente, primer día)
 │   │   ├── db.js              Consultas paginadas/masivas (filtran por periodo)
-│   │   └── reporteConsolidado.js  Excel consolidado + plantilla vacía
+│   │   ├── excelEncabezado.js Hojas Excel estilizadas: encabezado institucional, filas por
+│   │   │                      área con subtotal, RESÚMEN + ESSALUD 9% + COMPROBACIÓN,
+│   │   │                      cuadro presupuestal (Siaf + fecha) y hoja "Resumen por áreas"
+│   │   └── reporteConsolidado.js  Excel consolidado (cargar datos → pedir Siaf → generar)
 │   │
 │   ├── components/
 │   │   ├── Layout.jsx         Shell: Sidebar + Header + contenido
@@ -213,7 +233,8 @@ Reporte_Planillas/
 │   │   ├── Paginacion.jsx           ★ Control de paginación reutilizable (« Anterior 1 … 4 5 6 … 20 Siguiente »)
 │   │   ├── RecordForm.jsx           Modal editar (todos obligatorios) / alta rápida, con auto-cálculo
 │   │   ├── ExcelActualizarColumna.jsx  Actualizar una columna por DNI desde Excel + plantilla (trae todas las filas)
-│   │   ├── ExcelExport.jsx          Exportar TODAS las filas a .xlsx (las trae bajo demanda)
+│   │   ├── ExcelExport.jsx          Exportar TODAS las filas a .xlsx estilizado (pide Nº Siaf por área)
+│   │   ├── SiafModal.jsx            Modal reutilizable que pide el Nº Siaf de cada área
 │   │   ├── ConfirmDialog.jsx        Modal de confirmación reutilizable
 │   │   ├── PeriodoSelector.jsx      Selector de mes/periodo (para históricos mensuales)
 │   │   └── CorregirIdentidad.jsx    Modal para corregir datos fijos en todos los meses
@@ -223,7 +244,7 @@ Reporte_Planillas/
 │       ├── Dashboard.jsx      KPIs, gráfico, resumen, tarjetas por grupo
 │       ├── PlanillaPage.jsx   Página de una planilla (orquesta todo)
 │       ├── NuevoRegistro.jsx  Alta rápida: elegir grupo → planilla → datos básicos
-│       ├── BusquedaGlobal.jsx Búsqueda en las 19 planillas + imprimir boleta
+│       ├── BusquedaGlobal.jsx Búsqueda en las 13 planillas + imprimir boleta
 │       ├── MiPerfil.jsx       Perfil propio: nombre/celular + cambiar contraseña
 │       ├── Auditoria.jsx      Historial de cambios (admin)
 │       └── Usuarios.jsx       Gestión de usuarios: crear, rol, contraseña, desactivar/activar (admin)
@@ -302,7 +323,7 @@ operaciones masivas de Excel / recálculo.
 
 > **Recordatorio:** la suscripción Realtime solo funciona si la tabla está habilitada en
 > Supabase (Database → Replication / publicación `supabase_realtime`). El
-> `_migracion_completa.sql` ya agrega las 19 tablas con `REPLICA IDENTITY FULL`.
+> `_migracion_completa.sql` ya agrega las 13 tablas con `REPLICA IDENTITY FULL`.
 
 > **Exportar Excel** y **Actualizar columna** necesitan TODOS los registros (no solo los 50
 > visibles), así que los traen **bajo demanda** al usarlos.
@@ -364,7 +385,23 @@ Se detectan tres tipos por fila:
 ### 8.4 Exportar / Actualizar por Excel
 > Como la tabla está paginada (50 filas en memoria), ambas funciones traen **todos** los
 > registros bajo demanda (`fetchAllRows`) al usarlas, para no exportar/validar solo la página visible.
-- **Exportar** (`ExcelExport`): descarga **todas** las filas como `.xlsx` con cabeceras = labels.
+- **Exportar** (`ExcelExport` + `lib/excelEncabezado.js`): descarga **todas** las filas como
+  `.xlsx` estilizado con encabezado institucional (membrete, título oficial, mes, RUC). En
+  planillas con `areas`, las filas van **agrupadas por área**, cada una con:
+  - fila `ÁREA: <nombre>` + trabajadores + `SUBTOTAL` (suma de cada columna de monto);
+  - bloque **RESÚMEN** (cada concepto de ingreso con su suma + TOTAL INGRESOS) y, un poco
+    separado, **"A ESSALUD (IPSS) (CAJA DE ENFERM. Y MATERNIDAD)"** = total de ingresos ×
+    0.09 (2 decimales) + TOTAL;
+  - bloque **COMPROBACIÓN** (TOTAL LÍQUIDO + RETENCIONES por concepto + CUOTA PATRONAL =
+    mismo 9%), que cuadra con el total del RESÚMEN;
+  - **cuadro presupuestal** del área (datos fijos de `config/cuadrosPresupuestales.js`,
+    Nº Siaf pedido en un modal antes de descargar — `SiafModal` —, montos en blanco y
+    FECHA autocompletada con el día de la descarga).
+
+  Además agrega la hoja **"Resumen por áreas"**: una fila por área con **todas** las
+  columnas de montos de la planilla y una fila TOTAL GENERAL que suma cada columna.
+  Las planillas sin áreas (Cesantes) llevan una fila TOTAL GENERAL + un bloque único
+  al final de la hoja.
 - **Actualizar columna** (`ExcelActualizarColumna`): se elige **una** columna, se sube un
   Excel con `DNI + valor`, muestra una **vista previa** (emparejados / no encontrados /
   inválidos) y hace un **UPDATE atómico por DNI** vía el RPC `actualizar_columna_planilla`.
@@ -383,11 +420,14 @@ desde el botón **Imprimir** de cada resultado de `BusquedaGlobal.jsx` (ver 8.7)
 - **Tabla resumen** por planilla con fila de TOTAL GENERAL.
 - **Tarjetas** por grupo enlazando a cada planilla.
 - Botón para generar el **Reporte Consolidado** (un Excel con una hoja por planilla +
-  hoja de resumen).
+  hoja de resumen). Al pulsarlo, primero descarga los datos de todas las planillas
+  (`cargarDatosConsolidado`) y abre `SiafModal` **agrupado por planilla** para pedir el
+  Nº Siaf de cada área con cuadro presupuestal; cada hoja sale con el mismo formato que
+  la exportación individual (áreas, resúmenes, ESSALUD, cuadros, fecha).
 - Los datos provienen del RPC `resumen_planillas()` (un solo viaje a la BD).
 
 ### 8.7 Búsqueda global (`BusquedaGlobal.jsx`)
-Busca por DNI (exacto) o nombre (ILIKE) en las 19 tablas vía el RPC
+Busca por DNI (exacto) o nombre (ILIKE) en las 13 tablas vía el RPC
 `buscar_trabajador(termino, p_periodo)` para el mes/año elegido en el
 `<input type="month">`, agrupando resultados por planilla.
 
@@ -421,7 +461,7 @@ se mantienen archivos sueltos por número.
 > **Parches sobre una BD ya instalada:** cuando un cambio de esquema afecta a una base con
 > datos, se aplica un parche puntual en vez de reinstalar. Hoy existe
 > `supabase/migracion_rename_observaciones.sql` (renombra `observaciones →
-> tipo_acto_administrativo` en las 19 tablas, idempotente, conservando los datos). El
+> tipo_acto_administrativo` en las 13 tablas, idempotente, conservando los datos). El
 > `_migracion_completa.sql` ya refleja el nombre nuevo para instalaciones desde cero.
 
 El archivo contiene, en orden:
@@ -430,16 +470,16 @@ El archivo contiene, en orden:
 |---|---|
 | Extensiones | `moddatetime` (auto `updated_at`) y `pg_trgm` (búsqueda). |
 | `perfiles` | Tabla `perfiles` (`id`, `nombre`, `celular`, `rol` con `CHECK IN ('consultor','editor','administrador')`, `created_at`) + trigger `handle_new_user` (crea el perfil al registrarse con rol por defecto `consultor`) + trigger `proteger_rol` (impide que un no-admin cambie su propio `rol`). |
-| 19 planillas | Las 19 tablas (**generadas** — cada una con `id`, `dni INTEGER UNIQUE`, `created_at`, `updated_at` y trigger de `updated_at`). |
+| 13 planillas | Las 13 tablas (**generadas** — cada una con `id`, `dni INTEGER UNIQUE`, `created_at`, `updated_at` y trigger de `updated_at`). |
 | RLS | Función `get_my_rol()` (SECURITY DEFINER) + políticas. SELECT → los 3 roles; INSERT/UPDATE/DELETE → `editor`/`administrador`. Envueltas en `(select …)` por rendimiento. |
-| Realtime | `REPLICA IDENTITY FULL` y publicación Realtime en las 19 tablas. |
-| `auditoria` | Tabla `auditoria` (FK `usuario_id` → `public.perfiles.id`) + trigger genérico en las 19 tablas. SELECT solo `administrador`. |
+| Realtime | `REPLICA IDENTITY FULL` y publicación Realtime en las 13 tablas. |
+| `auditoria` | Tabla `auditoria` (FK `usuario_id` → `public.perfiles.id`) + trigger genérico en las 13 tablas. SELECT solo `administrador`. |
 | Funciones | RPCs `resumen_planillas()` y `buscar_trabajador(termino)`. |
 | Admin | Políticas extra para que un `administrador` gestione todos los `perfiles`. |
 | Totales | Triggers `BEFORE INSERT/UPDATE` que calculan `t_ingreso/t_dsctos/t_liquido` (**generados**; 18 planillas — no `obreros_necesidad_mercado`). |
 | Índices | GIN trigram sobre `apellidos_y_nombres` (**generados**). |
 | Operaciones | RPCs atómicas `recalcular_totales(p_tabla)` y `actualizar_columna_planilla(p_tabla, p_columna, p_valores)` (autorizan a `editor`/`administrador`, con whitelist de tablas). |
-| DNI único global | `dni_registro` + vista `vw_dni_todos` (`security_invoker`) + trigger `sync_dni_registro` en las 19 tablas. |
+| DNI único global | `dni_registro` + vista `vw_dni_todos` (`security_invoker`) + trigger `sync_dni_registro` en las 13 tablas. |
 | Recarga | `NOTIFY pgrst, 'reload schema';` final para refrescar la caché de PostgREST. |
 
 > **Los totales se calculan en la base de datos.** Los triggers de totales son la
@@ -450,7 +490,7 @@ El archivo contiene, en orden:
 ### Auditoría
 La tabla `auditoria` guarda `tabla`, `registro_id`, `accion` (INSERT/UPDATE/DELETE),
 `usuario_id`, `datos_ant` y `datos_nue` (JSONB) y `created_at`. Un trigger genérico
-registra automáticamente cada cambio en las 19 tablas. Solo los administradores pueden
+registra automáticamente cada cambio en las 13 tablas. Solo los administradores pueden
 leerla (RLS).
 
 ---

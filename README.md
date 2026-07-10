@@ -1,15 +1,17 @@
 # Muni Sheets — Municipalidad Provincial de Ica
 
-Sistema web para centralizar, consultar y gestionar **19 planillas de pago**
+Sistema web para centralizar, consultar y gestionar **13 planillas de pago**
 (remuneraciones) de distintos regímenes laborales (Obreros, Empleados, CAS,
 Pensionistas y Autoridades).
 
 Permite ver cada planilla en tabla con **paginación de 50 en 50 (server-side) y refresco en
 vivo** (Realtime), búsqueda/orden y edición en línea, editar/eliminar registros con
-**cálculo automático de totales**, un **alta rápida** global (solo datos básicos + S.N.P.;
-las planillas no tienen alta propia), **exportar** y **actualizar columnas** por **Excel**,
+**cálculo automático de totales**, un **alta rápida** global (solo datos básicos + S.N.P. +
+Área; las planillas no tienen alta propia), **exportar Excel estilizado** (agrupado por
+área, con resumen de conceptos, ESSALUD 9%, comprobación y **cuadro presupuestal por área**
+con Nº Siaf pedido al descargar) y **actualizar columnas** por **Excel**,
 generar **boletas PDF** y un **reporte consolidado**, buscar a un trabajador por DNI o
-nombre en las 19 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
+nombre en las 13 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
 de cambios, **gestión de usuarios/roles**, **histórico mensual permanente** (cada mes se
 conserva; ver abajo) y actualizaciones en **tiempo real** (Supabase Realtime).
 
@@ -17,8 +19,8 @@ conserva; ver abajo) y actualizaciones en **tiempo real** (Supabase Realtime).
 
 - **React 19** + **Vite 8** + **react-router-dom 7**
 - **Tailwind CSS 3** (color institucional `primary #003366`)
-- **@tanstack/react-table** · **xlsx** · **jspdf** + **jspdf-autotable** · **recharts** · **lucide-react** · **react-hot-toast**
-- **Supabase** (PostgreSQL + Auth + Realtime + RLS + RPC) como backend
+- **@tanstack/react-table** · **xlsx-js-style** (exportes estilizados) · **xlsx** (lectura) · **jspdf** + **jspdf-autotable** · **recharts** · **lucide-react** · **react-hot-toast**
+- **Supabase** (PostgreSQL + Auth + Realtime + RLS + RPC + Edge Functions) como backend
 
 ## Puesta en marcha
 
@@ -42,7 +44,7 @@ Para instalar (o reinstalar) la base de datos, pega ese archivo completo en el
 
 Para cambios sobre una base **con datos** se usan parches puntuales (no se reinstala).
 Ejemplo: `supabase/migracion_rename_observaciones.sql` renombra la columna
-`observaciones → tipo_acto_administrativo` en las 19 tablas conservando los registros.
+`observaciones → tipo_acto_administrativo` en las 13 tablas conservando los registros.
 
 > **Realtime:** las suscripciones en vivo requieren que las tablas estén en la publicación
 > `supabase_realtime` (Database → Replication). El `_migracion_completa.sql` ya las agrega.

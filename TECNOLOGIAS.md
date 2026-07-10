@@ -42,7 +42,8 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 | Tecnología | Versión | Para qué se usa |
 |---|---|---|
 | **@tanstack/react-table** | ^8.21.3 | Renderizado de tablas (orden, filtros, edición en línea, alertas) |
-| **xlsx** (SheetJS) | ^0.18.5 | Exportar y leer archivos Excel (`.xlsx`) |
+| **xlsx-js-style** | ^1.2.0 | Exportes Excel **estilizados**: encabezado institucional, agrupación por área, resúmenes (RESÚMEN / ESSALUD 9% / COMPROBACIÓN), cuadros presupuestales y reporte consolidado |
+| **xlsx** (SheetJS) | 0.20.3 | **Lectura** de archivos Excel (actualizar columna por DNI, plantillas) |
 | **jspdf** | ^4.2.1 | Generación de PDF (boletas de pago individuales) |
 | **jspdf-autotable** | ^5.0.8 | Tablas dentro de los PDF |
 | **recharts** | ^3.8.1 | Gráficos del Dashboard (barras de líquido total por grupo) |
@@ -95,6 +96,7 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 
 - **JavaScript** (ES Modules, `type: "module"`) — lógica de la aplicación.
 - **JSX** — componentes de React.
+- **TypeScript (Deno)** — Edge Functions de Supabase (`supabase/functions/`).
 - **SQL (PostgreSQL / PL-pgSQL)** — esquema, funciones y triggers (carpeta `supabase/`).
 - **HTML / CSS** — estructura y estilos base.
 
@@ -103,6 +105,7 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 ## Arquitectura en una frase
 
 > SPA en **React + Vite** estilizada con **Tailwind**, que consume **Supabase**
-> (PostgreSQL con RLS, Auth, Realtime y funciones/triggers en SQL) como backend,
-> con exportación/actualización por **Excel**, generación de **PDF** y gráficos con
-> **Recharts**.
+> (PostgreSQL con RLS, Auth, Realtime, Edge Functions y funciones/triggers en SQL)
+> como backend, con exportación **Excel estilizada** (resúmenes por área, ESSALUD,
+> cuadros presupuestales) y actualización masiva por **Excel**, generación de **PDF**
+> y gráficos con **Recharts**.

@@ -3,13 +3,46 @@ import { fetchAllRows } from './db'
 import { PLANILLAS } from '../config/planillas'
 import { formatPeriodo } from './periodo'
 import { construirHojaPlanilla } from './excelEncabezado'
+import { getCuadroArea } from '../config/cuadrosPresupuestales'
+
+/**
+ * Trae las filas del mes de TODAS las planillas y lista, por planilla, las
+ * áreas presentes que tienen cuadro presupuestal (para pedir sus Nº Siaf
+ * antes de generar el consolidado). La clave '*' representa el cuadro único
+ * de una planilla sin áreas.
+ * @returns {Promise<Array<{ planilla, filas, areas: string[] }>>}
+ */
+export async function cargarDatosConsolidado(periodo = null) {
+  const datos = []
+  for (const planilla of PLANILLAS) {
+    // Trae todas las filas (bloques de 1000) para no truncar el consolidado
+    let filas
+    try {
+      filas = await fetchAllRows(planilla.tabla, { order: 'apellidos_y_nombres', periodo })
+    } catch {
+      filas = []
+    }
+    let areas = []
+    if (planilla.areas?.length) {
+      areas = [...new Set(filas.map((f) => String(f.area ?? '').trim()).filter(Boolean))]
+        .filter((a) => getCuadroArea(planilla.slug, a))
+        .sort((a, b) => a.localeCompare(b, 'es'))
+    } else if (filas.length && getCuadroArea(planilla.slug, null)) {
+      areas = ['*']
+    }
+    datos.push({ planilla, filas, areas })
+  }
+  return datos
+}
 
 /**
  * Descarga un Excel con una hoja por planilla + hoja de resumen, para un mes.
  * @param {Array} resumenData - datos del RPC resumen_planillas (puede ser null)
  * @param {string|null} periodo - mes 'YYYY-MM-01' a exportar (null = sin filtro)
+ * @param {Array} datos - resultado de cargarDatosConsolidado(periodo)
+ * @param {Object} siafPorPlanilla - { [slug]: { [area]: siaf } } para los cuadros
  */
-export async function generarReporteConsolidado(resumenData, periodo = null) {
+export function generarReporteConsolidado(resumenData, periodo, datos, siafPorPlanilla = {}) {
   const wb = XLSX.utils.book_new()
 
   // Hoja resumen al inicio
@@ -36,16 +69,8 @@ export async function generarReporteConsolidado(resumenData, periodo = null) {
   XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen')
 
   // Una hoja por planilla
-  for (const planilla of PLANILLAS) {
-    // Trae todas las filas (bloques de 1000) para no truncar el consolidado
-    let data
-    try {
-      data = await fetchAllRows(planilla.tabla, { order: 'apellidos_y_nombres', periodo })
-    } catch {
-      data = []
-    }
-
-    const ws = construirHojaPlanilla(planilla, data, periodo)
+  for (const { planilla, filas } of datos) {
+    const ws = construirHojaPlanilla(planilla, filas, periodo, siafPorPlanilla[planilla.slug] ?? {})
     // Nombre de hoja máx 31 chars
     XLSX.utils.book_append_sheet(wb, ws, planilla.label.slice(0, 31))
   }

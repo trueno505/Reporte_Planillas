@@ -6,8 +6,9 @@ import Layout from '../components/Layout'
 import { PLANILLAS, GRUPOS, getPlanillaByTabla } from '../config/planillas'
 import { useAuth } from '../context/auth-context'
 import { supabase } from '../lib/supabaseClient'
-import { generarReporteConsolidado } from '../lib/reporteConsolidado'
+import { cargarDatosConsolidado, generarReporteConsolidado } from '../lib/reporteConsolidado'
 import { periodoActual, formatPeriodo } from '../lib/periodo'
+import SiafModal from '../components/SiafModal'
 
 const GRUPO_ICON = {
   Obreros: '👷',
@@ -35,6 +36,8 @@ export default function Dashboard() {
   const [loadingResumen, setLoadingResumen] = useState(true)
   const [exportando, setExportando] = useState(false)
   const [periodo, setPeriodo] = useState(periodoActual())
+  // Datos ya descargados a la espera de los Nº Siaf: { datos, grupos }
+  const [siafPendiente, setSiafPendiente] = useState(null)
 
   useEffect(() => {
     setLoadingResumen(true)
@@ -65,12 +68,35 @@ export default function Dashboard() {
 
   const handleExportar = async () => {
     setExportando(true)
-    await generarReporteConsolidado(resumen, periodo)
-    setExportando(false)
+    try {
+      const datos = await cargarDatosConsolidado(periodo)
+      // Planillas con áreas que llevan cuadro presupuestal → pedir Nº Siaf.
+      const grupos = datos
+        .filter((d) => d.areas.length > 0)
+        .map((d) => ({ id: d.planilla.slug, label: d.planilla.label, areas: d.areas }))
+      if (grupos.length > 0) {
+        setSiafPendiente({ datos, grupos })
+      } else {
+        generarReporteConsolidado(resumen, periodo, datos)
+      }
+    } finally {
+      setExportando(false)
+    }
   }
 
   return (
     <Layout>
+      {siafPendiente && (
+        <SiafModal
+          titulo="Nº Siaf por área — Reporte consolidado"
+          grupos={siafPendiente.grupos}
+          onCancel={() => setSiafPendiente(null)}
+          onConfirm={(valores) => {
+            generarReporteConsolidado(resumen, periodo, siafPendiente.datos, valores)
+            setSiafPendiente(null)
+          }}
+        />
+      )}
       <div className="max-w-5xl mx-auto">
         {/* Cabecera */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
