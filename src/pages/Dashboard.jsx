@@ -88,7 +88,7 @@ export default function Dashboard() {
     <Layout>
       {siafPendiente && (
         <SiafModal
-          titulo="Nº Siaf por área — Reporte consolidado"
+          titulo="Nº Siaf por planilla — Reporte consolidado"
           grupos={siafPendiente.grupos}
           onCancel={() => setSiafPendiente(null)}
           onConfirm={(valores) => {

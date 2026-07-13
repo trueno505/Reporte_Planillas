@@ -96,8 +96,9 @@ del **cuadro presupuestal** de cada área (Sec. Func., Programa, Función, Meta,
 Finalidad, Fte. Financ., Rubros y Clasificadores) por planilla, usados en la
 exportación Excel. El helper `getCuadroArea(slug, area)` los resuelve tolerando
 diferencias de tildes/mayúsculas; el Nº Siaf no es fijo: se pide al usuario al
-descargar (solo admite dígitos) y los montos/fecha del cuadro quedan para llenar
-a mano (la fecha se autocompleta con el día de la descarga).
+descargar — uno por planilla, solo dígitos, aplicado automáticamente a todas sus
+áreas — y los montos/fecha del cuadro quedan para llenar a mano (la fecha se
+autocompleta con el día de la descarga).
 
 Cada columna tiene un **tipo** que determina su comportamiento en toda la app:
 
@@ -234,7 +235,7 @@ Reporte_Planillas/
 │   │   ├── RecordForm.jsx           Modal editar (todos obligatorios) / alta rápida, con auto-cálculo
 │   │   ├── ExcelActualizarColumna.jsx  Actualizar una columna por DNI desde Excel + plantilla (trae todas las filas)
 │   │   ├── ExcelExport.jsx          Exportar TODAS las filas a .xlsx estilizado (pide Nº Siaf por área)
-│   │   ├── SiafModal.jsx            Modal reutilizable que pide el Nº Siaf de cada área (solo acepta números)
+│   │   ├── SiafModal.jsx            Modal reutilizable que pide un Nº Siaf por planilla (solo números; se aplica a todas sus áreas)
 │   │   ├── ConfirmDialog.jsx        Modal de confirmación reutilizable
 │   │   ├── PeriodoSelector.jsx      Selector de mes/periodo (para históricos mensuales)
 │   │   └── CorregirIdentidad.jsx    Modal para corregir datos fijos en todos los meses
@@ -395,8 +396,9 @@ Se detectan tres tipos por fila:
   - bloque **COMPROBACIÓN** (TOTAL LÍQUIDO + RETENCIONES por concepto + CUOTA PATRONAL =
     mismo 9%), que cuadra con el total del RESÚMEN;
   - **cuadro presupuestal** del área (datos fijos de `config/cuadrosPresupuestales.js`,
-    Nº Siaf pedido en un modal antes de descargar — `SiafModal`, solo acepta números —,
-    montos en blanco y FECHA autocompletada con el día de la descarga).
+    Nº Siaf pedido en un modal antes de descargar — `SiafModal`, uno por planilla, solo
+    números, replicado en todas sus áreas —, montos en blanco y FECHA autocompletada
+    con el día de la descarga).
 
   Además agrega la hoja **"Resumen por áreas"**: una fila por área con **todas** las
   columnas de montos de la planilla y una fila TOTAL GENERAL que suma cada columna.
@@ -421,9 +423,9 @@ desde el botón **Imprimir** de cada resultado de `BusquedaGlobal.jsx` (ver 8.7)
 - **Tarjetas** por grupo enlazando a cada planilla.
 - Botón para generar el **Reporte Consolidado** (un Excel con una hoja por planilla +
   hoja de resumen). Al pulsarlo, primero descarga los datos de todas las planillas
-  (`cargarDatosConsolidado`) y abre `SiafModal` **agrupado por planilla** para pedir el
-  Nº Siaf de cada área con cuadro presupuestal; cada hoja sale con el mismo formato que
-  la exportación individual (áreas, resúmenes, ESSALUD, cuadros, fecha).
+  (`cargarDatosConsolidado`) y abre `SiafModal` para pedir **un Nº Siaf por planilla**
+  (aplicado a todas sus áreas con cuadro presupuestal); cada hoja sale con el mismo
+  formato que la exportación individual (áreas, resúmenes, ESSALUD, cuadros, fecha).
 - Los datos provienen del RPC `resumen_planillas()` (un solo viaje a la BD).
 
 ### 8.7 Búsqueda global (`BusquedaGlobal.jsx`)
