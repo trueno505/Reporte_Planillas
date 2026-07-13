@@ -488,10 +488,15 @@ El archivo contiene, en orden:
 > cliente lo sobrescribe el trigger al guardar.
 
 ### Auditoría
-La tabla `auditoria` guarda `tabla`, `registro_id`, `accion` (INSERT/UPDATE/DELETE),
-`usuario_id`, `datos_ant` y `datos_nue` (JSONB) y `created_at`. Un trigger genérico
-registra automáticamente cada cambio en las 13 tablas. Solo los administradores pueden
-leerla (RLS).
+La tabla `auditoria` guarda `tabla`, `registro_id`, `accion`
+(INSERT/UPDATE/DELETE/GENERACION), `usuario_id`, `datos_ant` y `datos_nue` (JSONB) y
+`created_at`. Un trigger genérico registra automáticamente cada cambio en las 13 tablas.
+Solo los administradores pueden leerla (RLS).
+
+**GENERACION** distingue las filas clonadas por "Generar mes siguiente" de las altas
+manuales (INSERT): `abrir_periodo` marca la transacción con el GUC
+`app.generando_mes = '1'` y el trigger `registrar_auditoria` registra esos INSERT con
+`accion = 'GENERACION'` (parche `migracion_auditoria_generacion.sql`).
 
 ---
 

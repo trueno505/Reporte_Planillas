@@ -104,7 +104,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 
 **BusquedaGlobal** searches all 13 planillas by DNI (exact) or name (ILIKE) via the `buscar_trabajador(termino, p_periodo)` RPC, for the month/year picked in the `<input type="month">`. Each result row has an **Imprimir** (boleta PDF) button: since the search RPC returns only DNI, name and `t_liquido`, the button first fetches the **full row** from that worker's own table (`getPlanillaByTabla(tabla)` → `supabase.from(tabla).select('*').eq('dni', …).eq('periodo', …).single()`) and then calls `generarBoletaPdf(planilla, fila)` — so the boleta can be printed without navigating to the planilla. A per-row spinner (`boletaCargando` keyed by `tabla-dni`) disables that button while it loads; errors surface via `react-hot-toast`.
 
-**Auditoria** shows the change log from `public.auditoria` with filters by table and action (INSERT/UPDATE/DELETE), joined with `perfiles`.
+**Auditoria** shows the change log from `public.auditoria` with filters by table and action (INSERT/UPDATE/DELETE/GENERACION), joined with `perfiles`. **GENERACION** marks the rows cloned by "Generar mes siguiente", distinguishing them from manual creates: `abrir_periodo` sets the transaction GUC `app.generando_mes = '1'` and the `registrar_auditoria` trigger records those INSERTs as `GENERACION` (patch `supabase/migracion_auditoria_generacion.sql`, folded into `_migracion_completa.sql`).
 
 **Usuarios** allows admins to (a) **create accounts in-app** via a "Nuevo usuario" modal — nombre, email, rol, and an admin-set initial password — (b) assign each user one of the three roles (`consultor`, `editor`, `administrador`) via a dropdown, (c) **reset any user's password** via a "Contraseña" button per row (modal with generate/show controls), and (d) **deactivate / reactivate** any account via a per-row toggle (an **Estado** column shows Activa/Desactivada). **Accounts are never deleted** — deactivating bans the user (cannot log in) while keeping its profile and audit trail; reactivating restores access. Admins cannot change their own role nor deactivate their own account (guards against lock-out). Account creation calls the `crear-usuario` Edge Function; password-reset, listing and (de)activation call the `admin-usuarios` Edge Function (`accion: 'listar' | 'cambiar_password' | 'desactivar' | 'activar'`) — both via `supabase.functions.invoke` and both verify the caller is `administrador` server-side with the service-role key. The user is created already confirmed (`email_confirm: true`) so it can log in immediately, and can later change its password from `/perfil`. (Inviting from the Supabase panel still works as a fallback and lands the profile here as `consultor`.)
 
@@ -221,7 +221,8 @@ Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
   `actualizar_columna_planilla(p_tabla, p_periodo, p_columna, p_valores)`. Nuevas:
   `abrir_periodo(p_tabla, p_periodo)` (genera el mes clonando identidad; admin/editor; **solo
   permite el mes inmediatamente siguiente** al último existente, `MAX(periodo) + 1 mes` —
-  rechaza saltos como julio→diciembre incluso si se llama al RPC directamente),
+  rechaza saltos como julio→diciembre incluso si se llama al RPC directamente; las filas
+  clonadas se auditan como `GENERACION`, no como `INSERT`),
   `periodos_planilla(p_tabla)` (lista de meses para el selector), `corregir_identidad(p_tabla,
   p_dni, p_datos)` (corrige los campos fijos —incluida `area`— en **todos** los meses, vía el bypass).
 - **Frontend**: `src/lib/periodo.js` (helpers `formatPeriodo`/`periodoActual`/`siguientePeriodo`/`aPrimerDiaMes`),

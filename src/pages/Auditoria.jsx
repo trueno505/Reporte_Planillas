@@ -10,6 +10,7 @@ const ACCION_COLOR = {
   INSERT: 'bg-green-100 text-green-700',
   UPDATE: 'bg-blue-100 text-blue-700',
   DELETE: 'bg-red-100 text-red-700',
+  GENERACION: 'bg-purple-100 text-purple-700',
 }
 
 function fmtFecha(s) {
@@ -87,6 +88,7 @@ export default function Auditoria() {
             <option value="INSERT">INSERT (creación)</option>
             <option value="UPDATE">UPDATE (edición)</option>
             <option value="DELETE">DELETE (eliminación)</option>
+            <option value="GENERACION">GENERACION (nuevo mes)</option>
           </select>
           <span className="text-sm text-gray-500 self-center ml-auto">
             {filtrados.length} registro{filtrados.length !== 1 ? 's' : ''}
