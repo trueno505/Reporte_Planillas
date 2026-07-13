@@ -9,7 +9,7 @@ vivo** (Realtime), búsqueda/orden y edición en línea, editar/eliminar registr
 **cálculo automático de totales**, un **alta rápida** global (solo datos básicos + S.N.P. +
 Área; las planillas no tienen alta propia), **exportar Excel estilizado** (agrupado por
 área, con resumen de conceptos, ESSALUD 9%, comprobación y **cuadro presupuestal por área**
-con Nº Siaf pedido al descargar) y **actualizar columnas** por **Excel**,
+con Nº Siaf —solo números— pedido al descargar) y **actualizar columnas** por **Excel**,
 generar **boletas PDF** y un **reporte consolidado**, buscar a un trabajador por DNI o
 nombre en las 13 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
 de cambios, **gestión de usuarios/roles**, **histórico mensual permanente** (cada mes se

@@ -132,7 +132,7 @@ export default function Auditoria() {
                     )
                   })}
                 </tbody>
-              </table>
+              </table>  
             </div>
           </div>
         )}

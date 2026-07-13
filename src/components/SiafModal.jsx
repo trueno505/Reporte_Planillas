@@ -8,7 +8,7 @@ import { Download, X } from 'lucide-react'
  * La clave de área '*' representa el cuadro único de una planilla sin áreas
  * (se muestra con el label de la planilla).
  * `onConfirm` recibe { [id]: { [area]: siaf } }; los campos vacíos salen en
- * blanco en el Excel.
+ * blanco en el Excel. El input solo admite dígitos.
  */
 export default function SiafModal({ grupos, onConfirm, onCancel, titulo = 'Nº Siaf por área' }) {
   const [valores, setValores] = useState({})
@@ -43,8 +43,9 @@ export default function SiafModal({ grupos, onConfirm, onCancel, titulo = 'Nº S
                   </label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     value={valores[g.id]?.[a] ?? ''}
-                    onChange={(e) => setVal(g.id, a, e.target.value)}
+                    onChange={(e) => setVal(g.id, a, e.target.value.replace(/\D/g, ''))}
                     placeholder="Nº Siaf"
                     className="w-32 px-2 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
