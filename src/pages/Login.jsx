@@ -24,11 +24,13 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-surface flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-8">
-        {/* Escudo institucional */}
+        {/* Logo institucional */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary mb-3">
-            <span className="text-white font-bold text-2xl">MPI</span>
-          </div>
+          <img
+            src="/muni_sheets.png"
+            alt="Muni Sheets"
+            className="w-24 mx-auto rounded-2xl shadow-sm mb-3"
+          />
           <h1 className="text-primary font-bold text-xl leading-tight">Municipalidad Provincial de Ica</h1>
           <p className="text-gray-500 text-sm mt-1">Muni Sheets</p>
         </div>

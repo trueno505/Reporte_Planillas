@@ -25,9 +25,16 @@ export default function Sidebar({ open, onClose }) {
         className={`fixed top-0 left-0 h-full w-64 bg-primary z-30 flex flex-col transition-transform duration-200
           ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:z-auto`}
       >
-        <div className="px-5 py-5 border-b border-white/10">
-          <p className="text-white font-bold text-sm leading-tight">Municipalidad Provincial de Ica</p>
-          <p className="text-blue-200 text-xs mt-0.5">Muni Sheets</p>
+        <div className="px-5 py-5 border-b border-white/10 flex items-center gap-3">
+          <img
+            src="/muni_sheets.png"
+            alt="Muni Sheets"
+            className="w-10 h-10 rounded-lg object-cover shrink-0"
+          />
+          <div>
+            <p className="text-white font-bold text-sm leading-tight">Municipalidad Provincial de Ica</p>
+            <p className="text-blue-200 text-xs mt-0.5">Muni Sheets</p>
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 space-y-0.5 px-2">
