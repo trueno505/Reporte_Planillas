@@ -388,7 +388,8 @@ Se detectan tres tipos por fila:
 > registros bajo demanda (`fetchAllRows`) al usarlas, para no exportar/validar solo la página visible.
 - **Exportar** (`ExcelExport` + `lib/excelEncabezado.js`): descarga **todas** las filas como
   `.xlsx` estilizado con encabezado institucional (membrete, título oficial, mes, RUC). En
-  planillas con `areas`, las filas van **agrupadas por área**, cada una con:
+  planillas con `areas`, las filas van **agrupadas por área** (la columna `area` por
+  trabajador se excluye de la hoja: la banda de área ya la indica), cada una con:
   - fila `ÁREA: <nombre>` + trabajadores + `SUBTOTAL` (suma de cada columna de monto);
   - bloque **RESÚMEN** (cada concepto de ingreso con su suma + TOTAL INGRESOS) y, un poco
     separado, **"A ESSALUD (IPSS) (CAJA DE ENFERM. Y MATERNIDAD)"** = total de ingresos ×

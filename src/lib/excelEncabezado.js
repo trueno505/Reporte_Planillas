@@ -340,7 +340,11 @@ function escribirBloqueArea(ws, planilla, rows, r0, merges, area, siaf, periodo)
  * @param {Object} siafPorArea - Nº Siaf por área (clave '*' para planillas sin áreas)
  */
 export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorArea = {}) {
-  const columnas = planilla.columnas
+  // Las filas ya salen agrupadas bajo su banda "ÁREA: …", así que la columna
+  // 'area' por trabajador es redundante y se excluye de la hoja.
+  const columnas = planilla.areas?.length
+    ? planilla.columnas.filter((c) => c.key !== 'area')
+    : planilla.columnas
   const nCols = columnas.length
   const ultima = nCols - 1
   const titulo = planilla.titulo ?? planilla.label
