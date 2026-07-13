@@ -150,7 +150,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3 col-span-2 sm:col-span-1">
-            <span className="text-blue-600 font-bold text-[19px] leading-none select-none">S/</span>
+            <img src="/icono_moneda.png" alt="" className="w-[22px] h-[22px] object-contain shrink-0" />
             <div>
               {loadingResumen ? (
                 <Loader2 size={20} className="animate-spin text-gray-400" />
