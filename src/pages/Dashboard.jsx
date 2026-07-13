@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Users, FileText, DollarSign, Download, Loader2 } from 'lucide-react'
+import { Users, FileText, Download, Loader2 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
@@ -150,7 +150,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3 col-span-2 sm:col-span-1">
-            <DollarSign size={22} className="text-blue-600" />
+            <span className="text-blue-600 font-bold text-[19px] leading-none select-none">S/</span>
             <div>
               {loadingResumen ? (
                 <Loader2 size={20} className="animate-spin text-gray-400" />
