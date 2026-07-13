@@ -27,9 +27,9 @@ export default function Login() {
         {/* Logo institucional */}
         <div className="text-center mb-6">
           <img
-            src="/muni_sheets.png"
+            src="/muni_sheets_icon.png"
             alt="Muni Sheets"
-            className="w-24 mx-auto rounded-2xl shadow-sm mb-3"
+            className="w-20 mx-auto mb-3"
           />
           <h1 className="text-primary font-bold text-xl leading-tight">Municipalidad Provincial de Ica</h1>
           <p className="text-gray-500 text-sm mt-1">Muni Sheets</p>

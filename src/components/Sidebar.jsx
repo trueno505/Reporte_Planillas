@@ -27,9 +27,9 @@ export default function Sidebar({ open, onClose }) {
       >
         <div className="px-5 py-5 border-b border-white/10 flex items-center gap-3">
           <img
-            src="/muni_sheets.png"
+            src="/muni_sheets_icon_blanco.png"
             alt="Muni Sheets"
-            className="w-10 h-10 rounded-lg object-cover shrink-0"
+            className="w-9 h-9 object-contain shrink-0"
           />
           <div>
             <p className="text-white font-bold text-sm leading-tight">Municipalidad Provincial de Ica</p>
