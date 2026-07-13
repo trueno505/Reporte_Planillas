@@ -119,14 +119,14 @@
     <h1>Manual de Usuario</h1>
     <p style="font-size:21px;margin-top:8px;color:#e9cf72;font-weight:700">Roles Consultor y Editor</p>
     <p style="max-width:620px;margin-top:14px">
-      Guía completa y detallada para el uso diario del sistema: consultar las 19 planillas,
+      Guía completa y detallada para el uso diario del sistema: consultar las 13 planillas,
       buscar trabajadores, emitir boletas y reportes (Consultor), y además registrar, editar
       y actualizar datos de forma masiva (Editor). Todas las capturas provienen del sistema real.
     </p>
     <div class="meta">
       <div>Aplicación<b>Muni Sheets</b></div>
       <div>Dirigido a<b>Personal con rol Consultor o Editor</b></div>
-      <div>Versión<b>1.0 — Julio 2026</b></div>
+      <div>Versión<b>1.1 — Julio 2026</b></div>
     </div>
   </div>
   <div class="pfoot"><span>Muni Sheets · MPI</span><span>Uso interno</span></div>
@@ -169,7 +169,7 @@
   <div class="kicker">Introducción</div>
   <h2><span class="num">1</span>¿Qué es Muni Sheets y qué puede hacer cada rol?</h2>
   <p><b>Muni Sheets</b> es el sistema web de la Municipalidad Provincial de Ica que centraliza
-  las <b>19 planillas de pago</b> (Obreros, Empleados, CAS, Pensionistas y Autoridades) en una
+  las <b>13 planillas de pago</b> (Obreros, Empleados, CAS, Pensionistas y Autoridades) en una
   sola plataforma, con cálculo automático de totales, histórico mensual y control de acceso por roles.</p>
   <p>Este manual cubre los dos roles operativos:</p>
   <div style="margin:10px 0">
@@ -180,8 +180,8 @@
   <table>
     <thead><tr><th>Acción</th><th style="width:90px;text-align:center">Consultor</th><th style="width:90px;text-align:center">Editor</th></tr></thead>
     <tbody>
-      <tr><td>Ver el Panel de Planillas y las 19 planillas</td><td class="check">✔</td><td class="check">✔</td></tr>
-      <tr><td>Buscar dentro de una planilla y en las 19 a la vez (búsqueda global)</td><td class="check">✔</td><td class="check">✔</td></tr>
+      <tr><td>Ver el Panel de Planillas y las 13 planillas</td><td class="check">✔</td><td class="check">✔</td></tr>
+      <tr><td>Buscar dentro de una planilla y en las 13 a la vez (búsqueda global)</td><td class="check">✔</td><td class="check">✔</td></tr>
       <tr><td>Consultar meses anteriores (histórico)</td><td class="check">✔</td><td class="check">✔</td></tr>
       <tr><td>Descargar boletas de pago en PDF</td><td class="check">✔</td><td class="check">✔</td></tr>
       <tr><td>Exportar planillas a Excel · Reporte consolidado</td><td class="check">✔</td><td class="check">✔</td></tr>
@@ -241,13 +241,13 @@
   <ul class="b">
     <li><b>Barra superior:</b> tu nombre y tu rol (etiqueta gris «consultor» o dorada «editor»),
         y el botón para cerrar sesión.</li>
-    <li><b>Menú lateral izquierdo:</b> Inicio, Búsqueda global, Mi perfil y las 19 planillas
+    <li><b>Menú lateral izquierdo:</b> Inicio, Búsqueda global, Mi perfil y las 13 planillas
         agrupadas en 5 categorías (Obreros, Empleados, CAS, Pensionistas, Autoridades).
         Cada grupo se despliega o contrae al hacer clic.</li>
     <li><b>Indicadores:</b> número de planillas, total de trabajadores y total a pagar del mes.</li>
     <li><b>Gráfico de barras:</b> total líquido por grupo laboral.</li>
     <li><b>Resumen por planilla:</b> tabla con trabajadores, ingresos, descuentos y líquido de
-        cada una de las 19 planillas. El nombre de cada planilla es un enlace directo.</li>
+        cada una de las 13 planillas. El nombre de cada planilla es un enlace directo.</li>
     <li><b>Selector «Mes a consultar»:</b> cambia todo el panel a un mes anterior (ver sección 6).</li>
     <li><b>Botón «Reporte consolidado»:</b> descarga un Excel con todas las planillas del mes (sección 9).</li>
   </ul>
@@ -305,6 +305,12 @@
     <li>Haz clic de nuevo para invertir a <b>descendente</b>. Las flechas del encabezado
         indican el orden activo.</li>
   </ul>
+  <h3>Filtrar por área</h3>
+  <ul class="b">
+    <li>En las planillas divididas por <b>áreas</b> (actividades), un selector junto a la búsqueda
+        permite ver solo los trabajadores de un área. Elige <b class="ui">Todas las áreas</b> para
+        quitar el filtro.</li>
+  </ul>
   <div class="tip"><b>Búsqueda por DNI:</b> con solo dígitos el sistema busca el DNI exacto
   además del nombre — útil cuando conoces el documento del trabajador.</div>
   <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 7</span></div>
@@ -342,7 +348,7 @@
   <div class="kicker">Parte A · Funciones de consulta <span class="badge ce">consultor y editor</span></div>
   <h2><span class="num">7</span>Búsqueda global: encontrar a cualquier trabajador</h2>
   <p>¿No sabes en qué planilla está una persona? La <b>búsqueda global</b> consulta las
-  <b>19 planillas a la vez</b>.</p>
+  <b>13 planillas a la vez</b>.</p>
   <ol class="steps">
     <li>En el menú lateral entra a <b class="ui">Búsqueda global</b>.</li>
     <li>Elige el <b>mes</b> a consultar en el selector de la izquierda.</li>
@@ -380,17 +386,22 @@
   <h2 style="margin-top:22px"><span class="num">9</span>Exportar a Excel y Reporte consolidado</h2>
   <h3>Exportar una planilla</h3>
   <ol class="steps">
-    <li>Abre la planilla y el mes que necesitas.</li>
-    <li>Pulsa <b class="ui">Exportar Excel</b> (barra superior de la planilla).</li>
-    <li>Se descarga un archivo <b>.xlsx</b> con <b>todos los registros del mes</b> (no solo la
-        página visible), con las columnas en el mismo orden de la tabla.</li>
+    <li>Abre la planilla y el mes que necesitas y pulsa <b class="ui">Exportar Excel</b>.</li>
+    <li>Si la planilla tiene <b>cuadro presupuestal</b>, una ventana pide el <b>Nº Siaf</b> de cada
+        área — el campo <b>solo acepta números</b> y puede quedar en blanco. Pulsa <b class="ui">Descargar</b>.</li>
+    <li>Se descarga un <b>.xlsx</b> con formato institucional (membrete, título oficial y mes):
+        los trabajadores van <b>agrupados por área</b> con subtotales, y cada área lleva su
+        <b>resumen por concepto</b>, el aporte a <b>ESSALUD (9%)</b>, la <b>comprobación</b> y su
+        <b>cuadro presupuestal</b>. Al final se agrega la hoja <b>«Resumen por áreas»</b>.</li>
   </ol>
   <h3>Reporte consolidado (todas las planillas)</h3>
   <ol class="steps">
-    <li>Ve a <b class="ui">Inicio</b> (Panel de Planillas) y elige el mes.</li>
-    <li>Pulsa <b class="ui">Reporte consolidado</b> (esquina superior derecha).</li>
-    <li>Se descarga un Excel de <b>varias hojas</b>: un resumen general y una hoja por planilla
-        con sus trabajadores del mes.</li>
+    <li>Ve a <b class="ui">Inicio</b> (Panel de Planillas), elige el mes y pulsa
+        <b class="ui">Reporte consolidado</b> (esquina superior derecha).</li>
+    <li>Ingresa el <b>Nº Siaf</b> de cada área, agrupado por planilla (la misma ventana que en la
+        exportación individual), y pulsa <b class="ui">Descargar</b>.</li>
+    <li>Se descarga un Excel de <b>varias hojas</b>: una por planilla con sus trabajadores del mes,
+        con el mismo formato institucional de la exportación individual.</li>
   </ol>
   <div class="tip"><b>Ambas descargas están disponibles para los dos roles</b> — exportar no
   modifica ningún dato.</div>
@@ -486,13 +497,15 @@
   <h2><span class="num">12</span>Nuevo registro: asistente de 3 pasos (2/2)</h2>
   <h3>Paso 3 — Datos básicos del trabajador</h3>
   <ol class="steps">
-    <li>Completa los <b>5 datos de identidad</b>, todos obligatorios:
+    <li>Completa los <b>datos de identidad</b>, todos obligatorios:
       <ul class="b">
         <li><b>DNI</b> — solo números; no puede repetirse en otra planilla el mismo mes.</li>
         <li><b>Apellidos y Nombres</b> — nombre completo del trabajador.</li>
         <li><b>Fecha de Ingreso</b> — usa el calendario del campo.</li>
         <li><b>S.N.P.</b> — elige <b>ONP</b> o <b>AFP</b>; si eliges AFP aparece un segundo
             selector con las 4 AFP (Integra, Prima, Profuturo, Habitat).</li>
+        <li><b>Área</b> — actividad a la que pertenece el trabajador (lista desplegable;
+            solo aparece en las planillas divididas por áreas).</li>
         <li><b>Tipo de acto administrativo</b> — documento que sustenta el alta
             (ej. Resolución de Alcaldía N° 123-2026).</li>
       </ul>
@@ -500,12 +513,12 @@
     <li>Pulsa <b class="ui">Crear</b>. El trabajador queda registrado en el <b>mes abierto</b>
         de esa planilla.</li>
   </ol>
-  <img class="shot" src="assets/editor-nuevo-paso3.png" alt="Nuevo registro - paso 3" />
+  <img class="shot" style="max-width:86%;margin-left:auto;margin-right:auto" src="assets/editor-nuevo-paso3.png" alt="Nuevo registro - paso 3" />
   <p class="cap">Paso 3: formulario de datos básicos ya completado, listo para «Crear».</p>
   <div class="info"><b>¿Y los montos?</b> El alta solo registra la identidad. Las remuneraciones y
   descuentos quedan <b>en blanco</b> para completarlos después con <b>Editar</b> (sección 13) o con la
   <b>carga masiva por Excel</b> (sección 16).</div>
-  <div class="warn"><b>DNI duplicado:</b> si el DNI ya existe en cualquiera de las 19 planillas en ese
+  <div class="warn"><b>DNI duplicado:</b> si el DNI ya existe en cualquiera de las 13 planillas en ese
   mes, el sistema rechazará el alta. Es una protección para que nadie cobre dos veces.</div>
   <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 14</span></div>
 </section>
@@ -517,8 +530,8 @@
   <ol class="steps">
     <li>Abre la planilla en su <b>mes abierto</b> y ubica al trabajador (usa la búsqueda si es necesario).</li>
     <li>Pulsa <b class="ui">Editar</b> en su fila (o haz <b>doble clic</b> sobre una celda).</li>
-    <li>Se abre el formulario con todas las columnas de la planilla. Los <b>5 datos de identidad</b>
-        (DNI, nombres, fecha, S.N.P., tipo de acto) aparecen <b>bloqueados con la marca «(fijo)»</b> —
+    <li>Se abre el formulario con todas las columnas de la planilla. Los <b>datos de identidad</b>
+        (DNI, nombres, fecha, S.N.P., área, tipo de acto) aparecen <b>bloqueados con la marca «(fijo)»</b> —
         se corrigen con otro procedimiento (sección 14).</li>
     <li>Completa o corrige los <b>ingresos y descuentos</b>. Mientras escribes, los tres totales
         (<b>T. Ingreso, T. Descuentos, T. Líquido</b>) se <b>recalculan solos</b> — no los digites.</li>
@@ -538,15 +551,17 @@
 <section class="page">
   <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
   <h2><span class="num">14</span>Corregir datos fijos (identidad del trabajador)</h2>
-  <p>Los 5 datos de identidad se mantienen iguales en todos los meses del histórico. Por eso no se
+  <p>Los datos de identidad se mantienen iguales en todos los meses del histórico. Por eso no se
   editan mes a mes: se corrigen <b>una sola vez y en todos los meses a la vez</b>, para que el
   histórico quede consistente.</p>
   <ol class="steps">
     <li>Abre la edición del trabajador (sección 13).</li>
     <li>Pulsa <b class="ui">Corregir datos fijos</b> (botón ámbar, abajo a la izquierda del formulario).</li>
-    <li>Se abre una ventana con los 5 campos de identidad ahora <b>editables</b>: DNI,
-        Apellidos y Nombres, Fecha de Ingreso, S.N.P. y Tipo de acto administrativo.</li>
-    <li>Corrige lo necesario (por ejemplo, un apellido mal escrito o un DNI mal digitado).</li>
+    <li>Se abre una ventana con los campos de identidad ahora <b>editables</b>:
+        Apellidos y Nombres, Fecha de Ingreso, S.N.P., Área (si la planilla la tiene, como lista
+        desplegable) y Tipo de acto administrativo. El <b>DNI</b> no se cambia desde aquí:
+        es el dato que identifica al trabajador.</li>
+    <li>Corrige lo necesario (por ejemplo, un apellido mal escrito o una fecha errada).</li>
     <li>Confirma. El cambio se aplica a <b>todos los meses</b> del trabajador en esa planilla:
         el histórico completo queda corregido.</li>
   </ol>
@@ -650,8 +665,8 @@
   <div class="kicker">Parte B · Funciones de edición <span class="badge e">solo editor</span></div>
   <h2><span class="num">18</span>Generar el mes siguiente</h2>
   <p>Al cerrar un ciclo de pago, el editor crea la planilla del mes próximo. El sistema copia la
-  <b>identidad</b> de todos los trabajadores (DNI, nombres, fecha de ingreso, S.N.P., tipo de acto)
-  y deja los <b>montos en blanco</b> para el nuevo ciclo.</p>
+  <b>identidad</b> de todos los trabajadores (DNI, nombres, fecha de ingreso, S.N.P., área, tipo
+  de acto) y deja los <b>montos en blanco</b> para el nuevo ciclo.</p>
   <ol class="steps">
     <li>Abre la planilla en su mes abierto (el más reciente).</li>
     <li>Pulsa <b class="ui">Generar mes siguiente</b> (botón azul de la barra).</li>
@@ -664,9 +679,11 @@
   <img class="shot" src="assets/editor-generarmes.png" alt="Confirmación de generar mes siguiente" />
   <p class="cap">Confirmación de «Generar mes siguiente»: Agosto 2026 se creará copiando la identidad
   de los trabajadores de Julio 2026.</p>
-  <div class="warn"><b>Hazlo una sola vez por mes y por planilla.</b> Tras generar el nuevo mes,
-  el anterior queda cerrado (solo lectura). Si un trabajador ya no continúa, elimínalo del nuevo
-  mes (sección 15); si ingresó uno nuevo, créalo con el asistente (sección 12).</div>
+  <div class="warn"><b>Hazlo una sola vez por mes y por planilla.</b> El sistema solo permite
+  generar el <b>mes inmediatamente siguiente</b> al último existente (no se pueden saltar meses).
+  Tras generar el nuevo mes, el anterior queda cerrado (solo lectura). Si un trabajador ya no
+  continúa, elimínalo del nuevo mes (sección 15); si ingresó uno nuevo, créalo con el asistente
+  (sección 12).</div>
   <div class="pfoot"><span>Muni Sheets · MPI</span><span>Manual de Usuario · pág. 20</span></div>
 </section>
 
