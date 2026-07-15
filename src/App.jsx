@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
+import Restablecer from './pages/Restablecer'
 import Dashboard from './pages/Dashboard'
 import PlanillaPage from './pages/PlanillaPage'
 import NuevoRegistro from './pages/NuevoRegistro'
@@ -18,6 +19,7 @@ export default function App() {
         <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/restablecer" element={<Restablecer />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/nuevo-registro" element={<ProtectedRoute><NuevoRegistro /></ProtectedRoute>} />
           <Route path="/planilla/:slug" element={<ProtectedRoute><PlanillaPage /></ProtectedRoute>} />

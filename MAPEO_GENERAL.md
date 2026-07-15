@@ -241,7 +241,8 @@ Reporte_Planillas/
 │   │   └── CorregirIdentidad.jsx    Modal para corregir datos fijos en todos los meses
 │   │
 │   └── pages/
-│       ├── Login.jsx          Inicio de sesión (email/contraseña)
+│       ├── Login.jsx          Inicio de sesión (email/contraseña) + solicitar recuperación de contraseña
+│       ├── Restablecer.jsx    Definir nueva contraseña desde el enlace del correo de recuperación
 │       ├── Dashboard.jsx      KPIs, gráfico, resumen, tarjetas por grupo
 │       ├── PlanillaPage.jsx   Página de una planilla (orquesta todo)
 │       ├── NuevoRegistro.jsx  Alta rápida: elegir grupo → planilla → datos básicos
@@ -278,6 +279,7 @@ Reporte_Planillas/
 | Página | Ruta | Acceso |
 |---|---|---|
 | `Login` | `/login` | Público |
+| `Restablecer` | `/restablecer` | Público (requiere la sesión temporal del enlace de recuperación) |
 | `Dashboard` | `/dashboard` | Cualquier usuario autenticado |
 | `PlanillaPage` | `/planilla/:slug` | Cualquier usuario autenticado |
 | `BusquedaGlobal` | `/buscar` | Cualquier usuario autenticado |
@@ -286,11 +288,19 @@ Reporte_Planillas/
 | `Usuarios` | `/usuarios` | **Solo administrador** |
 | (cualquier otra) | `*` | Redirige a `/dashboard` |
 
-Todas las rutas (salvo `/login`) están envueltas en `<ProtectedRoute>`, que muestra un
+Todas las rutas (salvo `/login` y `/restablecer`) están envueltas en `<ProtectedRoute>`, que muestra un
 spinner mientras carga la sesión y redirige a `/login` si no hay sesión. El estado
 `loading` de `AuthContext` permanece activo **hasta que el perfil (rol) del usuario se
 resuelve**, de modo que las páginas que dependen del rol (p. ej. `/nuevo-registro`) no
 redirigen por error al cargarse por URL directa o al refrescar.
+
+**Recuperación de contraseña**: `Login` ofrece «¿Olvidaste tu contraseña?», que llama a
+`supabase.auth.resetPasswordForEmail(email, { redirectTo: origin + '/restablecer' })`. El
+enlace del correo abre `/restablecer` con una sesión temporal y la página guarda la nueva
+contraseña con `supabase.auth.updateUser({ password })`. `AuthContext` escucha el evento
+`PASSWORD_RECOVERY` y redirige a `/restablecer` aunque el enlace aterrice en otra página.
+Cada dominio de la app debe estar en **Supabase → Authentication → URL Configuration →
+Redirect URLs** (localhost y producción, con la ruta `/restablecer`).
 
 > **Acceso a la edición de datos** (botones de editar/eliminar, alta rápida en
 > `/nuevo-registro`, actualizar columna por Excel, recálculo, edición en línea) está

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { AuthContext } from './auth-context'
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate()
   const [session, setSession] = useState(undefined) // undefined = loading
   const [perfil, setPerfil] = useState(null)
   // userId cuyo perfil ya terminó de cargar (null = ninguno todavía). Permite
@@ -13,11 +15,14 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s)
+      // El enlace del correo de recuperación abre una sesión temporal; lleve a
+      // donde lleve la redirección, el usuario debe definir su nueva contraseña.
+      if (event === 'PASSWORD_RECOVERY') navigate('/restablecer', { replace: true })
     })
     return () => subscription.unsubscribe()
-  }, [])
+  }, [navigate])
 
   // Carga el perfil del usuario autenticado. Reutilizable para refrescar tras
   // editar el propio perfil (nombre/celular) y que el Header se actualice.

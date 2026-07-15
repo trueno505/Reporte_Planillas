@@ -85,6 +85,15 @@ listar correos y estado) corren en las Edge Functions `crear-usuario` y `admin-u
 que verifican en el servidor que quien llama sea administrador. Invitar desde **Supabase →
 Authentication → Invite user** sigue funcionando como alternativa y deja la cuenta como `consultor`.
 
+Además, cada usuario puede **recuperar su contraseña por sí mismo**: el enlace
+«¿Olvidaste tu contraseña?» del login envía un correo de recuperación que abre
+`/restablecer` para definir una nueva. Requiere: (1) que el correo de cada cuenta sea una
+bandeja real que su dueño controle, y (2) registrar las URLs de la app (localhost y
+producción, con la ruta `/restablecer`) en **Supabase → Authentication → URL
+Configuration → Redirect URLs**. Para producción conviene configurar un SMTP propio en
+**Authentication → Emails → SMTP Settings** (el servicio por defecto tiene un límite de
+~2 correos/hora).
+
 ## Histórico mensual
 
 Cada planilla guarda una fila por **(trabajador, mes)** mediante una columna `periodo`

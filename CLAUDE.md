@@ -90,6 +90,7 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 | Page | Route | Access |
 |---|---|---|
 | `Login.jsx` | `/login` | Public |
+| `Restablecer.jsx` | `/restablecer` | Public (destino del enlace del correo de recuperación) |
 | `Dashboard.jsx` | `/dashboard` | All |
 | `PlanillaPage.jsx` | `/planilla/:slug` | All |
 | `NuevoRegistro.jsx` | `/nuevo-registro` | editor/admin (`puedeEditar`) |
@@ -97,6 +98,10 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 | `MiPerfil.jsx` | `/perfil` | All |
 | `Auditoria.jsx` | `/auditoria` | Admin only |
 | `Usuarios.jsx` | `/usuarios` | Admin only |
+
+**Login** has a "¿Olvidaste tu contraseña?" flow: an inline view asks the account email and calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: \`${origin}/restablecer\` })`. The confirmation message is deliberately neutral ("Si X tiene una cuenta…") to avoid account enumeration.
+
+**Restablecer** (`/restablecer`) is the target of the recovery email link: Supabase validates the token and opens a temporary session, and the page calls `supabase.auth.updateUser({ password })` (same rules as MiPerfil: min 6 chars, must differ from the old one), then navigates to `/dashboard`. Without a session (expired/used link) it shows an "enlace no válido" notice. As a safety net, `AuthContext` listens for the `PASSWORD_RECOVERY` auth event and redirects to `/restablecer` wherever the link lands. **Config requirement:** every deploy origin must be allowlisted in Supabase → Authentication → URL Configuration → Redirect URLs (e.g. `http://localhost:5173/restablecer` and the production `/restablecer` URL), or the email link falls back to the Site URL. **Security note:** with self-service recovery enabled, whoever controls an account's email inbox can take over that account — account emails must be real inboxes owned by their users.
 
 **Dashboard** shows KPIs, a bar chart (Recharts) of total líquido by group, a summary table per planilla, and a button to generate a consolidated Excel report (`reporteConsolidado.js`). Clicking it first fetches all data (`cargarDatosConsolidado`), then opens `SiafModal` to ask ONE Nº Siaf per planilla (applied automatically to every área with cuadro presupuestal) before generating.
 
