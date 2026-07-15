@@ -4,7 +4,7 @@ import { Search, Loader2, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabaseClient'
-import { getPlanillaByTabla } from '../config/planillas'
+import { PLANILLAS, getPlanillaByTabla } from '../config/planillas'
 import { generarBoletaPdf } from '../lib/boletaPdf'
 import { periodoActual, formatPeriodo } from '../lib/periodo'
 
@@ -77,7 +77,7 @@ export default function BusquedaGlobal() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold text-primary mb-2">Búsqueda en todas las planillas</h1>
         <p className="text-gray-500 text-sm mb-6">
-          Busca un trabajador por DNI o parte de su nombre en el mes elegido. Se consultan las 19 planillas simultáneamente.
+          Busca un trabajador por DNI o parte de su nombre en el mes elegido. Se consultan las {PLANILLAS.length} planillas simultáneamente.
         </p>
 
         <form onSubmit={buscar} className="flex flex-wrap gap-2 mb-6">
