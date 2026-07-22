@@ -1,7 +1,8 @@
 // Edge Function: crear-usuario
 // -----------------------------------------------------------------------------
-// Permite que un ADMINISTRADOR cree cuentas (editor / consultor / administrador)
-// directamente desde la app, sin entrar al panel de Supabase.
+// Permite que un ADMINISTRADOR o SUPERADMIN cree cuentas (consultor / editor /
+// administrador / superadmin) directamente desde la app, sin entrar al panel
+// de Supabase.
 //
 // Por qué una Edge Function: crear usuarios usa la Admin API
 // (auth.admin.createUser), que requiere la SERVICE_ROLE_KEY. Esa clave salta
@@ -17,7 +18,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-const ROLES_VALIDOS = ['consultor', 'editor', 'administrador']
+const ROLES_VALIDOS = ['consultor', 'editor', 'administrador', 'superadmin']
 
 // Restringe CORS al origen de la app si defines ALLOWED_ORIGIN en el entorno de
 // la función (Supabase → Edge Functions → Secrets). Cae a '*' si no está.
@@ -80,7 +81,7 @@ Deno.serve(async (req) => {
     .eq('id', userData.user.id)
     .single()
 
-  if (perfilErr || perfil?.rol !== 'administrador') {
+  if (perfilErr || !['administrador', 'superadmin'].includes(perfil?.rol ?? '')) {
     return json({ error: 'Solo un administrador puede crear usuarios.' }, 403)
   }
 

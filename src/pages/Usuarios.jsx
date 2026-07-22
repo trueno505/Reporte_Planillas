@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { UserCog, ShieldCheck, Pencil, Eye, UserPlus, X, RefreshCw, KeyRound, Ban, CircleCheck } from 'lucide-react'
+import { UserCog, ShieldCheck, Pencil, Eye, Crown, UserPlus, X, RefreshCw, KeyRound, Ban, CircleCheck } from 'lucide-react'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabaseClient'
 import { Navigate } from 'react-router-dom'
@@ -7,9 +7,16 @@ import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
 import ConfirmDialog from '../components/ConfirmDialog'
 
-// Los tres roles del sistema. La seguridad real la impone RLS en la BD; aquí
+// Los cuatro roles del sistema. La seguridad real la impone RLS en la BD; aquí
 // solo se asigna el valor de perfiles.rol.
 const ROLES = [
+  {
+    id: 'superadmin',
+    label: 'Superadmin',
+    desc: 'Mismo control que Administrador. Su rol y su cuenta son permanentes: nadie puede cambiarlos, desactivarlos ni eliminarlos.',
+    Icon: Crown,
+    badge: 'bg-purple-700 text-white',
+  },
   {
     id: 'administrador',
     label: 'Administrador',
@@ -311,7 +318,7 @@ function CambiarPasswordModal({ usuario, onClose }) {
 }
 
 export default function Usuarios() {
-  const { isAdmin, perfil, loading: authLoading } = useAuth()
+  const { isAdmin, isSuperadmin, perfil, loading: authLoading } = useAuth()
   const [perfiles, setPerfiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [mostrarNuevo, setMostrarNuevo] = useState(false)
@@ -407,11 +414,11 @@ export default function Usuarios() {
           </button>
         </div>
         <p className="text-gray-500 text-sm mb-4">
-          Crea cuentas y asigna a cada usuario uno de los tres roles.
+          Crea cuentas y asigna a cada usuario uno de los cuatro roles.
         </p>
 
         {/* Leyenda de roles */}
-        <div className="grid sm:grid-cols-3 gap-2 mb-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
           {ROLES.map(({ id, label, desc, Icon, badge }) => (
             <div key={id} className="rounded-lg border border-gray-200 bg-white p-3">
               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${badge}`}>
@@ -448,6 +455,11 @@ export default function Usuarios() {
                   const info = ROL_INFO[p.rol] ?? ROL_INFO.consultor
                   const esMiPerfil = p.id === perfil?.id
                   const Icon = info.Icon
+                  // El rol superadmin es permanente; y solo un superadmin puede
+                  // (des)activar la cuenta de un administrador (Edge Function lo
+                  // rechaza igual; esto solo evita el intento inútil en la UI).
+                  const rolBloqueado = p.rol === 'superadmin'
+                  const gestionRestringida = p.rol === 'administrador' && !isSuperadmin
                   return (
                     <tr key={p.id} className={i % 2 === 0 ? 'bg-white' : 'bg-surface'}>
                       <td className="px-4 py-3 font-medium text-gray-800">
@@ -467,9 +479,13 @@ export default function Usuarios() {
                       <td className="px-4 py-3">
                         <select
                           value={p.rol}
-                          disabled={esMiPerfil}
+                          disabled={esMiPerfil || rolBloqueado}
                           onChange={(e) => cambiarRol(p.id, e.target.value)}
-                          title={esMiPerfil ? 'No puedes cambiar tu propio rol' : 'Cambiar rol del usuario'}
+                          title={
+                            esMiPerfil ? 'No puedes cambiar tu propio rol'
+                            : rolBloqueado ? 'El rol de superadmin es permanente y no se puede cambiar'
+                            : 'Cambiar rol del usuario'
+                          }
                           className="border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {ROLES.map((r) => (
@@ -500,8 +516,13 @@ export default function Usuarios() {
                           {p.activo ? (
                             <button
                               onClick={() => setADesactivar(p)}
-                              disabled={esMiPerfil || procesando}
-                              title={esMiPerfil ? 'No puedes desactivar tu propia cuenta' : 'Desactivar la cuenta (no podrá iniciar sesión)'}
+                              disabled={esMiPerfil || procesando || rolBloqueado || gestionRestringida}
+                              title={
+                                esMiPerfil ? 'No puedes desactivar tu propia cuenta'
+                                : rolBloqueado ? 'La cuenta superadmin nunca se puede desactivar'
+                                : gestionRestringida ? 'Solo un superadmin puede desactivar la cuenta de un administrador'
+                                : 'Desactivar la cuenta (no podrá iniciar sesión)'
+                              }
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-amber-700 border border-amber-300 hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <Ban size={14} /> Desactivar
@@ -509,8 +530,8 @@ export default function Usuarios() {
                           ) : (
                             <button
                               onClick={() => cambiarEstado(p, true)}
-                              disabled={procesando}
-                              title="Reactivar la cuenta"
+                              disabled={procesando || gestionRestringida}
+                              title={gestionRestringida ? 'Solo un superadmin puede reactivar la cuenta de un administrador' : 'Reactivar la cuenta'}
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-green-700 border border-green-300 hover:bg-green-50 disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <CircleCheck size={14} /> Activar

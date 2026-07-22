@@ -55,7 +55,12 @@ export function AuthProvider({ children }) {
     return () => { cancelado = true }
   }, [session, cargarPerfil])
 
-  const isAdmin = perfil?.rol === 'administrador'
+  const isSuperadmin = perfil?.rol === 'superadmin'
+  // isAdmin agrupa a quien tiene privilegios de administración (gestión de
+  // usuarios, auditoría): administrador y superadmin comparten todo lo que
+  // isAdmin habilita. isSuperadmin distingue lo poco que es exclusivo de
+  // superadmin (ver Usuarios.jsx / Auditoria.jsx).
+  const isAdmin = perfil?.rol === 'administrador' || isSuperadmin
   const isEditor = perfil?.rol === 'editor'
   const isConsultor = perfil?.rol === 'consultor'
   // Puede modificar datos de las planillas (CRUD + Excel). Admin y editor; el
@@ -70,7 +75,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, perfil, isAdmin, isEditor, isConsultor, puedeEditar, loading, signOut, refreshPerfil }}
+      value={{ session, perfil, isAdmin, isSuperadmin, isEditor, isConsultor, puedeEditar, loading, signOut, refreshPerfil }}
     >
       {children}
     </AuthContext.Provider>

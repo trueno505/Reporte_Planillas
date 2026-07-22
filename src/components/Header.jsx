@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/auth-context'
 
 const ROL_BADGE = {
+  superadmin: 'bg-purple-700 text-white',
   administrador: 'bg-primary text-white',
   editor: 'bg-amber-500 text-white',
   consultor: 'bg-gray-100 text-gray-600',

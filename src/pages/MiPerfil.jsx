@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { UserCircle, ShieldCheck, Pencil, Eye, Save, KeyRound, Mail } from 'lucide-react'
+import { UserCircle, ShieldCheck, Pencil, Eye, Save, KeyRound, Mail, Crown } from 'lucide-react'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
 
 const ROL_INFO = {
+  superadmin: { label: 'Superadmin', Icon: Crown, badge: 'bg-purple-700 text-white' },
   administrador: { label: 'Administrador', Icon: ShieldCheck, badge: 'bg-primary text-white' },
   editor: { label: 'Editor', Icon: Pencil, badge: 'bg-amber-500 text-white' },
   consultor: { label: 'Consultor', Icon: Eye, badge: 'bg-gray-100 text-gray-600' },
@@ -191,7 +192,10 @@ export default function MiPerfil() {
             </span>
           </div>
           <p className="text-xs text-gray-400 mt-3">
-            Miembro desde {fmtFecha(perfil?.created_at)}. Tu rol solo lo puede cambiar un administrador.
+            Miembro desde {fmtFecha(perfil?.created_at)}.{' '}
+            {rol === 'superadmin'
+              ? 'Tu rol de superadmin es permanente: nadie puede cambiarlo ni desactivar tu cuenta.'
+              : 'Tu rol solo lo puede cambiar un administrador.'}
           </p>
         </div>
 

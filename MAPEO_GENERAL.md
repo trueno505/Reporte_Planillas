@@ -2,7 +2,7 @@
 
 > Documento de referencia que explica **todo lo que está creado e implementado** en el
 > proyecto. Generado a partir de una revisión completa del código fuente.
-> **Última revisión:** 2026-07-10
+> **Última revisión:** 2026-07-22
 
 ---
 
@@ -27,8 +27,8 @@ Permite:
 - Generar **boletas de pago en PDF** por trabajador y un **reporte consolidado** en Excel.
 - Buscar a un trabajador por DNI o nombre en **las 13 planillas a la vez**.
 - Un **dashboard** con KPIs y gráficos.
-- **Edición de datos** disponible para administradores y **editores**; los **consultores** solo leen/exportan.
-- **Auditoría** de cambios y **gestión de usuarios/roles** (solo administradores).
+- **Edición de datos** disponible para administradores, **superadmin** y **editores**; los **consultores** solo leen/exportan.
+- **Auditoría** de cambios y **gestión de usuarios/roles** (administrador y superadmin; el log de cambios de rol es exclusivo de superadmin).
 - Actualizaciones en **tiempo real** (Supabase Realtime) entre usuarios conectados.
 
 ---
@@ -248,19 +248,21 @@ Reporte_Planillas/
 │       ├── NuevoRegistro.jsx  Alta rápida: elegir grupo → planilla → datos básicos
 │       ├── BusquedaGlobal.jsx Búsqueda en las 13 planillas + imprimir boleta
 │       ├── MiPerfil.jsx       Perfil propio: nombre/celular + cambiar contraseña
-│       ├── Auditoria.jsx      Historial de cambios (admin)
-│       └── Usuarios.jsx       Gestión de usuarios: crear, rol, contraseña, desactivar/activar (admin)
+│       ├── Auditoria.jsx      Historial de cambios (admin/superadmin)
+│       └── Usuarios.jsx       Gestión de usuarios: crear, rol, contraseña, desactivar/activar (admin/superadmin)
 │
 ├── supabase/                  Esquema SQL + Edge Functions
 │   ├── _migracion_completa.sql  Todo el esquema (tablas, RLS, realtime,
 │   │                            auditoría, funciones, totales, índices,
-│   │                            operaciones, 3 roles). Correr una vez en
+│   │                            operaciones, 4 roles). Correr una vez en
 │   │                            el SQL Editor de Supabase.
 │   ├── migracion_rename_observaciones.sql  Parche idempotente: renombra
 │   │                            observaciones → tipo_acto_administrativo en una BD ya instalada.
 │   ├── migracion_historico_periodo.sql  Parche idempotente: añade el histórico
 │   │                            mensual (columna periodo, bloqueo de meses cerrados, RPCs por mes).
-│   └── functions/             Edge Functions (corren con service_role; solo admin)
+│   ├── migracion_rol_superadmin.sql  Parche idempotente: añade el rol superadmin
+│   │                            y sus protecciones (cuenta/rol permanentes).
+│   └── functions/             Edge Functions (corren con service_role; solo admin/superadmin)
 │       ├── crear-usuario/index.ts    Crear cuentas desde la app
 │       └── admin-usuarios/index.ts   Listar correos/estado, cambiar contraseña y desactivar/activar usuarios
 │
@@ -284,8 +286,8 @@ Reporte_Planillas/
 | `PlanillaPage` | `/planilla/:slug` | Cualquier usuario autenticado |
 | `BusquedaGlobal` | `/buscar` | Cualquier usuario autenticado |
 | `MiPerfil` | `/perfil` | Cualquier usuario autenticado |
-| `Auditoria` | `/auditoria` | **Solo administrador** |
-| `Usuarios` | `/usuarios` | **Solo administrador** |
+| `Auditoria` | `/auditoria` | **Administrador o superadmin** |
+| `Usuarios` | `/usuarios` | **Administrador o superadmin** |
 | (cualquier otra) | `*` | Redirige a `/dashboard` |
 
 Todas las rutas (salvo `/login` y `/restablecer`) están envueltas en `<ProtectedRoute>`, que muestra un
@@ -304,9 +306,10 @@ Redirect URLs** (localhost y producción, con la ruta `/restablecer`).
 
 > **Acceso a la edición de datos** (botones de editar/eliminar, alta rápida en
 > `/nuevo-registro`, actualizar columna por Excel, recálculo, edición en línea) está
-> reservado a **administrador y editor** — (el alta de registros es solo global; las
-> planillas ya no tienen botón "Nuevo registro" propio) —
-> se controla con el derivado `puedeEditar` de `AuthContext` (= `isAdmin || isEditor`).
+> reservado a **administrador, superadmin y editor** — (el alta de registros es solo
+> global; las planillas ya no tienen botón "Nuevo registro" propio) —
+> se controla con el derivado `puedeEditar` de `AuthContext` (= `isAdmin || isEditor`,
+> donde `isAdmin` ya es `true` para `administrador` **o** `superadmin`).
 > La página **Nuevo registro** (`/nuevo-registro`) también exige `puedeEditar`.
 
 ---
@@ -482,17 +485,18 @@ El archivo contiene, en orden:
 | Bloque | Contenido |
 |---|---|
 | Extensiones | `moddatetime` (auto `updated_at`) y `pg_trgm` (búsqueda). |
-| `perfiles` | Tabla `perfiles` (`id`, `nombre`, `celular`, `rol` con `CHECK IN ('consultor','editor','administrador')`, `created_at`) + trigger `handle_new_user` (crea el perfil al registrarse con rol por defecto `consultor`) + trigger `proteger_rol` (impide que un no-admin cambie su propio `rol`). |
+| `perfiles` | Tabla `perfiles` (`id`, `nombre`, `celular`, `rol` con `CHECK IN ('consultor','editor','administrador','superadmin')`, `created_at`) + trigger `handle_new_user` (crea el perfil al registrarse con rol por defecto `consultor`) + trigger `proteger_rol_perfil` (impide que un no-admin cambie su propio `rol`, y revierte cualquier intento de cambiar el `rol` de una fila que ya es `superadmin`). |
 | 13 planillas | Las 13 tablas (**generadas** — cada una con `id`, `dni INTEGER UNIQUE`, `created_at`, `updated_at` y trigger de `updated_at`). |
-| RLS | Función `get_my_rol()` (SECURITY DEFINER) + políticas. SELECT → los 3 roles; INSERT/UPDATE/DELETE → `editor`/`administrador`. Envueltas en `(select …)` por rendimiento. |
+| RLS | Función `get_my_rol()` (SECURITY DEFINER) + políticas. SELECT → los 4 roles; INSERT/UPDATE/DELETE → `editor`/`administrador`/`superadmin`. Envueltas en `(select …)` por rendimiento. |
 | Realtime | `REPLICA IDENTITY FULL` y publicación Realtime en las 13 tablas. |
-| `auditoria` | Tabla `auditoria` (FK `usuario_id` → `public.perfiles.id`) + trigger genérico en las 13 tablas. SELECT solo `administrador`. |
+| `auditoria` | Tabla `auditoria` (FK `usuario_id` → `public.perfiles.id`) + trigger genérico en las 13 tablas + trigger `registrar_cambio_rol` en `perfiles` (registra cada cambio de `rol` con `tabla='perfiles'`). SELECT: `administrador` ve todo salvo `tabla='perfiles'`; `superadmin` ve todo, incluido el log de cambios de rol. |
 | Funciones | RPCs `resumen_planillas()` y `buscar_trabajador(termino)`. |
-| Admin | Políticas extra para que un `administrador` gestione todos los `perfiles`. |
+| Admin | Políticas extra para que `administrador`/`superadmin` gestionen todos los `perfiles`. |
 | Totales | Triggers `BEFORE INSERT/UPDATE` que calculan `t_ingreso/t_dsctos/t_liquido` (**generados**; 18 planillas — no `obreros_necesidad_mercado`). |
 | Índices | GIN trigram sobre `apellidos_y_nombres` (**generados**). |
-| Operaciones | RPCs atómicas `recalcular_totales(p_tabla)` y `actualizar_columna_planilla(p_tabla, p_columna, p_valores)` (autorizan a `editor`/`administrador`, con whitelist de tablas). |
+| Operaciones | RPCs atómicas `recalcular_totales(p_tabla)`, `actualizar_columna_planilla(p_tabla, p_columna, p_valores)`, `abrir_periodo(p_tabla, p_periodo)` y `corregir_identidad(p_tabla, p_dni, p_datos)` (autorizan a `editor`/`administrador`/`superadmin`, con whitelist de tablas). |
 | DNI único global | `dni_registro` + vista `vw_dni_todos` (`security_invoker`) + trigger `sync_dni_registro` en las 13 tablas. |
+| Superadmin | Triggers `proteger_superadmin_ban` (`BEFORE UPDATE` en `auth.users`, revierte cambios a `banned_until` de una cuenta `superadmin`) y `proteger_superadmin_delete` (`BEFORE DELETE` en `perfiles`, bloquea eliminar una fila `superadmin`, abortando también el `DELETE` en cascada desde `auth.users`). Ver `supabase/migracion_rol_superadmin.sql`. |
 | Recarga | `NOTIFY pgrst, 'reload schema';` final para refrescar la caché de PostgREST. |
 
 > **Los totales se calculan en la base de datos.** Los triggers de totales son la
@@ -504,7 +508,8 @@ El archivo contiene, en orden:
 La tabla `auditoria` guarda `tabla`, `registro_id`, `accion`
 (INSERT/UPDATE/DELETE/GENERACION), `usuario_id`, `datos_ant` y `datos_nue` (JSONB) y
 `created_at`. Un trigger genérico registra automáticamente cada cambio en las 13 tablas.
-Solo los administradores pueden leerla (RLS).
+Solo administrador y superadmin pueden leerla (RLS); las filas con `tabla='perfiles'`
+(cambios de rol, ver más abajo) las ve **solo** superadmin.
 
 **GENERACION** distingue las filas clonadas por "Generar mes siguiente" de las altas
 manuales (INSERT): `abrir_periodo` marca la transacción con el GUC
@@ -515,41 +520,72 @@ manuales (INSERT): `abrir_periodo` marca la transacción con el GUC
 
 ## 10. Roles y seguridad
 
-- **Tres roles**, almacenados en `public.perfiles.rol` (`CHECK IN
-  ('consultor','editor','administrador')`):
+- **Cuatro roles**, almacenados en `public.perfiles.rol` (`CHECK IN
+  ('consultor','editor','administrador','superadmin')`):
   - **`consultor`** — SELECT (ver), exportar a Excel, descargar boleta PDF.
   - **`editor`** — todo lo del consultor **+ editar datos** de las planillas (crear/
     editar/eliminar, alta rápida, actualizar columnas por Excel, recálculo). **No** gestiona
     usuarios ni ve la auditoría.
   - **`administrador`** — control total: datos + **gestión de usuarios** + **auditoría**.
-- `AuthContext` expone `isAdmin`, `isEditor`, `isConsultor` y el derivado
-  **`puedeEditar`** (= `isAdmin || isEditor`). La UI usa `puedeEditar` para mostrar las
-  acciones de edición y `isAdmin` para las de usuarios/auditoría.
+  - **`superadmin`** — **exactamente los mismos privilegios que `administrador`** en toda
+    la RLS y los RPCs, más tres diferencias (añadido el 2026-07-22, ver
+    `supabase/migracion_rol_superadmin.sql`):
+    1. **Cuenta y rol permanentes**: el trigger `proteger_rol_perfil` revierte cualquier
+       intento de cambiar el `rol` de una fila que ya es `superadmin` (lo intente quien lo
+       intente, incluso otro superadmin); `proteger_superadmin_ban` (`BEFORE UPDATE` en
+       `auth.users`) revierte cualquier cambio a `banned_until` de esa cuenta;
+       `proteger_superadmin_delete` (`BEFORE DELETE` en `perfiles`) bloquea su eliminación
+       (y por tanto también el `DELETE` en cascada desde `auth.users`). Los tres corren
+       **a nivel de base de datos**, así que protegen sin importar la vía (Edge Function,
+       panel de Supabase o SQL directo).
+    2. Solo un **superadmin** puede (des)activar la cuenta de un **administrador** — esto
+       se impone en la Edge Function `admin-usuarios`, porque es la única pieza que conoce
+       quién está llamando (la Admin API corre con la `service_role`, no con el JWT de quien
+       llama, así que un trigger de BD no podría distinguirlo).
+    3. Cada cambio de `rol` se registra en `auditoria` (`tabla='perfiles'`, trigger
+       `registrar_cambio_rol`), y esas filas son visibles **solo** para superadmin — un
+       administrador normal sigue viendo el resto de la auditoría, pero no el historial de
+       cambios de rol.
+    - **Decisión de diseño deliberada**: ascender a alguien a `administrador` o
+      `superadmin` **no** está restringido — cualquier admin o superadmin actual puede
+      hacerlo desde `/usuarios`. Solo se restringió la parte de (des)activar cuentas de
+      administrador, no la de otorgar el rol.
+- `AuthContext` expone `isAdmin` (= `true` para `administrador` **o** `superadmin` — úsalo
+  para todo lo que deba comportarse igual entre ambos), `isSuperadmin` (= `true` solo para
+  `superadmin`, para las tres diferencias de arriba), `isEditor`, `isConsultor` y el
+  derivado **`puedeEditar`** (= `isAdmin || isEditor`). La UI usa `puedeEditar` para
+  mostrar las acciones de edición y `isAdmin` para las de usuarios/auditoría.
 - El **frontend solo oculta** controles; la seguridad real la impone **RLS** en Supabase
   vía `get_my_rol()` — nunca confiar solo en la UI. Las RPCs masivas también validan
-  `get_my_rol() IN ('editor','administrador')` (defensa en profundidad).
+  `get_my_rol() IN ('editor','administrador','superadmin')` (defensa en profundidad).
 - El perfil se crea automáticamente al registrarse (`consultor`). Para cambiar de rol:
-  - Desde la página `/usuarios` (selector con los 3 roles; un admin no puede cambiar su
-    propio rol, para evitar quedar bloqueado), o
-  - `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'`.
+  - Desde la página `/usuarios` (selector con los 4 roles; un admin no puede cambiar su
+    propio rol, para evitar quedar bloqueado; el rol `superadmin` no se puede cambiar desde
+    nadie), o
+  - `UPDATE perfiles SET rol = '<rol>' WHERE id = '<uuid>'` (bloqueado por el trigger si la
+    fila destino ya es `superadmin`).
 - **Autogestión de perfil (`/perfil`):** cualquier usuario puede editar su `nombre` y
   `celular` y cambiar su contraseña (`supabase.auth.updateUser`). La política RLS
-  `perfiles_update` permite editar la propia fila, pero el trigger `proteger_rol`
+  `perfiles_update` permite editar la propia fila, pero el trigger `proteger_rol_perfil`
   revierte cualquier intento de un no-admin de cambiarse el `rol` (anti-escalada de
-  privilegios).
-- **Gestión de usuarios desde `/usuarios` (solo admin):** el administrador puede
-  **crear** cuentas (nombre, correo, rol y contraseña inicial), **cambiar la contraseña**
-  de cualquier persona y **desactivar/reactivar** cuentas (no puede desactivarse a sí mismo).
-  Las cuentas **no se eliminan**: desactivar impide el login pero conserva perfil y auditoría.
-  La página muestra el **correo** y el **estado** (Activa/Desactivada) de cada usuario. Estas
-  operaciones usan la `service_role` (Admin API `auth.admin.*`), que **nunca** puede vivir en
-  el frontend, por lo que corren en dos Edge Functions que verifican en el servidor que quien
-  llama sea `administrador`:
+  privilegios), y también revierte cualquier cambio de rol sobre una fila `superadmin`.
+- **Gestión de usuarios desde `/usuarios` (admin o superadmin):** puede **crear** cuentas
+  (nombre, correo, rol y contraseña inicial), **cambiar la contraseña** de cualquier
+  persona y **desactivar/reactivar** cuentas (no puede desactivarse a sí mismo; nadie puede
+  desactivar a un `superadmin`; solo un `superadmin` puede (des)activar a un
+  `administrador` — la UI deshabilita esos controles con un tooltip explicativo).
+  Las cuentas **no se eliminan**: desactivar impide el login pero conserva perfil y
+  auditoría. La página muestra el **correo** y el **estado** (Activa/Desactivada) de cada
+  usuario. Estas operaciones usan la `service_role` (Admin API `auth.admin.*`), que
+  **nunca** puede vivir en el frontend, por lo que corren en dos Edge Functions que
+  verifican en el servidor que quien llama sea `administrador` o `superadmin`:
   - **`crear-usuario`** — `auth.admin.createUser` (`email_confirm: true`) + fija `nombre`
     y `rol` en `perfiles`.
   - **`admin-usuarios`** — despacha por `accion`: `listar` (correo + `banned_until` vía
     `auth.admin.listUsers`), `cambiar_password` (`auth.admin.updateUserById`), `desactivar`
-    (`ban_duration: '876000h'`) y `activar` (`ban_duration: 'none'`).
+    (`ban_duration: '876000h'`; rechaza el objetivo `superadmin` y el objetivo
+    `administrador` si quien llama no es `superadmin`) y `activar` (`ban_duration: 'none'`,
+    mismas restricciones).
   Despliegue: `npx supabase functions deploy <nombre> --project-ref <ref>`. Invitar desde
   **Supabase → Authentication → Invite user** sigue funcionando como alternativa y deja la
   cuenta como `consultor`.

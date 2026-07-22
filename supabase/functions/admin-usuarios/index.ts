@@ -1,7 +1,8 @@
 // Edge Function: admin-usuarios
 // -----------------------------------------------------------------------------
-// Acciones de gestión de cuentas que SOLO un ADMINISTRADOR puede ejecutar y que
-// requieren la Admin API de Supabase (auth.admin.*) con la SERVICE_ROLE_KEY:
+// Acciones de gestión de cuentas que SOLO un ADMINISTRADOR o SUPERADMIN puede
+// ejecutar y que requieren la Admin API de Supabase (auth.admin.*) con la
+// SERVICE_ROLE_KEY:
 //
 //   • listar            → devuelve [{ id, email, banned_until }] de los usuarios.
 //   • cambiar_password  → restablece la contraseña de cualquier usuario.
@@ -89,9 +90,10 @@ Deno.serve(async (req) => {
     .eq('id', callerId)
     .single()
 
-  if (perfilErr || perfil?.rol !== 'administrador') {
+  if (perfilErr || !['administrador', 'superadmin'].includes(perfil?.rol ?? '')) {
     return json({ error: 'Solo un administrador puede gestionar usuarios.' }, 403)
   }
+  const callerRol = perfil.rol
 
   // ── 3) Leer la acción ──────────────────────────────────────────────────────
   let payload: { accion?: string; userId?: string; password?: string }
@@ -129,6 +131,25 @@ Deno.serve(async (req) => {
 
   if (!userId) {
     return json({ error: 'Falta el identificador del usuario.' }, 400)
+  }
+
+  // ── 3.5) La cuenta superadmin nunca se activa/desactiva, y solo un superadmin
+  //         puede (des)activar la cuenta de un administrador (defensa en
+  //         profundidad: la BD ya bloquea el ban de un superadmin a nivel de
+  //         trigger, pero solo esta función conoce quién llama).
+  if (accion === 'desactivar' || accion === 'activar') {
+    const { data: objetivo } = await admin
+      .from('perfiles')
+      .select('rol')
+      .eq('id', userId)
+      .single()
+
+    if (objetivo?.rol === 'superadmin') {
+      return json({ error: 'La cuenta superadmin no se puede desactivar ni reactivar.' }, 400)
+    }
+    if (objetivo?.rol === 'administrador' && callerRol !== 'superadmin') {
+      return json({ error: 'Solo un superadmin puede activar o desactivar la cuenta de un administrador.' }, 403)
+    }
   }
 
   // ── 4) Ejecutar la acción ──────────────────────────────────────────────────

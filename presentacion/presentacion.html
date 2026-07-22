@@ -177,7 +177,7 @@
     <div class="kpi">
       <div class="box"><div class="n">13</div><div class="l">Planillas centralizadas</div></div>
       <div class="box"><div class="n">5</div><div class="l">Regímenes laborales</div></div>
-      <div class="box"><div class="n">3</div><div class="l">Roles de acceso</div></div>
+      <div class="box"><div class="n">4</div><div class="l">Roles de acceso</div></div>
       <div class="box"><div class="n">100%</div><div class="l">Cambios auditados</div></div>
     </div>
     <div class="grid2" style="margin-top:22px">
@@ -230,7 +230,7 @@
           <li><b>Cálculo automático</b> de ingresos, descuentos y líquido — sin sumar a mano.</li>
           <li><b>Búsqueda global por DNI</b> en las 13 planillas a la vez, sin saber a cuál pertenece.</li>
           <li><b>Auditoría completa</b>: cada creación, edición y borrado queda registrada con usuario y fecha.</li>
-          <li><b>Histórico mensual</b> permanente y control de acceso por <b>3 roles</b>.</li>
+          <li><b>Histórico mensual</b> permanente y control de acceso por <b>4 roles</b>.</li>
         </ul>
       </div>
     </div>
@@ -240,26 +240,28 @@
   <!-- 4 · MANUAL POR ROLES — MATRIZ -->
   <section class="slide">
     <div class="kicker">Manual de uso</div>
-    <h2>Los 3 roles y qué puede hacer cada uno</h2>
+    <h2>Los 4 roles y qué puede hacer cada uno</h2>
     <p class="muted" style="margin-bottom:6px">Cada usuario recibe un rol. El sistema muestra solo lo que su rol permite y la base de datos lo refuerza.</p>
     <table>
       <thead><tr>
-        <th>Acción</th><th>Consultor</th><th>Editor</th><th>Administrador</th>
+        <th>Acción</th><th>Consultor</th><th>Editor</th><th>Administrador</th><th>Superadmin</th>
       </tr></thead>
       <tbody>
-        <tr><td>Ver planillas y dashboard</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
-        <tr><td>Búsqueda global por DNI</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
-        <tr><td>Exportar Excel · descargar boletas PDF</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
-        <tr><td>Crear / editar / eliminar registros</td><td class="cross">✕</td><td class="check">✔</td><td class="check">✔</td></tr>
-        <tr><td>Actualizar columnas por Excel · recalcular · generar mes</td><td class="cross">✕</td><td class="check">✔</td><td class="check">✔</td></tr>
-        <tr><td>Gestionar usuarios y roles</td><td class="cross">✕</td><td class="cross">✕</td><td class="check">✔</td></tr>
-        <tr><td>Ver auditoría de cambios</td><td class="cross">✕</td><td class="cross">✕</td><td class="check">✔</td></tr>
+        <tr><td>Ver planillas y dashboard</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
+        <tr><td>Búsqueda global por DNI</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
+        <tr><td>Exportar Excel · descargar boletas PDF</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
+        <tr><td>Crear / editar / eliminar registros</td><td class="cross">✕</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
+        <tr><td>Actualizar columnas por Excel · recalcular · generar mes</td><td class="cross">✕</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
+        <tr><td>Gestionar usuarios y roles</td><td class="cross">✕</td><td class="cross">✕</td><td class="check">✔</td><td class="check">✔</td></tr>
+        <tr><td>Ver auditoría de cambios</td><td class="cross">✕</td><td class="cross">✕</td><td class="check">✔</td><td class="check">✔</td></tr>
+        <tr><td>Cuenta permanente (no se puede desactivar/eliminar)</td><td class="cross">✕</td><td class="cross">✕</td><td class="cross">✕</td><td class="check">✔</td></tr>
       </tbody>
     </table>
-    <div class="grid3" style="margin-top:18px">
+    <div class="grid3" style="margin-top:18px;grid-template-columns:repeat(4,1fr)">
       <div class="card"><div style="display:flex;align-items:center;gap:12px"><div class="role-badge" style="background:#6b7684">C</div><div><h3 style="margin:0">Consultor</h3><span class="pill">Solo lectura</span></div></div></div>
       <div class="card"><div style="display:flex;align-items:center;gap:12px"><div class="role-badge" style="background:#b8860b">E</div><div><h3 style="margin:0">Editor</h3><span class="pill">Consulta + edición</span></div></div></div>
       <div class="card"><div style="display:flex;align-items:center;gap:12px"><div class="role-badge" style="background:var(--azul)">A</div><div><h3 style="margin:0">Administrador</h3><span class="pill">Control total</span></div></div></div>
+      <div class="card"><div style="display:flex;align-items:center;gap:12px"><div class="role-badge" style="background:#7e22ce">S</div><div><h3 style="margin:0">Superadmin</h3><span class="pill">Control total + permanente</span></div></div></div>
     </div>
     <div class="foot"><span>Muni Sheets · MPI</span><span>Manual · Matriz de permisos</span></div>
   </section>
@@ -348,6 +350,9 @@
           <li>No puede cambiar su <b>propio rol</b> ni desactivar su <b>propia cuenta</b> (evita bloqueos).</li>
           <li>La base de datos revierte cualquier intento de escalar privilegios.</li>
         </ul>
+        <p class="tipline"><b>Superadmin:</b> mismo control total que Administrador, con una
+        cuenta permanente que nadie puede desactivar, eliminar ni reasignar de rol — y solo
+        un superadmin puede (des)activar a un administrador.</p>
       </div>
       <div class="shotwrap">
         <h3 style="margin-bottom:8px">Lo que ve en pantalla</h3>
@@ -381,7 +386,7 @@
       <div>11 · Editar y eliminar registros</div>
       <div>12 · Actualizar columna por Excel · Recalcular</div>
       <div>13 · Generar mes siguiente · Corregir identidad</div>
-      <div style="margin-top:8px"><b>Administración (solo administrador)</b></div>
+      <div style="margin-top:8px"><b>Administración (administrador / superadmin)</b></div>
       <div>14 · Gestión de usuarios</div>
       <div>15 · Auditoría / Historial de cambios</div>
     </div>
@@ -596,17 +601,17 @@
 
   <!-- M7 · Gestión de usuarios -->
   <section class="slide">
-    <div class="kicker">Manual · Administración <span style="color:var(--azul)">(solo administrador)</span></div>
+    <div class="kicker">Manual · Administración <span style="color:var(--azul)">(administrador / superadmin)</span></div>
     <h2>14 · Gestión de usuarios</h2>
     <div class="manual-grid fill">
       <div>
         <ol class="steps">
           <li>Entra a <b>Usuarios</b>. Pulsa <b>Nuevo usuario</b> e ingresa nombre, correo, rol y una contraseña inicial (autogenerada).</li>
-          <li><b>Cambiar rol:</b> abre el desplegable de la fila y elige consultor, editor o administrador.</li>
+          <li><b>Cambiar rol:</b> abre el desplegable de la fila y elige consultor, editor, administrador o superadmin.</li>
           <li><b>Contraseña:</b> restablece la clave de cualquier usuario desde su fila.</li>
           <li><b>Estado:</b> desactiva o reactiva cuentas (nunca se eliminan; se conserva su historial).</li>
         </ol>
-        <p class="tipline"><b>Protecciones:</b> no puedes cambiar tu propio rol ni desactivar tu propia cuenta.</p>
+        <p class="tipline"><b>Protecciones:</b> no puedes cambiar tu propio rol ni desactivar tu propia cuenta; el rol y la cuenta de un superadmin son permanentes, y solo un superadmin puede (des)activar a un administrador.</p>
       </div>
       <div class="shotwrap">
         <img class="shot" src="assets/admin-usuarios.png" alt="Gestión de usuarios"
@@ -620,7 +625,7 @@
 
   <!-- M8 · Auditoría -->
   <section class="slide">
-    <div class="kicker">Manual · Administración <span style="color:var(--azul)">(solo administrador)</span></div>
+    <div class="kicker">Manual · Administración <span style="color:var(--azul)">(administrador / superadmin)</span></div>
     <h2>15 · Auditoría / Historial de cambios</h2>
     <div class="manual-grid fill">
       <div>
@@ -630,7 +635,7 @@
           <li>Filtra por <b>planilla</b> para ver solo una.</li>
           <li>Filtra por <b>acción</b>: altas (INSERT), ediciones (UPDATE), eliminaciones (DELETE) o filas creadas al generar un nuevo mes (GENERACION).</li>
         </ol>
-        <p class="tipline"><b>Para qué sirve:</b> control y trazabilidad — se sabe quién hizo cada cambio y cuándo. Página exclusiva del administrador.</p>
+        <p class="tipline"><b>Para qué sirve:</b> control y trazabilidad — se sabe quién hizo cada cambio y cuándo. Página exclusiva de administrador/superadmin; el registro de cambios de rol solo lo ve superadmin.</p>
       </div>
       <div class="shotwrap">
         <img class="shot" style="max-height:400px" src="assets/admin-auditoria.png" alt="Auditoría"

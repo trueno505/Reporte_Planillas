@@ -66,24 +66,27 @@ node scripts/genSql.mjs   # Regenera el SQL de tablas/totales/índices desde
 
 ## Roles
 
-Tres roles, almacenados en `public.perfiles.rol` (la seguridad real la impone RLS):
+Cuatro roles, almacenados en `public.perfiles.rol` (la seguridad real la impone RLS):
 
 | Rol | Permite |
 |---|---|
 | **consultor** | Consultar, exportar a Excel y descargar boletas PDF (solo lectura). |
 | **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, alta rápida, actualizar columnas por Excel, recálculo). **No** gestiona usuarios ni ve la auditoría. |
 | **administrador** | Control total: datos + **gestión de usuarios** + **auditoría**. |
+| **superadmin** | Igual que administrador en todo, **más**: su cuenta y su rol son **permanentes** (nadie puede desactivarla, eliminarla ni reasignarle otro rol — ni siquiera otro superadmin), solo un superadmin puede (des)activar la cuenta de un administrador, y ve un registro de auditoría de **cambios de rol** que un administrador normal no ve. |
 
-Un **administrador** gestiona las cuentas que usan la app desde la página
-**Usuarios** (`/usuarios`): puede **crear** cuentas (nombre, correo, rol y contraseña
-inicial), **asignar el rol** de cada usuario, **cambiar la contraseña** de cualquier
-persona y **desactivar/reactivar** cuentas (no puede cambiar su propio rol ni desactivarse
-a sí mismo, para evitar quedar bloqueado). Las cuentas **no se eliminan**: desactivar
-impide el inicio de sesión pero conserva el perfil y la auditoría, y se puede reactivar.
-Las acciones que requieren la `service_role` (crear, cambiar contraseña, desactivar/activar,
-listar correos y estado) corren en las Edge Functions `crear-usuario` y `admin-usuarios`,
-que verifican en el servidor que quien llama sea administrador. Invitar desde **Supabase →
-Authentication → Invite user** sigue funcionando como alternativa y deja la cuenta como `consultor`.
+Un **administrador** (o **superadmin**) gestiona las cuentas que usan la app desde la
+página **Usuarios** (`/usuarios`): puede **crear** cuentas (nombre, correo, rol y
+contraseña inicial), **asignar el rol** de cada usuario, **cambiar la contraseña** de
+cualquier persona y **desactivar/reactivar** cuentas (no puede cambiar su propio rol ni
+desactivarse a sí mismo, para evitar quedar bloqueado). Las cuentas **no se eliminan**:
+desactivar impide el inicio de sesión pero conserva el perfil y la auditoría, y se puede
+reactivar. Las acciones que requieren la `service_role` (crear, cambiar contraseña,
+desactivar/activar, listar correos y estado) corren en las Edge Functions `crear-usuario`
+y `admin-usuarios`, que verifican en el servidor que quien llama sea administrador o
+superadmin (y que solo un superadmin pueda (des)activar a un administrador). Invitar
+desde **Supabase → Authentication → Invite user** sigue funcionando como alternativa y
+deja la cuenta como `consultor`.
 
 Además, cada usuario puede **recuperar su contraseña por sí mismo**: el enlace
 «¿Olvidaste tu contraseña?» del login envía un correo de recuperación que abre

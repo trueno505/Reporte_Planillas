@@ -19,6 +19,11 @@ function fmtFecha(s) {
   return d.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+// 'perfiles' agrupa los cambios de rol (usuarios); el resto son nombres de tabla.
+function tablaLabel(t) {
+  return t === 'perfiles' ? 'Cambio de rol' : t.replace(/_/g, ' ')
+}
+
 export default function Auditoria() {
   const { isAdmin, loading: authLoading } = useAuth()
   const [registros, setRegistros] = useState([])
@@ -26,6 +31,9 @@ export default function Auditoria() {
   const [filtroTabla, setFiltroTabla] = useState('')
   const [filtroAccion, setFiltroAccion] = useState('')
   const [tablas, setTablas] = useState([])
+  // Lookup id → nombre para mostrar a quién le cambiaron el rol (registro_id
+  // no tiene FK a perfiles, así que no se puede embeber vía PostgREST).
+  const [perfilesMap, setPerfilesMap] = useState({})
 
   useEffect(() => {
     if (!isAdmin) return
@@ -44,6 +52,9 @@ export default function Auditoria() {
         setTablas([...new Set(rows.map((r) => r.tabla))].sort())
         setLoading(false)
       })
+    supabase.from('perfiles').select('id, nombre').then(({ data }) => {
+      setPerfilesMap(Object.fromEntries((data ?? []).map((p) => [p.id, p.nombre])))
+    })
   }, [isAdmin])
 
   if (authLoading) return null
@@ -76,7 +87,7 @@ export default function Auditoria() {
               className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none"
             >
               <option value="">Todas las planillas</option>
-              {tablas.map((t) => <option key={t} value={t}>{t}</option>)}
+              {tablas.map((t) => <option key={t} value={t}>{tablaLabel(t)}</option>)}
             </select>
           </div>
           <select
@@ -117,19 +128,24 @@ export default function Auditoria() {
                 </thead>
                 <tbody>
                   {filtrados.map((r, i) => {
+                    const esCambioRol = r.tabla === 'perfiles'
                     const datos = r.datos_nue ?? r.datos_ant ?? {}
                     return (
                       <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-surface'}>
                         <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{fmtFecha(r.created_at)}</td>
-                        <td className="px-4 py-2 text-gray-700 whitespace-nowrap">{r.tabla.replace(/_/g, ' ')}</td>
+                        <td className="px-4 py-2 text-gray-700 whitespace-nowrap">{tablaLabel(r.tabla)}</td>
                         <td className="px-4 py-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-semibold ${ACCION_COLOR[r.accion] ?? 'bg-gray-100 text-gray-600'}`}>
                             {r.accion}
                           </span>
                         </td>
                         <td className="px-4 py-2 text-gray-600">{r.perfiles?.nombre ?? '—'}</td>
-                        <td className="px-4 py-2 tabular-nums">{datos.dni ?? '—'}</td>
-                        <td className="px-4 py-2">{datos.apellidos_y_nombres ?? '—'}</td>
+                        <td className="px-4 py-2 tabular-nums">{esCambioRol ? '—' : (datos.dni ?? '—')}</td>
+                        <td className="px-4 py-2">
+                          {esCambioRol
+                            ? `${perfilesMap[r.registro_id] ?? '—'}: ${r.datos_ant?.rol ?? '—'} → ${r.datos_nue?.rol ?? '—'}`
+                            : (datos.apellidos_y_nombres ?? '—')}
+                        </td>
                       </tr>
                     )
                   })}
