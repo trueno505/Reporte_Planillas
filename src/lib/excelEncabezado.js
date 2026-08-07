@@ -112,6 +112,7 @@ const stSubtotal = {
   fill: { fgColor: { rgb: GRIS } },
   border: borde,
 }
+const stFilaLbl = { font: { bold: true, sz: 9 }, border: borde }
 const stResTit = { font: { bold: true, color: { rgb: AZUL_OSC }, sz: 10 } }
 const stResHead = {
   font: { bold: true, color: { rgb: BLANCO }, sz: 9 },
@@ -345,35 +346,106 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
   const columnas = planilla.areas?.length
     ? planilla.columnas.filter((c) => c.key !== 'area')
     : planilla.columnas
-  const nCols = columnas.length
-  const ultima = nCols - 1
+
+  // Cada trabajador ocupa varias filas: IDENTIDAD (DNI, nombre, fecha, cargo…
+  // — todo lo que no sea columna money y esté antes de T. Ingreso), INGRES.
+  // (T. Ingreso + las columnas money anteriores a él), DSCTOS (T. Dsctos, T.
+  // Líquido y todo lo que va después de T. Ingreso) y, si la planilla tiene
+  // `tipo_acto_administrativo`, OBSERVAC. con ese texto combinado en el resto
+  // de la fila. Las columnas de INGRES. y DSCTOS reutilizan el MISMO rango de
+  // columnas (una fila debajo de la otra) en vez de ir una a continuación de
+  // la otra, para no ensanchar la hoja; por eso el encabezado también sale en
+  // 2 filas: una con los conceptos de ingreso (para leer junto a INGRES.) y
+  // otra con los de descuento (para leer junto a DSCTOS).
+  const idxIngreso = columnas.findIndex((c) => c.key === 't_ingreso')
+  const idxObs = columnas.findIndex((c) => c.key === 'tipo_acto_administrativo')
+
+  // Planillas sin T. Ingreso (totales manuales, `sinAutoTotales`): sin
+  // compactar ni dividir filas, como una tabla simple de siempre.
+  const identidadCols = idxIngreso === -1 ? columnas : columnas.filter((c, i) => i <= idxIngreso && c.type !== 'money')
+  const ingresoCols = idxIngreso === -1 ? [] : columnas.filter((c, i) => i <= idxIngreso && c.type === 'money')
+  const descuentoCols = idxIngreso === -1 ? [] : columnas.filter((c, i) => i > idxIngreso && c.key !== 'tipo_acto_administrativo')
+
+  const nIdent = identidadCols.length
+  const nMoney = Math.max(ingresoCols.length, descuentoCols.length)
+  const nCols = idxIngreso === -1 ? columnas.length : nIdent + nMoney
+  const ultima = Math.max(nCols - 1, 0)
   const titulo = planilla.titulo ?? planilla.label
   const ws = {}
   const merges = []
 
   let r = escribirEncabezado(ws, titulo, periodo, nCols, merges)
 
-  // Fila de etiquetas de columnas.
-  columnas.forEach((c, i) => set(ws, r, i, { t: 's', v: c.label }, stColLbl))
-  r += 1
-
-  const moneyCols = columnas
-    .map((c, i) => ({ c, i }))
-    .filter(({ c }) => c.type === 'money')
+  if (idxIngreso === -1) {
+    columnas.forEach((c, i) => set(ws, r, i, { t: 's', v: c.label }, stColLbl))
+    r += 1
+  } else {
+    // Encabezado en 2 filas: la de arriba trae identidad + conceptos de
+    // ingreso (termina en Total Ingreso, corresponde a la fila INGRES.); la
+    // de abajo repite el mismo rango de columnas con los conceptos de
+    // descuento (corresponde a la fila DSCTOS). Como la identidad no cambia
+    // entre una y otra, sus celdas de encabezado se combinan verticalmente
+    // (ocupan las 2 filas) en vez de dejar la fila de abajo vacía debajo.
+    const rDesc = r + 1
+    identidadCols.forEach((c, i) => {
+      set(ws, r, i, { t: 's', v: c.label }, stColLbl)
+      merges.push({ s: { r, c: i }, e: { r: rDesc, c: i } })
+    })
+    ingresoCols.forEach((c, i) => set(ws, r, nIdent + i, { t: 's', v: c.label }, stColLbl))
+    descuentoCols.forEach((c, i) => set(ws, rDesc, nIdent + i, { t: 's', v: c.label }, stColLbl))
+    r += 2
+  }
 
   const escribirFilas = (rows) => {
     for (const fila of rows) {
-      columnas.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), stResLbl))
+      if (idxIngreso === -1) {
+        // Planilla sin T. Ingreso (totales manuales): sin split, como antes.
+        columnas.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), stResLbl))
+        r += 1
+        continue
+      }
+
+      // Fila IDENTIDAD
+      identidadCols.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), stResLbl))
       r += 1
+
+      // Fila INGRES.
+      set(ws, r, 0, { t: 's', v: 'INGRES.' }, stFilaLbl)
+      ingresoCols.forEach((c, i) => set(ws, r, nIdent + i, valorCelda(c, fila), stResLbl))
+      r += 1
+
+      // Fila DSCTOS
+      set(ws, r, 0, { t: 's', v: 'DSCTOS' }, stFilaLbl)
+      descuentoCols.forEach((c, i) => set(ws, r, nIdent + i, valorCelda(c, fila), stResLbl))
+      r += 1
+
+      // Fila OBSERVAC. (tipo de acto administrativo), combinada en el resto.
+      if (idxObs !== -1) {
+        set(ws, r, 0, { t: 's', v: 'OBSERVAC.:' }, stFilaLbl)
+        set(ws, r, 1, { t: 's', v: fila.tipo_acto_administrativo ?? '' }, stResLbl)
+        if (ultima > 1) merges.push({ s: { r, c: 1 }, e: { r, c: ultima } })
+        r += 1
+      }
     }
   }
   const escribirSubtotal = (rows, etiqueta) => {
-    // Etiqueta en la 2ª columna (apellidos) y sumas bajo cada columna money.
-    set(ws, r, 0, { t: 's', v: etiqueta }, stSubtotal)
-    if (nCols > 1) set(ws, r, 1, { t: 's', v: '' }, stSubtotal)
-    for (const { c, i } of moneyCols) {
-      set(ws, r, i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT })
+    if (idxIngreso === -1) {
+      set(ws, r, 0, { t: 's', v: etiqueta }, stSubtotal)
+      if (nCols > 1) set(ws, r, 1, { t: 's', v: '' }, stSubtotal)
+      columnas.forEach((c, i) => {
+        if (c.type === 'money') set(ws, r, i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT })
+      })
+      r += 1
+      return
     }
+    // Subtotal en 2 filas, alineado con INGRES./DSCTOS de cada trabajador.
+    set(ws, r, 0, { t: 's', v: `${etiqueta} - INGRESOS` }, stSubtotal)
+    ingresoCols.forEach((c, i) => set(ws, r, nIdent + i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT }))
+    r += 1
+    set(ws, r, 0, { t: 's', v: `${etiqueta} - DSCTOS` }, stSubtotal)
+    descuentoCols.forEach((c, i) => {
+      if (c.type === 'money') set(ws, r, nIdent + i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT })
+    })
     r += 1
   }
 
@@ -406,9 +478,11 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
   const maxCol = Math.max(ultima, COL_CUADRO + 6)
   ws['!ref'] = `A1:${ref(maxRow, maxCol)}`
   ws['!merges'] = merges
-  ws['!cols'] = columnas.map((c) =>
-    c.key === 'apellidos_y_nombres' ? { wch: 32 } : { wch: 14 },
-  )
+  ws['!cols'] = idxIngreso === -1
+    ? columnas.map((c) => (c.key === 'apellidos_y_nombres' ? { wch: 32 } : { wch: 14 }))
+    : Array.from({ length: nCols }, (_, i) =>
+        identidadCols[i]?.key === 'apellidos_y_nombres' ? { wch: 32 } : { wch: 14 },
+      )
   return ws
 }
 
