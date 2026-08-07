@@ -6,9 +6,10 @@ import {
 } from '@tanstack/react-table'
 import { ChevronUp, ChevronDown, ChevronsUpDown, Printer, AlertTriangle, Search } from 'lucide-react'
 import { mapAlertasPlanilla } from '../lib/alertas'
-import { generarBoletaPdf } from '../lib/boletaPdf'
+import { imprimirBoletaMeses } from '../lib/imprimirBoleta'
 import { supabase } from '../lib/supabaseClient'
 import Paginacion from './Paginacion'
+import BoletaMesesModal from './BoletaMesesModal'
 import toast from 'react-hot-toast'
 
 const TOTAL_KEYS = new Set(['t_ingreso', 't_dsctos', 't_liquido'])
@@ -109,6 +110,24 @@ export default function PlanillaTable({
   const alertasMap = useMemo(() => mapAlertasPlanilla(planilla, filas), [planilla, filas])
   const totalAlertas = alertasMap.size
 
+  const [boletaFila, setBoletaFila] = useState(null)
+  const [boletaCargando, setBoletaCargando] = useState(false)
+
+  const seleccionarMeses = async (nMeses) => {
+    setBoletaCargando(true)
+    try {
+      const { encontrados } = await imprimirBoletaMeses(planilla, boletaFila.dni, boletaFila.periodo, nMeses)
+      if (encontrados < nMeses) {
+        toast(`Solo se encontraron ${encontrados} de ${nMeses} mes(es) solicitados.`, { icon: '⚠️' })
+      }
+      setBoletaFila(null)
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setBoletaCargando(false)
+    }
+  }
+
   const columns = useMemo(
     () => [
       ...columnas.map((col) => ({
@@ -139,7 +158,7 @@ export default function PlanillaTable({
                 </span>
               )}
               <button
-                onClick={() => generarBoletaPdf(planilla, row.original)}
+                onClick={() => setBoletaFila(row.original)}
                 className="p-1 rounded text-gray-500 hover:bg-gray-100 transition"
                 title="Descargar boleta PDF"
               >
@@ -292,6 +311,14 @@ export default function PlanillaTable({
         total={total}
         pageSize={pageSize}
       />
+
+      {boletaFila && (
+        <BoletaMesesModal
+          loading={boletaCargando}
+          onSeleccionar={seleccionarMeses}
+          onCancel={() => setBoletaFila(null)}
+        />
+      )}
     </div>
   )
 }

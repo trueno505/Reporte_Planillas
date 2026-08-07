@@ -2958,11 +2958,15 @@ END;
 $$;
 
 -- 3) abrir_periodo: marcar el GUC durante el INSERT masivo de clonado
+-- Copia TODAS las columnas de datos del mes anterior (montos, cargo, textos, etc.)
+-- excepto id/periodo/timestamps y las columnas de asistencia ('faltas', 'faltas_tarda'),
+-- que deben registrarse de nuevo cada mes. t_ingreso/t_dsctos/t_liquido quedan
+-- recalculados de todas formas por el trigger de totales al insertar.
 CREATE OR REPLACE FUNCTION public.abrir_periodo(p_tabla text, p_periodo date)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 DECLARE v_src DATE; v_next DATE; v_cols TEXT; n INTEGER;
 BEGIN
-  IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN RAISE EXCEPTION 'No autorizado'; END IF;
+  IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador', 'superadmin') THEN RAISE EXCEPTION 'No autorizado'; END IF;
   IF NOT public._es_tabla_planilla(p_tabla) THEN RAISE EXCEPTION 'Tabla no permitida: %', p_tabla; END IF;
   p_periodo := date_trunc('month', p_periodo)::date;
   EXECUTE format('SELECT MAX(periodo) FROM public.%I', p_tabla) INTO v_src;
@@ -2977,7 +2981,8 @@ BEGIN
   SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position) INTO v_cols
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = p_tabla
-     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo');
+     AND column_name NOT IN ('id', 'periodo', 'created_at', 'updated_at')
+     AND column_name !~ '^faltas';
   PERFORM set_config('app.generando_mes', '1', true);
   EXECUTE format('INSERT INTO public.%I (periodo, %s) SELECT $1, %s FROM public.%I WHERE periodo = $2', p_tabla, v_cols, v_cols, p_tabla) USING p_periodo, v_src;
   GET DIAGNOSTICS n = ROW_COUNT;

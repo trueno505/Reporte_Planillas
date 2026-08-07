@@ -23,7 +23,8 @@ Permite:
   S.N.P., Área — en planillas con `areas` — y Tipo de acto administrativo).
 - Exportar datos en **Excel estilizado** (agrupado por área, con resumen de conceptos,
   aporte a ESSALUD al 9%, comprobación y **cuadro presupuestal por área** con Nº Siaf
-  pedido al descargar) y **actualizar una columna** masivamente por Excel.
+  pedido al descargar), **importar trabajadores nuevos masivamente** (plantilla en blanco +
+  vista previa) y **actualizar una columna** masivamente por Excel.
 - Generar **boletas de pago en PDF** por trabajador y un **reporte consolidado** en Excel.
 - Buscar a un trabajador por DNI o nombre en **las 13 planillas a la vez**.
 - Un **dashboard** con KPIs y gráficos.
@@ -116,6 +117,7 @@ Cada columna tiene un **tipo** que determina su comportamiento en toda la app:
 - Los tipos de input, validación y auto-cálculo del formulario (`RecordForm`).
 - El orden de cabeceras al exportar a Excel (`ExcelExport`).
 - El selector de columnas y la plantilla de actualización por Excel (`ExcelActualizarColumna`).
+- La plantilla en blanco y el mapeo de columnas de la carga masiva (`ExcelImportarMasivo`).
 - El diseño de la boleta PDF (`boletaPdf.js`).
 - El cálculo de totales (`calculos.js`).
 
@@ -233,6 +235,7 @@ Reporte_Planillas/
 │   │   ├── PlanillaTable.jsx  Tabla de la página actual (orden/búsqueda server-side, edición, PDF)
 │   │   ├── Paginacion.jsx           ★ Control de paginación reutilizable (« Anterior 1 … 4 5 6 … 20 Siguiente »)
 │   │   ├── RecordForm.jsx           Modal editar (todos obligatorios) / alta rápida, con auto-cálculo
+│   │   ├── ExcelImportarMasivo.jsx  Carga masiva: plantilla en blanco + subir Excel → previsualizar → crear (chequea duplicados y DNI de otras planillas)
 │   │   ├── ExcelActualizarColumna.jsx  Actualizar una columna por DNI desde Excel + plantilla (trae todas las filas)
 │   │   ├── ExcelExport.jsx          Exportar TODAS las filas a .xlsx estilizado (pide Nº Siaf por área)
 │   │   ├── SiafModal.jsx            Modal reutilizable que pide un Nº Siaf por planilla (solo números; se aplica a todas sus áreas)
@@ -326,7 +329,7 @@ PlanillaPage (lee :slug de la URL)
   → useRealtime(tabla, onCambio)      se suscribe a los cambios postgres de ESA tabla y,
                                       ante cualquier evento, hace un refetch (con debounce)
   → PlanillaTable + Paginacion        renderiza la página actual + el control de paginación
-  → RecordForm / ExcelActualizarColumna / ExcelExport   mutan o leen Supabase
+  → RecordForm / ExcelImportarMasivo / ExcelActualizarColumna / ExcelExport   mutan o leen Supabase
 ```
 
 **Tiempo real con paginación:** como insertar/borrar cambia qué 50 filas tocan a la página
@@ -396,8 +399,8 @@ Se detectan tres tipos por fila:
 - **`TOTAL_DESCUADRADO`** (ámbar): el `t_liquido` guardado difiere del recalculado en > S/ 0.05.
 - **`FALTAS_EXCESIVAS`** (naranja): `faltas > 10` días.
 
-### 8.4 Exportar / Actualizar por Excel
-> Como la tabla está paginada (50 filas en memoria), ambas funciones traen **todos** los
+### 8.4 Exportar / Importar / Actualizar por Excel
+> Como la tabla está paginada (50 filas en memoria), las tres funciones traen **todos** los
 > registros bajo demanda (`fetchAllRows`) al usarlas, para no exportar/validar solo la página visible.
 - **Exportar** (`ExcelExport` + `lib/excelEncabezado.js`): descarga **todas** las filas como
   `.xlsx` estilizado con encabezado institucional (membrete, título oficial, mes, RUC). En
@@ -422,6 +425,15 @@ Se detectan tres tipos por fila:
   Excel con `DNI + valor`, muestra una **vista previa** (emparejados / no encontrados /
   inválidos) y hace un **UPDATE atómico por DNI** vía el RPC `actualizar_columna_planilla`.
   Incluye botón para descargar una **plantilla** para rellenar.
+- **Importar Excel** (`ExcelImportarMasivo`): carga masiva de **trabajadores nuevos**.
+  Descarga una plantilla en blanco con las columnas en el orden de `planillas.js` (sin los
+  totales, que los calcula el trigger). Al subir el archivo lleno, empareja las cabeceras por
+  etiqueta (tolera reordenar columnas), castea cada valor según el `type` de la columna y
+  muestra una vista previa con cuatro grupos: **se crearán**, **ya existen** en esta planilla
+  este mes, **en otra planilla** (mismo DNI ya usado este `periodo` en otra tabla — chequeado
+  contra `dni_registro`, porque un DNI no puede repetirse el mismo mes entre planillas) y
+  **filas inválidas** (falta el DNI o un campo obligatorio). Al confirmar, inserta por lotes
+  de 300 filas en el mes abierto.
 
 ### 8.5 Boleta PDF (`boletaPdf.js`)
 Genera una boleta A4 por trabajador con encabezado institucional, datos del trabajador,
@@ -524,8 +536,8 @@ manuales (INSERT): `abrir_periodo` marca la transacción con el GUC
   ('consultor','editor','administrador','superadmin')`):
   - **`consultor`** — SELECT (ver), exportar a Excel, descargar boleta PDF.
   - **`editor`** — todo lo del consultor **+ editar datos** de las planillas (crear/
-    editar/eliminar, alta rápida, actualizar columnas por Excel, recálculo). **No** gestiona
-    usuarios ni ve la auditoría.
+    editar/eliminar, alta rápida, importar registros y actualizar columnas por Excel,
+    recálculo). **No** gestiona usuarios ni ve la auditoría.
   - **`administrador`** — control total: datos + **gestión de usuarios** + **auditoría**.
   - **`superadmin`** — **exactamente los mismos privilegios que `administrador`** en toda
     la RLS y los RPCs, más tres diferencias (añadido el 2026-07-22, ver

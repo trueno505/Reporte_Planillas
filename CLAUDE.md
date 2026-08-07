@@ -55,8 +55,6 @@ The same config object drives:
 
 Groups: Obreros, Empleados, CAS, Pensionistas, Autoridades.
 
-Slugs: `obreros-permanentes`, `obreros-plazo-indeterminado`, `obreros-mandato-judicial`, `obreros-concurso`, `obreros-necesidad-mercado`, `empleados-permanentes`, `empleados-contrato-plazo-indet`, `empleados-contrato-provisional`, `empleados-mandato-judicial`, `cas-general`, `cesantes-pensionistas`, `gerente-municipal`, `alcalde`.
-
 > **CAS**: originalmente había 7 subplanillas CAS; se eliminaron 6 (`cas-choferes`, `cas-i-2025`, `cas-ii-2023`, `cas-ii-2024`, `cas-iii-2025`, `cas-funcional`) dejando solo `cas-general`. Ver `supabase/migracion_eliminar_cas_subplanillas.sql`.
 
 ### Data flow per planilla page
@@ -119,13 +117,10 @@ Realtime now **refetches the current page** (debounced ~200 ms) instead of mutat
 
 | Component | Purpose |
 |---|---|
-| `Layout.jsx` | Shell with Header + Sidebar + main content area |
-| `Header.jsx` | Top bar: current user, role badge, logout |
-| `Sidebar.jsx` | Collapsible navigation grouped by `grupo` |
-| `ProtectedRoute.jsx` | Redirects unauthenticated users to `/login` |
 | `PlanillaTable.jsx` | Data table for the current page (50 rows) with controlled server-side sort/search, inline edit, row alerts, PDF boleta download, edit/delete actions; renders `<Paginacion>` |
 | `Paginacion.jsx` | Reusable Tailwind pagination control (« Anterior \| 1 … 4 5 6 … 20 \| Siguiente »), current page highlighted, ellipsis for large ranges, prev/next disabled at ends; hidden when ≤1 page |
 | `RecordForm.jsx` | Modal to edit a record (or quick-create in `soloBasicos`); live auto-calculates totals. **On edit, ALL non-total fields are required** (forces filling fields left blank during quick-create) — see `esRequerido`; validation runs in JS on submit (the save button sits outside the `<form>`, so native `required` doesn't fire). `soloBasicos` prop (used by `NuevoRegistro`) restricts to DNI, Apellidos y Nombres, the **date column(s)** (`type === 'date'`, typically F. Ingreso), S.N.P., Área and Tipo de acto administrativo, makes them required, renders S.N.P. as an ONP/AFP selector and Área as a `<select>` from `planilla.areas` (also on normal create; read-only identity on edit). **The per-planilla page has no create button** — new records are added only from `/nuevo-registro`. |
+| `ExcelImportarMasivo.jsx` | Bulk-create new records via Excel. Downloads a blank template with headers = `planilla.columnas` labels in config order (minus the auto-calculated totals `t_ingreso`/`t_dsctos`/`t_liquido`, which the DB trigger fills in). On upload, matches columns by normalized header label (order-tolerant), casts each value by column `type` (dates accept Excel serials, `dd/mm/yyyy` or `yyyy-mm-dd`), and previews rows split into **se crearán** / **ya existen en esta planilla** (same `tabla`+`periodo`) / **en otra planilla** (DNI already claimed this `periodo` by a different table, checked against `dni_registro`) / **filas inválidas** (missing DNI or a `required` column). Confirms with a chunked `insert` (300 rows/batch) into the open `periodo`. Same visibility gate as `ExcelActualizarColumna` (`editable` = `puedeEditar && esAbierto`) |
 | `ExcelActualizarColumna.jsx` | Pick one column → upload Excel (DNI + value) → preview (matched/not-found/invalid) → atomic single-column UPDATE by DNI via `actualizar_columna_planilla` RPC; also downloads a fill-in template |
 | `ExcelExport.jsx` | Download current rows as `.xlsx`, with a styled institutional header (membrete + planilla `titulo` + month + RUC) built by `lib/excelEncabezado.js` using `xlsx-js-style`. Before downloading, if the planilla has cuadros presupuestales configured (`config/cuadrosPresupuestales.js`), a modal asks ONE **Nº Siaf** for the planilla (blank allowed) and applies it to every área present in the month's data, passed as `siafPorArea` |
 | `ConfirmDialog.jsx` | Reusable confirm modal; `danger` prop for red styling |
@@ -213,10 +208,15 @@ Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
 - **Columna `periodo`** en las 13 tablas (`DATE NOT NULL DEFAULT date_trunc('month', now())`),
   con `UNIQUE (dni, periodo)` (reemplaza la antigua `dni UNIQUE`) e índice `idx_<tabla>_periodo`.
   El histórico arranca en **junio 2026** (las filas previas se backfillearon a `2026-06-01`).
-- **Identidad fija**: al generar un mes, se copian `dni` + las que existan de
-  `{apellidos_y_nombres, f_ingreso/fecha_ing, snp, area, tipo_acto_administrativo}`; el resto de
-  columnas (montos, faltas, cargo…) quedan en blanco. En el front, `getColumnasIdentidad(planilla)`
-  (en `planillas.js`) devuelve esas columnas; `RecordForm` las muestra **solo lectura** al editar.
+- **Identidad fija**: `dni` + las que existan de `{apellidos_y_nombres, f_ingreso/fecha_ing, snp,
+  area, tipo_acto_administrativo}`. En el front, `getColumnasIdentidad(planilla)` (en `planillas.js`)
+  devuelve esas columnas; `RecordForm` las muestra **solo lectura** al editar (independiente de qué
+  copie `abrir_periodo`, ver abajo).
+- **Al generar un mes** (`abrir_periodo`), se copian **todas** las columnas de datos del mes
+  anterior (montos, cargo, textos…) **excepto** `id`/`periodo`/`created_at`/`updated_at` y las
+  columnas de asistencia (`faltas`, `faltas_tarda`), que quedan en blanco para registrarse de
+  nuevo cada mes. `t_ingreso`/`t_dsctos`/`t_liquido` igual se recalculan al insertar por el
+  trigger de totales.
 - **Mes abierto vs cerrado**: el mes editable es `MAX(periodo)` de cada tabla; los anteriores son
   **solo lectura**, impuesto por el trigger `proteger_periodo_cerrado` (BEFORE I/U/D en las 13
   tablas). Se salta con el GUC de sesión `app.bypass_periodo='1'` (lo usa solo `corregir_identidad`).
@@ -225,13 +225,14 @@ Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
 - **RPCs** (todas reciben/filtran por mes): `resumen_planillas(p_periodo)`,
   `buscar_trabajador(termino, p_periodo)`, `recalcular_totales(p_tabla, p_periodo)`,
   `actualizar_columna_planilla(p_tabla, p_periodo, p_columna, p_valores)`. Nuevas:
-  `abrir_periodo(p_tabla, p_periodo)` (genera el mes clonando identidad; admin/editor; **solo
-  permite el mes inmediatamente siguiente** al último existente, `MAX(periodo) + 1 mes` —
+  `abrir_periodo(p_tabla, p_periodo)` (genera el mes clonando todos los datos salvo faltas, ver
+  arriba; editor/administrador/superadmin; **solo permite el mes inmediatamente siguiente** al
+  último existente, `MAX(periodo) + 1 mes` —
   rechaza saltos como julio→diciembre incluso si se llama al RPC directamente; las filas
   clonadas se auditan como `GENERACION`, no como `INSERT`),
   `periodos_planilla(p_tabla)` (lista de meses para el selector), `corregir_identidad(p_tabla,
   p_dni, p_datos)` (corrige los campos fijos —incluida `area`— en **todos** los meses, vía el bypass).
-- **Frontend**: `src/lib/periodo.js` (helpers `formatPeriodo`/`periodoActual`/`siguientePeriodo`/`aPrimerDiaMes`),
+- **Frontend**: `src/lib/periodo.js` (helpers `formatPeriodo`/`periodoActual`/`siguientePeriodo`/`periodoAnterior`/`ultimosPeriodos`/`aPrimerDiaMes`),
   `PeriodoSelector.jsx`, y `periodo` enhebrado por `usePlanillaPaginada` → `db.js`
   (`fetchPagina`/`fetchAllRows` filtran `.eq('periodo', …)`). `PlanillaPage` tiene el selector de
   mes, banner de solo-lectura y botón **"Generar mes siguiente"** (`abrir_periodo`). `Dashboard` y
@@ -239,28 +240,10 @@ Cada planilla es un **histórico mensual**: una fila por `(dni, periodo)`, donde
   es el modal de corrección de datos fijos. `boletaPdf`/`ExcelExport`/`reporteConsolidado` reflejan el mes.
 - **SQL**: el parche idempotente para BD viva es `supabase/migracion_historico_periodo.sql`; el mismo
   bloque está integrado al final de `_migracion_completa.sql` y `genSql.mjs` ya genera las tablas con
-  `periodo` + `UNIQUE (dni, periodo)`.
+  `periodo` + `UNIQUE (dni, periodo)`. El comportamiento de `abrir_periodo` (copiar todo salvo
+  faltas) tiene su propio parche idempotente `supabase/migracion_abrir_periodo_copiar_todo.sql`,
+  también integrado en `_migracion_completa.sql`.
 
-### Type mapping reference
+(Column `type` → SQL type / JS coercion mapping is documented as a comment at the top of `src/config/planillas.js`.)
 
-| config `type` | SQL type | JS coercion |
-|---|---|---|
-| `dni` | `INTEGER UNIQUE NOT NULL` | `parseInt` |
-| `int` | `INTEGER` | `parseInt` |
-| `money` | `NUMERIC(12,2)` | `parseFloat` |
-| `date` | `DATE` | string / Excel serial → `YYYY-MM-DD` |
-| `text` | `TEXT` | string |
-
-### Key dependencies
-
-| Package | Use |
-|---|---|
-| `@supabase/supabase-js` | Backend client |
-| `react-router-dom` | Routing |
-| `@tanstack/react-table` | Table rendering |
-| `xlsx` | Excel import/export |
-| `jspdf` + `jspdf-autotable` | PDF boleta generation |
-| `recharts` | Dashboard charts |
-| `lucide-react` | Icons |
-| `react-hot-toast` | Toast notifications |
-| `tailwindcss` | Styling (custom colors: primary `#003366`) |
+See `TECNOLOGIAS.md` for the full dependency/version list.

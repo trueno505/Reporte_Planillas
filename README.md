@@ -9,8 +9,9 @@ vivo** (Realtime), búsqueda/orden y edición en línea, editar/eliminar registr
 **cálculo automático de totales**, un **alta rápida** global (solo datos básicos + S.N.P. +
 Área; las planillas no tienen alta propia), **exportar Excel estilizado** (agrupado por
 área, con resumen de conceptos, ESSALUD 9%, comprobación y **cuadro presupuestal por área**
-con Nº Siaf —solo números— pedido al descargar) y **actualizar columnas** por **Excel**,
-generar **boletas PDF** y un **reporte consolidado**, buscar a un trabajador por DNI o
+con Nº Siaf —solo números— pedido al descargar), **importar trabajadores nuevos de forma
+masiva** y **actualizar columnas** por **Excel**, generar **boletas PDF** y un **reporte
+consolidado**, buscar a un trabajador por DNI o
 nombre en las 13 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
 de cambios, **gestión de usuarios/roles**, **histórico mensual permanente** (cada mes se
 conserva; ver abajo) y actualizaciones en **tiempo real** (Supabase Realtime).
@@ -71,7 +72,7 @@ Cuatro roles, almacenados en `public.perfiles.rol` (la seguridad real la impone 
 | Rol | Permite |
 |---|---|
 | **consultor** | Consultar, exportar a Excel y descargar boletas PDF (solo lectura). |
-| **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, alta rápida, actualizar columnas por Excel, recálculo). **No** gestiona usuarios ni ve la auditoría. |
+| **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, alta rápida, importar registros y actualizar columnas por Excel, recálculo). **No** gestiona usuarios ni ve la auditoría. |
 | **administrador** | Control total: datos + **gestión de usuarios** + **auditoría**. |
 | **superadmin** | Igual que administrador en todo, **más**: su cuenta y su rol son **permanentes** (nadie puede desactivarla, eliminarla ni reasignarle otro rol — ni siquiera otro superadmin), solo un superadmin puede (des)activar la cuenta de un administrador, y ve un registro de auditoría de **cambios de rol** que un administrador normal no ve. |
 
@@ -105,9 +106,15 @@ Cada planilla guarda una fila por **(trabajador, mes)** mediante una columna `pe
 - Las columnas **fijas** (DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P., Tipo de
   acto administrativo) se mantienen iguales todos los meses; las demás varían.
 - El **mes actual** es editable; los **meses anteriores** quedan en **solo lectura**.
-- En cada planilla, el botón **«Generar mes siguiente»** crea el mes nuevo copiando a los
-  trabajadores (identidad) con los montos en blanco para llenarlos. Por seguridad solo puede
-  generar el **mes inmediatamente siguiente** al último existente (no se pueden saltar meses).
+- En cada planilla, el botón **«Generar mes siguiente»** crea el mes nuevo copiando **todos**
+  los datos del mes anterior (montos, cargo, identidad, etc.), salvo las columnas de
+  asistencia (`faltas`/`faltas_tarda`), que quedan en blanco para registrarse de nuevo. Por
+  seguridad solo puede generar el **mes inmediatamente siguiente** al último existente (no se
+  pueden saltar meses).
+- Para cargar muchos trabajadores nuevos de una vez (p. ej. al abrir una planilla por primera
+  vez), cada planilla tiene un botón **«Importar Excel»**: descarga una plantilla en blanco con
+  las columnas en el orden correcto y, al subirla llena, previsualiza qué filas se crearán antes
+  de confirmar (ver `ExcelImportarMasivo` en `CLAUDE.md`).
 - El selector de mes (en la planilla, el dashboard y la búsqueda global) permite consultar
   meses y años anteriores. Para corregir un dato fijo, **«Corregir datos fijos»** lo cambia
   en todos los meses del trabajador.

@@ -6,6 +6,7 @@ import PlanillaTable from '../components/PlanillaTable'
 import RecordForm from '../components/RecordForm'
 import ExcelExport from '../components/ExcelExport'
 import ExcelActualizarColumna from '../components/ExcelActualizarColumna'
+import ExcelImportarMasivo from '../components/ExcelImportarMasivo'
 import ConfirmDialog from '../components/ConfirmDialog'
 import PeriodoSelector from '../components/PeriodoSelector'
 import { getPlanillaBySlug, getSeccionesCalculo } from '../config/planillas'
@@ -174,6 +175,7 @@ export default function PlanillaPage() {
 
             {editable && (
               <>
+                <ExcelImportarMasivo planilla={planilla} periodo={periodo} onDone={refetch} onBusy={setBulkBusy} />
                 <ExcelActualizarColumna planilla={planilla} periodo={periodo} onDone={refetch} onBusy={setBulkBusy} />
                 {getSeccionesCalculo(planilla) && (
                   <button
@@ -265,7 +267,7 @@ export default function PlanillaPage() {
       {generarOpen && (
         <ConfirmDialog
           title={`Generar planilla de ${formatPeriodo(nuevoMes)}`}
-          message={`Se creará el mes ${formatPeriodo(nuevoMes)} copiando a los trabajadores de ${formatPeriodo(periodoAbierto)} (DNI, nombres, fecha de ingreso, S.N.P., área y tipo de acto administrativo). Los montos quedarán en blanco para llenarlos. ${formatPeriodo(periodoAbierto)} quedará como histórico de solo lectura.`}
+          message={`Se creará el mes ${formatPeriodo(nuevoMes)} copiando todos los datos de ${formatPeriodo(periodoAbierto)} (montos, cargo, identidad, etc.). Las faltas quedarán en blanco para registrarlas de nuevo. ${formatPeriodo(periodoAbierto)} quedará como histórico de solo lectura.`}
           loading={generando}
           onConfirm={handleGenerarMes}
           onCancel={() => setGenerarOpen(false)}

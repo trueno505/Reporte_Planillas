@@ -28,6 +28,24 @@ export function siguientePeriodo(p) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
 }
 
+// Mes anterior a un periodo 'YYYY-MM-01' → 'YYYY-MM-01'.
+export function periodoAnterior(p) {
+  const [y, m] = String(p).slice(0, 10).split('-').map(Number)
+  const d = new Date(y, m - 1 - 1, 1) // m es 1-based; -1 mes
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+}
+
+// Lista de `n` periodos consecutivos que terminan en `p` (incluido), en orden ascendente.
+export function ultimosPeriodos(p, n) {
+  const periodos = []
+  let cursor = p
+  for (let i = 0; i < n; i++) {
+    periodos.unshift(cursor)
+    cursor = periodoAnterior(cursor)
+  }
+  return periodos
+}
+
 // Normaliza cualquier fecha 'YYYY-MM-DD' al primer día de su mes.
 export function aPrimerDiaMes(p) {
   return `${String(p).slice(0, 7)}-01`

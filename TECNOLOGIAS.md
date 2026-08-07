@@ -43,7 +43,7 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 |---|---|---|
 | **@tanstack/react-table** | ^8.21.3 | Renderizado de tablas (orden, filtros, edición en línea, alertas) |
 | **xlsx-js-style** | ^1.2.0 | Exportes Excel **estilizados**: encabezado institucional, agrupación por área, resúmenes (RESÚMEN / ESSALUD 9% / COMPROBACIÓN), cuadros presupuestales y reporte consolidado |
-| **xlsx** (SheetJS) | 0.20.3 | **Lectura** de archivos Excel (actualizar columna por DNI, plantillas) |
+| **xlsx** (SheetJS) | 0.20.3 | **Lectura** de archivos Excel (importar registros nuevos, actualizar columna por DNI, plantillas) |
 | **jspdf** | ^4.2.1 | Generación de PDF (boletas de pago individuales) |
 | **jspdf-autotable** | ^5.0.8 | Tablas dentro de los PDF |
 | **recharts** | ^3.8.1 | Gráficos del Dashboard (barras de líquido total por grupo) |
@@ -63,8 +63,8 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 
 - **Row Level Security (RLS)** — control de acceso por rol (`consultor` / `editor` / `administrador` / `superadmin`).
 - **Funciones (PL/pgSQL y SQL)** — `get_my_rol()`, `recalcular_totales()`,
-  `actualizar_columna_planilla()`, `buscar_trabajador()`, `resumen_planillas()`,
-  `sync_dni_registro()`, etc.
+  `actualizar_columna_planilla()`, `abrir_periodo()`, `corregir_identidad()`,
+  `buscar_trabajador()`, `resumen_planillas()`, `sync_dni_registro()`, etc.
 - **Triggers** — totales calculados en la BD, auditoría automática, DNI único global,
   protección de la cuenta `superadmin` (`proteger_rol_perfil`, `proteger_superadmin_ban`,
   `proteger_superadmin_delete`).
@@ -109,5 +109,5 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 > SPA en **React + Vite** estilizada con **Tailwind**, que consume **Supabase**
 > (PostgreSQL con RLS, Auth, Realtime, Edge Functions y funciones/triggers en SQL)
 > como backend, con exportación **Excel estilizada** (resúmenes por área, ESSALUD,
-> cuadros presupuestales) y actualización masiva por **Excel**, generación de **PDF**
-> y gráficos con **Recharts**.
+> cuadros presupuestales), carga masiva de trabajadores nuevos y actualización masiva
+> por **Excel**, generación de **PDF** y gráficos con **Recharts**.
