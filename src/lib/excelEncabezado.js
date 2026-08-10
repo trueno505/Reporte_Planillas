@@ -364,11 +364,37 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
   // compactar ni dividir filas, como una tabla simple de siempre.
   const identidadCols = idxIngreso === -1 ? columnas : columnas.filter((c, i) => i <= idxIngreso && c.type !== 'money')
   const ingresoCols = idxIngreso === -1 ? [] : columnas.filter((c, i) => i <= idxIngreso && c.type === 'money')
-  const descuentoCols = idxIngreso === -1 ? [] : columnas.filter((c, i) => i > idxIngreso && c.key !== 'tipo_acto_administrativo')
+  const descuentoColsAll = idxIngreso === -1 ? [] : columnas.filter((c, i) => i > idxIngreso && c.key !== 'tipo_acto_administrativo')
+
+  // Total Líquido (y cualquier columna que venga después, p.ej. Firma) no
+  // tiene par en Ingresos: se reservan sus propias columnas al final del
+  // rango compartido, fusionadas verticalmente entre la fila INGRES. y la
+  // fila DSCTOS, en vez de competir por posición con el resto de conceptos
+  // de descuento.
+  const idxLiquido = descuentoColsAll.findIndex((c) => c.key === 't_liquido')
+  const reservadas = idxLiquido === -1 ? [] : descuentoColsAll.slice(idxLiquido)
+  const descuentoCols = idxLiquido === -1 ? descuentoColsAll : descuentoColsAll.slice(0, idxLiquido)
 
   const nIdent = identidadCols.length
-  const nMoney = Math.max(ingresoCols.length, descuentoCols.length)
-  const nCols = idxIngreso === -1 ? columnas.length : nIdent + nMoney
+  const nMoneyBase = Math.max(ingresoCols.length, descuentoCols.length)
+  const nMoney = nMoneyBase + reservadas.length
+  // La lista más corta (Ingresos o Descuentos) se alinea por la derecha
+  // contra la más larga, de modo que Total Ingreso y Total Descuentos
+  // —siempre el último concepto de cada lista— terminan en la misma columna.
+  // Cuando Descuentos es la lista larga (el caso normal), el hueco que sobra
+  // a la izquierda de Ingresos se cubre "prestando" las últimas columnas de
+  // identidad (Cargo, Niv. Rem., S.N.P., …): su rótulo no necesita repetirse
+  // en las 2 filas del encabezado, así que la fila de abajo (DSCTOS) se
+  // reutiliza ahí para los primeros conceptos de descuento, angostando la
+  // hoja en vez de dejar celdas vacías. Si en cambio Ingresos es la lista
+  // larga, no hay nada que prestar (la fila de arriba ya la ocupa identidad).
+  const gap = nMoneyBase - Math.min(ingresoCols.length, descuentoCols.length)
+  const prestadas = descuentoCols.length >= ingresoCols.length ? Math.min(nIdent, gap) : 0
+  const base = nIdent - prestadas
+  const offIngreso = nMoneyBase - ingresoCols.length
+  const offDescuento = nMoneyBase - descuentoCols.length
+  const colReservada = (k) => base + nMoneyBase + k
+  const nCols = idxIngreso === -1 ? columnas.length : base + nMoney
   const ultima = Math.max(nCols - 1, 0)
   const titulo = planilla.titulo ?? planilla.label
   const ws = {}
@@ -389,10 +415,17 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
     const rDesc = r + 1
     identidadCols.forEach((c, i) => {
       set(ws, r, i, { t: 's', v: c.label }, stColLbl)
-      merges.push({ s: { r, c: i }, e: { r: rDesc, c: i } })
+      // Las últimas `prestadas` columnas de identidad no se fusionan: su fila
+      // de abajo se reutiliza para los primeros conceptos de la lista larga.
+      if (i < base) merges.push({ s: { r, c: i }, e: { r: rDesc, c: i } })
     })
-    ingresoCols.forEach((c, i) => set(ws, r, nIdent + i, { t: 's', v: c.label }, stColLbl))
-    descuentoCols.forEach((c, i) => set(ws, rDesc, nIdent + i, { t: 's', v: c.label }, stColLbl))
+    ingresoCols.forEach((c, i) => set(ws, r, base + offIngreso + i, { t: 's', v: c.label }, stColLbl))
+    descuentoCols.forEach((c, i) => set(ws, rDesc, base + offDescuento + i, { t: 's', v: c.label }, stColLbl))
+    reservadas.forEach((c, k) => {
+      const col = colReservada(k)
+      set(ws, r, col, { t: 's', v: c.label }, stColLbl)
+      merges.push({ s: { r, c: col }, e: { r: rDesc, c: col } })
+    })
     r += 2
   }
 
@@ -410,13 +443,16 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
       r += 1
 
       // Fila INGRES.
+      const rIngres = r
       set(ws, r, 0, { t: 's', v: 'INGRES.' }, stFilaLbl)
-      ingresoCols.forEach((c, i) => set(ws, r, nIdent + i, valorCelda(c, fila), stResLbl))
+      ingresoCols.forEach((c, i) => set(ws, r, base + offIngreso + i, valorCelda(c, fila), stResLbl))
+      reservadas.forEach((c, k) => set(ws, r, colReservada(k), valorCelda(c, fila), stResLbl))
       r += 1
 
       // Fila DSCTOS
       set(ws, r, 0, { t: 's', v: 'DSCTOS' }, stFilaLbl)
-      descuentoCols.forEach((c, i) => set(ws, r, nIdent + i, valorCelda(c, fila), stResLbl))
+      descuentoCols.forEach((c, i) => set(ws, r, base + offDescuento + i, valorCelda(c, fila), stResLbl))
+      reservadas.forEach((c, k) => merges.push({ s: { r: rIngres, c: colReservada(k) }, e: { r, c: colReservada(k) } }))
       r += 1
 
       // Fila OBSERVAC. (tipo de acto administrativo), combinada en el resto.
@@ -439,13 +475,18 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
       return
     }
     // Subtotal en 2 filas, alineado con INGRES./DSCTOS de cada trabajador.
+    const rIngresos = r
     set(ws, r, 0, { t: 's', v: `${etiqueta} - INGRESOS` }, stSubtotal)
-    ingresoCols.forEach((c, i) => set(ws, r, nIdent + i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT }))
+    ingresoCols.forEach((c, i) => set(ws, r, base + offIngreso + i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT }))
+    reservadas.forEach((c, k) => {
+      if (c.type === 'money') set(ws, r, colReservada(k), { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT })
+    })
     r += 1
     set(ws, r, 0, { t: 's', v: `${etiqueta} - DSCTOS` }, stSubtotal)
     descuentoCols.forEach((c, i) => {
-      if (c.type === 'money') set(ws, r, nIdent + i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT })
+      if (c.type === 'money') set(ws, r, base + offDescuento + i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT })
     })
+    reservadas.forEach((c, k) => merges.push({ s: { r: rIngresos, c: colReservada(k) }, e: { r, c: colReservada(k) } }))
     r += 1
   }
 

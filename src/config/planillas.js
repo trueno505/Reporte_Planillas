@@ -700,7 +700,16 @@ export const PLANILLAS = [
       { key: 'coop_s_crist', label: 'Coop. S. Crist.', type: 'money' },
       { key: 'ccp', label: 'CCP', type: 'money' },
       { key: 'faltas_tarda', label: 'Faltas/Tardanzas', type: 'money' },
-      { key: 'ret_jud', label: 'Ret. Jud.', type: 'money' },
+      {
+        key: 'ret_jud',
+        label: 'Ret. Jud.',
+        type: 'money',
+        // Se calcula solo: cada retención judicial aplica un % sobre
+        // (Total Ingreso − suma de formulaBase); `detalleKey` guarda los
+        // porcentajes (hasta 10) para poder editarlos después. Ver RecordForm.
+        formulaBase: ['fdo_pens', 'p_seg', 'c_var', 'ir_5ta_cat'],
+        detalleKey: 'ret_jud_detalle',
+      },
       { key: 'dscto_aut_varios', label: 'Dscto. Aut. Varios', type: 'money' },
       { key: 'la_positiva_vida', label: 'La Positiva Vida', type: 'money' },
       { key: 'cep', label: 'CEP', type: 'money' },

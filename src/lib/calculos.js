@@ -24,6 +24,6 @@ export function recalcularFilas(planilla, filas) {
   return filas.map((fila) => ({ ...fila, ...calcularTotales(planilla, fila) }))
 }
 
-function round2(n) {
+export function round2(n) {
   return Math.round(n * 100) / 100
 }

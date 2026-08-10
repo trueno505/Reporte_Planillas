@@ -1049,6 +1049,7 @@ CREATE TABLE IF NOT EXISTS public.alcalde (
   ccp NUMERIC(12,2),
   faltas_tarda NUMERIC(12,2),
   ret_jud NUMERIC(12,2),
+  ret_jud_detalle JSONB, -- % de cada retención judicial (hasta 10); ret_jud = suma calculada
   dscto_aut_varios NUMERIC(12,2),
   la_positiva_vida NUMERIC(12,2),
   cep NUMERIC(12,2),
@@ -2990,3 +2991,16 @@ BEGIN
   RETURN n;
 END
 $function$;
+
+-- =====================================================================
+-- RET. JUD. (Alcalde): columna ret_jud_detalle para el cálculo automático
+-- Integrado desde supabase/migracion_ret_jud_detalle.sql
+-- Idempotente; se ejecuta al final del consolidado.
+--
+-- ret_jud pasa de ser un monto editable a un total calculado en el cliente:
+-- cada retención judicial aplica un % (hasta 10, guardados en
+-- ret_jud_detalle) sobre (Total Ingreso − (Fdo. Pens. + P. Seg. + C. Var. +
+-- IR 5ta Cat.)). abrir_periodo ya copia esta columna automáticamente al
+-- generar el mes siguiente (usa information_schema, no una lista fija).
+-- =====================================================================
+ALTER TABLE public.alcalde ADD COLUMN IF NOT EXISTS ret_jud_detalle JSONB;

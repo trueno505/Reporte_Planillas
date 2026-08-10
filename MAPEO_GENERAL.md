@@ -2,7 +2,7 @@
 
 > Documento de referencia que explica **todo lo que está creado e implementado** en el
 > proyecto. Generado a partir de una revisión completa del código fuente.
-> **Última revisión:** 2026-07-22
+> **Última revisión:** 2026-08-10
 
 ---
 
@@ -110,6 +110,13 @@ Cada columna tiene un **tipo** que determina su comportamiento en toda la app:
 | `money` | `NUMERIC(12,2)` | `parseFloat` | Importe en soles |
 | `date` | `DATE` | string / serial Excel → `YYYY-MM-DD` | Fecha |
 | `text` | `TEXT` | string | Texto libre |
+
+Una columna puede además declarar **`formulaBase`** (array de `key`s de otras columnas
+`money`) y **`detalleKey`**: en vez de un input numérico normal, `RecordForm` la renderiza
+como un widget de fórmula (`CampoFormula`) que calcula una base, reparte hasta 10 % sobre
+ella y guarda el detalle de cada % en la columna `detalleKey` (JSONB) mientras el total
+sigue viajando por la columna real. Hoy el único caso es **Ret. Jud.** en `alcalde`
+(ver 8.2).
 
 **Ese mismo objeto de configuración alimenta a:**
 - La **generación del SQL** de tablas (`scripts/genSql.mjs`).
@@ -388,6 +395,16 @@ operaciones masivas de Excel / recálculo.
   **alfabéticamente** al renderizar (`localeCompare`, es) y ocupa **todo el ancho de la fila**
   para leer completo el nombre de la actividad. El resto de columnas quedan en blanco y los
   totales los calcula el trigger.
+- **Campo fórmula (`CampoFormula`) — "Ret. Jud." de Alcalde:** la única columna con
+  `formulaBase`/`detalleKey` hoy. En vez de un input de monto normal, muestra la **Base**
+  calculada (Total Ingreso − (Fdo. Pens. + P. Seg. + C. Var. + IR 5ta Cat.)), un selector
+  **"N° retenciones"** (0 a 10) y un input de **%** por cada retención con su monto
+  calculado en vivo al lado (2 decimales). El **Total** (suma de los montos) es el valor
+  real que se guarda en `ret_jud` — sigue siendo una columna de descuento normal, así que
+  dispara el recálculo habitual de Total Descuentos/Total Líquido. Los % individuales se
+  guardan en `ret_jud_detalle` (JSONB). Si se abre un registro con un `ret_jud` cargado a
+  mano (de antes de este widget) y no se toca el campo, su valor se conserva en vez de
+  pisarse con 0 solo por abrir el formulario.
 
 ### 8.2.1 Alta rápida (`NuevoRegistro.jsx`, ruta `/nuevo-registro`)
 Asistente en 3 pasos (grupo → planilla → datos) que reutiliza `RecordForm` con
@@ -489,8 +506,10 @@ se mantienen archivos sueltos por número.
 > **Parches sobre una BD ya instalada:** cuando un cambio de esquema afecta a una base con
 > datos, se aplica un parche puntual en vez de reinstalar. Hoy existe
 > `supabase/migracion_rename_observaciones.sql` (renombra `observaciones →
-> tipo_acto_administrativo` en las 13 tablas, idempotente, conservando los datos). El
-> `_migracion_completa.sql` ya refleja el nombre nuevo para instalaciones desde cero.
+> tipo_acto_administrativo` en las 13 tablas, idempotente, conservando los datos) y
+> `supabase/migracion_ret_jud_detalle.sql` (agrega `ret_jud_detalle JSONB` a `alcalde`
+> para el widget de fórmula de Ret. Jud., ver 3 y 8.2 — ya aplicado en producción). El
+> `_migracion_completa.sql` ya refleja ambos cambios para instalaciones desde cero.
 
 El archivo contiene, en orden:
 

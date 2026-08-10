@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Calculator, ShieldAlert } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
-import { calcularTotales } from '../lib/calculos'
+import { calcularTotales, round2 } from '../lib/calculos'
 import { getSeccionesCalculo, esColumnaIdentidad } from '../config/planillas'
 import CorregirIdentidad from './CorregirIdentidad'
 import { formatPeriodo } from '../lib/periodo'
@@ -20,6 +20,96 @@ function castValue(val, type) {
 
 // Sistema de pensiones para el campo S.N.P. en el alta rápida (soloBasicos)
 const AFP_OPCIONES = ['AFP Integra', 'Prima AFP', 'AFP Habitat', 'Profuturo AFP']
+
+const fmtMoney = (n) => (n ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+const MAX_RETENCIONES = 10
+
+// Campo especial para columnas con `formulaBase` (p.ej. Ret. Jud. en
+// Alcalde): cada retención aplica un % sobre (Total Ingreso − suma de
+// formulaBase). El detalle de porcentajes se guarda en `col.detalleKey`; el
+// total (suma de cada monto ya redondeado a 2 decimales) se guarda en
+// `col.key`, que sigue siendo una descuentoKey normal para t_dsctos/t_liquido.
+function CampoFormula({ col, form, setForm }) {
+  const pcts = form[col.detalleKey] ?? []
+
+  const base = col.formulaBase.reduce(
+    (acc, k) => acc - (parseFloat(form[k]) || 0),
+    parseFloat(form.t_ingreso) || 0
+  )
+  const montos = pcts.map((p) => round2((base * (parseFloat(p) || 0)) / 100))
+  const total = round2(montos.reduce((a, b) => a + b, 0))
+
+  // Mantiene la columna real (p.ej. ret_jud) sincronizada con el detalle;
+  // como es una descuentoKey normal, esto a su vez dispara el recálculo de
+  // t_dsctos/t_liquido en el efecto de totales de RecordForm. Con 0
+  // retenciones no se toca: evita que, al abrir un registro creado antes de
+  // este cálculo automático (con un ret_jud cargado a mano y sin detalle),
+  // se pise ese valor con 0 solo por abrir el formulario.
+  useEffect(() => {
+    if (pcts.length === 0) return
+    setForm((prev) => (prev[col.key] === total ? prev : { ...prev, [col.key]: total }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, pcts.length])
+
+  const setCantidad = (n) => {
+    n = Math.max(0, Math.min(MAX_RETENCIONES, n))
+    setForm((prev) => ({
+      ...prev,
+      [col.detalleKey]: Array.from({ length: n }, (_, i) => pcts[i] ?? ''),
+    }))
+  }
+
+  const setPct = (i, val) => {
+    const next = [...pcts]
+    next[i] = val
+    setForm((prev) => ({ ...prev, [col.detalleKey]: next }))
+  }
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-gray-500">Base: S/ {fmtMoney(base)}</span>
+        <label className="flex items-center gap-1.5 text-xs text-gray-600">
+          N° retenciones
+          <select
+            value={pcts.length}
+            onChange={(e) => setCantidad(parseInt(e.target.value, 10))}
+            className="border border-gray-200 rounded px-1.5 py-1 text-xs"
+          >
+            {Array.from({ length: MAX_RETENCIONES + 1 }, (_, n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {pcts.map((p, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 w-14 shrink-0">Ret. {i + 1}</span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            value={p}
+            onChange={(e) => setPct(i, e.target.value)}
+            placeholder="%"
+            className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <span className="text-sm font-medium text-primary w-28 text-right shrink-0">
+            S/ {fmtMoney(montos[i])}
+          </span>
+        </div>
+      ))}
+
+      <div className="flex items-center justify-between pt-2 border-t border-gray-200 text-sm font-semibold text-primary">
+        <span>Total {col.label}</span>
+        <span>S/ {fmtMoney(total)}</span>
+      </div>
+    </div>
+  )
+}
 
 export default function RecordForm({ planilla, record, onClose, onSaved, soloBasicos = false, periodo = null }) {
   const { tabla, columnas } = planilla
@@ -88,6 +178,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
   //  - Al crear normal: solo DNI y los marcados `required` en la config.
   const esRequerido = (col) => {
     if (secciones && totalKeys.has(col.key)) return false
+    if (col.formulaBase) return false // se calcula solo (ver CampoFormula)
     if (esFijaBloqueada(col.key)) return false // identidad en solo lectura al editar
     if (soloBasicos) return true
     if (isEdit) return true
@@ -135,6 +226,9 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
     const payload = {}
     for (const col of columnas) {
       payload[col.key] = castValue(form[col.key], col.type)
+      if (col.detalleKey) {
+        payload[col.detalleKey] = (form[col.detalleKey] ?? []).map((p) => parseFloat(p) || 0)
+      }
     }
 
     let error
@@ -200,15 +294,17 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             return (
               <div
                 key={col.key}
-                className={esAreaSelect ? 'sm:col-span-2 lg:col-span-3' : undefined}
+                className={esAreaSelect || col.formulaBase ? 'sm:col-span-2 lg:col-span-3' : undefined}
               >
                 <label className="block text-xs font-medium text-gray-600 mb-1 flex items-center gap-1">
                   {col.label}
                   {requerido && <span className="text-red-500">*</span>}
-                  {autoTotal && <Calculator size={10} className="text-primary" />}
+                  {(autoTotal || col.formulaBase) && <Calculator size={10} className="text-primary" />}
                   {fijaBloqueada && <span className="text-gray-400 text-[10px]">(fijo)</span>}
                 </label>
-                {fijaBloqueada ? (
+                {col.formulaBase ? (
+                  <CampoFormula col={col} form={form} setForm={setForm} />
+                ) : fijaBloqueada ? (
                   // Columna de identidad: solo lectura al editar el mes.
                   <input
                     type="text"
