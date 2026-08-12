@@ -145,6 +145,46 @@ function set(ws, r, c, cell, style) {
   ws[ref(r, c)] = out
 }
 
+// Rellena con celdas vacías (con borde) las columnas del rango [0, ultima] de
+// la fila `r` que hayan quedado sin escribir. El formato compacto solo
+// escribe valores en algunas columnas de cada fila (IDENTIDAD/INGRES./DSCTOS)
+// dejando huecos sin estilo entre medio; una celda sin estilo no dibuja línea
+// y rompe el efecto de "cuadro" continuo alrededor de cada trabajador.
+function completarFila(ws, r, ultima, estilo) {
+  for (let c = 0; c <= ultima; c++) {
+    if (!ws[ref(r, c)]) set(ws, r, c, { t: 's', v: '' }, estilo)
+  }
+}
+
+// Borde grueso negro para el CONTORNO exterior del bloque de cada trabajador
+// (distinto del borde fino gris que ya llevan todas las celdas), de modo que
+// se note claramente dónde termina un trabajador y empieza el siguiente.
+const BORDE_GRUESO = { style: 'medium', color: { rgb: '000000' } }
+
+// Refuerza uno o más lados ('top'|'bottom'|'left'|'right') del borde de la
+// celda (r, c) ya escrita, sin perder el resto de su estilo.
+function reforzarBorde(ws, r, c, lados) {
+  const cell = ws[ref(r, c)]
+  if (!cell) return
+  const s = { ...(cell.s ?? {}) }
+  const border = { ...(s.border ?? {}) }
+  for (const lado of lados) border[lado] = BORDE_GRUESO
+  s.border = border
+  ws[ref(r, c)] = { ...cell, s }
+}
+
+// Dibuja el contorno grueso alrededor de las filas [rInicio, rFin] × [0, ultima].
+function encuadrarBloque(ws, rInicio, rFin, ultima) {
+  for (let c = 0; c <= ultima; c++) {
+    reforzarBorde(ws, rInicio, c, ['top'])
+    reforzarBorde(ws, rFin, c, ['bottom'])
+  }
+  for (let r = rInicio; r <= rFin; r++) {
+    reforzarBorde(ws, r, 0, ['left'])
+    reforzarBorde(ws, r, ultima, ['right'])
+  }
+}
+
 /**
  * Escribe el bloque de encabezado institucional (membrete + título + mes + RUC)
  * en las filas 0..6 y devuelve el índice de la fila siguiente (7).
@@ -434,12 +474,16 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
       if (idxIngreso === -1) {
         // Planilla sin T. Ingreso (totales manuales): sin split, como antes.
         columnas.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), stResLbl))
+        encuadrarBloque(ws, r, r, ultima)
         r += 1
         continue
       }
 
+      const rInicio = r
+
       // Fila IDENTIDAD
       identidadCols.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), stResLbl))
+      completarFila(ws, r, ultima, stResLbl)
       r += 1
 
       // Fila INGRES.
@@ -447,12 +491,14 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
       set(ws, r, 0, { t: 's', v: 'INGRES.' }, stFilaLbl)
       ingresoCols.forEach((c, i) => set(ws, r, base + offIngreso + i, valorCelda(c, fila), stResLbl))
       reservadas.forEach((c, k) => set(ws, r, colReservada(k), valorCelda(c, fila), stResLbl))
+      completarFila(ws, r, ultima, stResLbl)
       r += 1
 
       // Fila DSCTOS
       set(ws, r, 0, { t: 's', v: 'DSCTOS' }, stFilaLbl)
       descuentoCols.forEach((c, i) => set(ws, r, base + offDescuento + i, valorCelda(c, fila), stResLbl))
       reservadas.forEach((c, k) => merges.push({ s: { r: rIngres, c: colReservada(k) }, e: { r, c: colReservada(k) } }))
+      completarFila(ws, r, ultima, stResLbl)
       r += 1
 
       // Fila OBSERVAC. (tipo de acto administrativo), combinada en el resto.
@@ -460,8 +506,13 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
         set(ws, r, 0, { t: 's', v: 'OBSERVAC.:' }, stFilaLbl)
         set(ws, r, 1, { t: 's', v: fila.tipo_acto_administrativo ?? '' }, stResLbl)
         if (ultima > 1) merges.push({ s: { r, c: 1 }, e: { r, c: ultima } })
+        completarFila(ws, r, ultima, stResLbl)
         r += 1
       }
+
+      // Contorno grueso alrededor de TODO el bloque del trabajador (IDENTIDAD
+      // .. OBSERVAC.), para diferenciarlo claramente del siguiente.
+      encuadrarBloque(ws, rInicio, r - 1, ultima)
     }
   }
   const escribirSubtotal = (rows, etiqueta) => {
@@ -481,12 +532,14 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
     reservadas.forEach((c, k) => {
       if (c.type === 'money') set(ws, r, colReservada(k), { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT })
     })
+    completarFila(ws, r, ultima, stSubtotal)
     r += 1
     set(ws, r, 0, { t: 's', v: `${etiqueta} - DSCTOS` }, stSubtotal)
     descuentoCols.forEach((c, i) => {
       if (c.type === 'money') set(ws, r, base + offDescuento + i, { t: 'n', v: sumaClave(rows, c.key) }, { ...stSubtotal, z: NUMFMT })
     })
     reservadas.forEach((c, k) => merges.push({ s: { r: rIngresos, c: colReservada(k) }, e: { r, c: colReservada(k) } }))
+    completarFila(ws, r, ultima, stSubtotal)
     r += 1
   }
 
@@ -525,6 +578,122 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
         identidadCols[i]?.key === 'apellidos_y_nombres' ? { wch: 32 } : { wch: 14 },
       )
   return ws
+}
+
+// ─── Hojas "por descuento" ────────────────────────────────────────────────────
+// Una hoja aparte por cada concepto de descuento (Rimac, cooperativas, F.
+// Pens., etc.), listando solo a los trabajadores con monto != 0 en esa
+// columna — para entregar/enviar la relación a cada entidad por separado.
+const stTituloDsc = {
+  font: { bold: true, sz: 11 },
+  alignment: { horizontal: 'center', vertical: 'center' },
+}
+const stConceptoLbl = { font: { bold: true, color: { rgb: MAGENTA }, sz: 11 } }
+const stPlanillaNLbl = { font: { bold: true, sz: 9 } }
+const stPlanillaNVal = { font: { sz: 9 }, border: borde }
+const stNumCentro = { font: { sz: 9 }, alignment: { horizontal: 'center' }, border: borde }
+const stFechaLarga = { font: { bold: true, sz: 10 }, alignment: { horizontal: 'right' } }
+
+const MESES_LARGO = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+]
+
+// "Ica, 18 de Marzo del 2026" (fecha de descarga del reporte).
+function fechaLarga(d) {
+  const mes = MESES_LARGO[d.getMonth()]
+  return `Ica, ${d.getDate()} de ${mes.charAt(0).toUpperCase()}${mes.slice(1)} del ${d.getFullYear()}`
+}
+
+// Excel prohíbe : \ / ? * [ ] en el nombre de una hoja y lo limita a 31 caracteres.
+function nombreHoja(base) {
+  return base.replace(/[:\\/?*[\]]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 31)
+}
+
+/**
+ * Construye la hoja de un solo concepto de descuento: N°, Apellidos y
+ * Nombres, monto — solo los trabajadores con monto != 0 en `col.key` — y al
+ * final el TOTAL y la fecha de generación.
+ */
+function construirHojaDescuentoConcepto(planilla, filas, periodo, col) {
+  const NCOLS = 3
+  const ws = {}
+  const merges = []
+  let r = 0
+
+  set(ws, r, 0, { t: 's', v: ENTIDAD }, stTituloDsc)
+  merges.push({ s: { r, c: 0 }, e: { r, c: NCOLS - 1 } })
+  r += 2
+
+  set(ws, r, 0, { t: 's', v: `PERSONAL ${(planilla.label ?? '').toUpperCase()} QUE SE LE DESCUENTA` }, stTituloDsc)
+  merges.push({ s: { r, c: 0 }, e: { r, c: NCOLS - 1 } })
+  r += 1
+
+  set(ws, r, 0, { t: 's', v: `${col.label}:` }, stConceptoLbl)
+  set(ws, r, NCOLS - 1, { t: 's', v: mesLargo(periodo) }, stMesVal)
+  r += 1
+
+  // "Planilla N°" queda en blanco: es un código interno que se asigna a mano.
+  set(ws, r, 0, { t: 's', v: 'Planilla N°' }, stPlanillaNLbl)
+  set(ws, r, 1, { t: 's', v: '' }, stPlanillaNVal)
+  r += 2
+
+  set(ws, r, 0, { t: 's', v: 'N°' }, stColLbl)
+  set(ws, r, 1, { t: 's', v: 'APELLIDOS y NOMBRES' }, stColLbl)
+  set(ws, r, 2, { t: 's', v: `Dscto.\n${col.label}` }, stColLbl)
+  r += 1
+
+  let total = 0
+  filas.forEach((fila, i) => {
+    const monto = round2(parseFloat(fila[col.key]) || 0)
+    total += monto
+    set(ws, r, 0, { t: 'n', v: i + 1 }, stNumCentro)
+    set(ws, r, 1, { t: 's', v: fila.apellidos_y_nombres ?? '' }, stResLbl)
+    set(ws, r, 2, { t: 'n', v: monto }, stResVal)
+    r += 1
+  })
+
+  set(ws, r, 0, { t: 's', v: '' }, stResTot)
+  set(ws, r, 1, { t: 's', v: 'TOTAL' }, { ...stResTot, alignment: { horizontal: 'center' } })
+  merges.push({ s: { r, c: 0 }, e: { r, c: 1 } })
+  set(ws, r, 2, { t: 'n', v: round2(total) }, stResTotVal)
+  r += 2
+
+  set(ws, r, 0, { t: 's', v: fechaLarga(new Date()) }, stFechaLarga)
+  merges.push({ s: { r, c: 0 }, e: { r, c: NCOLS - 1 } })
+  r += 1
+
+  ws['!ref'] = `A1:${ref(Math.max(r, 1), NCOLS - 1)}`
+  ws['!merges'] = merges
+  ws['!cols'] = [{ wch: 6 }, { wch: 38 }, { wch: 16 }]
+  return ws
+}
+
+/**
+ * Devuelve una hoja por cada concepto de descuento de la planilla (columnas
+ * money entre Total Ingreso y Total Descuentos) que tenga al menos un
+ * trabajador con monto != 0 ese mes. `[]` si la planilla no tiene descuentos
+ * calculados (`sinAutoTotales`) o ninguno con datos.
+ *
+ * @returns {{ nombre: string, hoja: object }[]}
+ */
+export function construirHojasDescuentos(planilla, filas, periodo = null) {
+  const secciones = getSeccionesCalculo(planilla)
+  if (!secciones) return []
+
+  const colMap = Object.fromEntries(planilla.columnas.map((c) => [c.key, c]))
+  const hojas = []
+  for (const key of secciones.descuentoKeys) {
+    const col = colMap[key]
+    if (!col) continue
+    const filasConDescuento = filas.filter((f) => (parseFloat(f[key]) || 0) !== 0)
+    if (!filasConDescuento.length) continue
+    hojas.push({
+      nombre: nombreHoja(col.label),
+      hoja: construirHojaDescuentoConcepto(planilla, filasConDescuento, periodo, col),
+    })
+  }
+  return hojas
 }
 
 /**

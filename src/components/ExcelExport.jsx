@@ -3,7 +3,7 @@ import XLSX from 'xlsx-js-style'
 import { Download } from 'lucide-react'
 import { fetchAllRows } from '../lib/db'
 import { formatPeriodo } from '../lib/periodo'
-import { construirHojaPlanilla, construirHojaResumenAreas } from '../lib/excelEncabezado'
+import { construirHojaPlanilla, construirHojaResumenAreas, construirHojasDescuentos } from '../lib/excelEncabezado'
 import { getCuadroArea } from '../config/cuadrosPresupuestales'
 import SiafModal from './SiafModal'
 import toast from 'react-hot-toast'
@@ -21,6 +21,23 @@ export default function ExcelExport({ planilla, periodo = null }) {
     XLSX.utils.book_append_sheet(wb, ws, label.slice(0, 31))
     const wsResumen = construirHojaResumenAreas(planilla, filas, periodo)
     if (wsResumen) XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen por áreas'.slice(0, 31))
+
+    // Una hoja aparte por cada concepto de descuento (Rimac, cooperativas...)
+    // con al menos un trabajador afectado ese mes, para poder entregarla
+    // directamente a cada entidad. Se evitan nombres de hoja repetidos.
+    const nombresUsados = new Set(wb.SheetNames)
+    for (const { nombre, hoja } of construirHojasDescuentos(planilla, filas, periodo)) {
+      let nombreFinal = nombre || 'Descuento'
+      let n = 2
+      while (nombresUsados.has(nombreFinal)) {
+        const sufijoN = ` (${n})`
+        nombreFinal = `${nombre.slice(0, 31 - sufijoN.length)}${sufijoN}`
+        n += 1
+      }
+      nombresUsados.add(nombreFinal)
+      XLSX.utils.book_append_sheet(wb, hoja, nombreFinal)
+    }
+
     const sufijo = periodo ? `_${formatPeriodo(periodo).replace(' ', '_')}` : ''
     XLSX.writeFile(wb, `${label}${sufijo}.xlsx`)
   }
