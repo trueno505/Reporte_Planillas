@@ -2,6 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { getSeccionesCalculo } from '../config/planillas'
 import { formatPeriodo } from './periodo'
+import { fmtMoneda } from './formato'
 
 const AZUL = [0, 51, 102]   // #003366
 const GRIS = [245, 246, 250] // #f5f6fa
@@ -324,8 +325,9 @@ function dibujarPaginaComparativa(doc, planilla, filas) {
   doc.text('Documento generado electrónicamente — Municipalidad Provincial de Ica', 14, 287)
 }
 
+// Importe para el PDF. Delega el formato en fmtMoneda; solo añade el
+// saneamiento de valores no numéricos (la boleta nunca debe imprimir "NaN").
 function fmt(v) {
   const n = parseFloat(v)
-  if (isNaN(n)) return '0.00'
-  return n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return fmtMoneda(isNaN(n) ? 0 : n)
 }

@@ -2,6 +2,7 @@ import XLSX from 'xlsx-js-style'
 import { formatPeriodo } from './periodo'
 import { getSeccionesCalculo } from '../config/planillas'
 import { getCuadroArea } from '../config/cuadrosPresupuestales'
+import { round2 } from './calculos'
 
 // Cuota patronal ESSALUD: 9% del total de ingresos.
 const TASA_ESSALUD = 0.09
@@ -26,10 +27,6 @@ const borde = {
   bottom: { style: 'thin', color: { rgb: '999999' } },
   left: { style: 'thin', color: { rgb: '999999' } },
   right: { style: 'thin', color: { rgb: '999999' } },
-}
-
-function round2(n) {
-  return Math.round((n + Number.EPSILON) * 100) / 100
 }
 
 function ref(r, c) {

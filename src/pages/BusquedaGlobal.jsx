@@ -8,10 +8,7 @@ import { PLANILLAS, getPlanillaByTabla } from '../config/planillas'
 import { imprimirBoletaMeses } from '../lib/imprimirBoleta'
 import BoletaMesesModal from '../components/BoletaMesesModal'
 import { periodoActual, formatPeriodo } from '../lib/periodo'
-
-function fmt(n) {
-  return Number(n ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })
-}
+import { fmtMoneda } from '../lib/formato'
 
 export default function BusquedaGlobal() {
   const [termino, setTermino] = useState('')
@@ -156,7 +153,7 @@ export default function BusquedaGlobal() {
                             <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-surface'}>
                               <td className="px-4 py-2 tabular-nums text-gray-600">{r.dni}</td>
                               <td className="px-4 py-2 font-medium text-gray-900">{r.apellidos_y_nombres}</td>
-                              <td className="px-4 py-2 text-right tabular-nums text-primary font-semibold">{fmt(r.t_liquido)}</td>
+                              <td className="px-4 py-2 text-right tabular-nums text-primary font-semibold">{fmtMoneda(r.t_liquido)}</td>
                               <td className="px-4 py-2 text-right">
                                 <button
                                   onClick={() => setBoletaObjetivo({ tabla, dni: r.dni })}

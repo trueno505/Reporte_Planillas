@@ -3,37 +3,9 @@ import * as XLSX from 'xlsx'
 import { Upload, X, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { fetchAllRows } from '../lib/db'
+import { castValor } from '../lib/casteo'
 import { getSeccionesCalculo } from '../config/planillas'
 import toast from 'react-hot-toast'
-
-function parseFecha(val) {
-  if (val === '' || val === null || val === undefined) return null
-  if (typeof val === 'number') {
-    const d = XLSX.SSF.parse_date_code(val)
-    return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`
-  }
-  const s = String(val).trim()
-  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
-  m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
-  return s
-}
-
-// Castea el valor leído del Excel al tipo de la columna destino.
-function castValor(val, type) {
-  if (val === '' || val === null || val === undefined) return null
-  if (type === 'dni' || type === 'int') {
-    const n = parseInt(String(val).trim(), 10)
-    return isNaN(n) ? null : n
-  }
-  if (type === 'money') {
-    const n = parseFloat(String(val).trim().replace(',', '.'))
-    return isNaN(n) ? null : n
-  }
-  if (type === 'date') return parseFecha(val)
-  return String(val).trim()
-}
 
 const norm = (s) => String(s).trim().toLowerCase()
 

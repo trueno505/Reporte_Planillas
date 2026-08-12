@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
 import { PASSWORD_MIN, validarPassword } from '../lib/password'
+import { fmtFecha } from '../lib/formato'
 
 const ROL_INFO = {
   superadmin: { label: 'Superadmin', Icon: Crown, badge: 'bg-purple-700 text-white' },
@@ -15,11 +16,6 @@ const ROL_INFO = {
 
 const inputClass =
   'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40'
-
-function fmtFecha(s) {
-  if (!s) return '—'
-  return new Date(s).toLocaleDateString('es-PE')
-}
 
 // Formulario de nombre + celular. Se monta solo cuando `perfil` ya está cargado,
 // por lo que su estado inicial siempre arranca con los valores correctos.

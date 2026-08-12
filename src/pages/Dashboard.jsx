@@ -8,6 +8,7 @@ import { useAuth } from '../context/auth-context'
 import { supabase } from '../lib/supabaseClient'
 import { cargarDatosConsolidado, generarReporteConsolidado } from '../lib/reporteConsolidado'
 import { periodoActual, formatPeriodo } from '../lib/periodo'
+import { fmtMoneda } from '../lib/formato'
 import SiafModal from '../components/SiafModal'
 import toast from 'react-hot-toast'
 
@@ -25,10 +26,6 @@ const GRUPO_COLOR = {
   CAS: '#1a7abf',
   Pensionistas: '#2d9c8a',
   Autoridades: '#6b3fa0',
-}
-
-function fmt(n) {
-  return Number(n ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 export default function Dashboard() {
@@ -182,7 +179,7 @@ export default function Dashboard() {
               {loadingResumen ? (
                 <Loader2 size={20} className="animate-spin text-gray-400" />
               ) : (
-                <p className="text-lg font-bold text-blue-700">S/ {fmt(totalLiquido)}</p>
+                <p className="text-lg font-bold text-blue-700">S/ {fmtMoneda(totalLiquido)}</p>
               )}
               <p className="text-xs text-gray-500">Total a pagar</p>
             </div>
@@ -197,7 +194,7 @@ export default function Dashboard() {
               <BarChart data={chartData} margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
                 <XAxis dataKey="grupo" tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `S/${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`S/ ${fmt(v)}`, 'Líquido']} />
+                <Tooltip formatter={(v) => [`S/ ${fmtMoneda(v)}`, 'Líquido']} />
                 <Bar dataKey="liquido" radius={[4, 4, 0, 0]}>
                   {chartData.map((entry) => (
                     <Cell key={entry.grupo} fill={GRUPO_COLOR[entry.grupo] ?? '#003366'} />
@@ -234,17 +231,17 @@ export default function Dashboard() {
                         </Link>
                       </td>
                       <td className="px-4 py-2 text-right tabular-nums">{r.n_registros}</td>
-                      <td className="px-4 py-2 text-right tabular-nums">{fmt(r.suma_ingreso)}</td>
-                      <td className="px-4 py-2 text-right tabular-nums text-red-600">{fmt(r.suma_dsctos)}</td>
-                      <td className="px-4 py-2 text-right tabular-nums font-semibold text-primary">{fmt(r.suma_liquido)}</td>
+                      <td className="px-4 py-2 text-right tabular-nums">{fmtMoneda(r.suma_ingreso)}</td>
+                      <td className="px-4 py-2 text-right tabular-nums text-red-600">{fmtMoneda(r.suma_dsctos)}</td>
+                      <td className="px-4 py-2 text-right tabular-nums font-semibold text-primary">{fmtMoneda(r.suma_liquido)}</td>
                     </tr>
                   ))}
                   <tr className="bg-primary text-white text-xs font-bold">
                     <td className="px-4 py-2">TOTAL GENERAL</td>
                     <td className="px-4 py-2 text-right">{totalTrabajadores.toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right">{fmt(resumen.reduce((a, r) => a + Number(r.suma_ingreso ?? 0), 0))}</td>
-                    <td className="px-4 py-2 text-right">{fmt(resumen.reduce((a, r) => a + Number(r.suma_dsctos ?? 0), 0))}</td>
-                    <td className="px-4 py-2 text-right">{fmt(totalLiquido)}</td>
+                    <td className="px-4 py-2 text-right">{fmtMoneda(resumen.reduce((a, r) => a + Number(r.suma_ingreso ?? 0), 0))}</td>
+                    <td className="px-4 py-2 text-right">{fmtMoneda(resumen.reduce((a, r) => a + Number(r.suma_dsctos ?? 0), 0))}</td>
+                    <td className="px-4 py-2 text-right">{fmtMoneda(totalLiquido)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -274,7 +271,7 @@ export default function Dashboard() {
                       {stats ? (
                         <div className="mt-2 flex justify-between text-xs text-gray-500">
                           <span>{stats.n_registros} trabajadores</span>
-                          <span className="font-semibold text-primary">S/ {fmt(stats.suma_liquido)}</span>
+                          <span className="font-semibold text-primary">S/ {fmtMoneda(stats.suma_liquido)}</span>
                         </div>
                       ) : (
                         <p className="text-xs text-gray-400 mt-1">{p.columnas.length} columnas</p>

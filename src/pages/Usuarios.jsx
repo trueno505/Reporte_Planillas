@@ -7,6 +7,7 @@ import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { PASSWORD_MIN, validarPassword } from '../lib/password'
+import { fmtFecha } from '../lib/formato'
 
 // Los cuatro roles del sistema. La seguridad real la impone RLS en la BD; aquí
 // solo se asigna el valor de perfiles.rol.
@@ -49,11 +50,6 @@ const ROL_INFO = Object.fromEntries(ROLES.map((r) => [r.id, r]))
 // a ese rol desde la UI (el trigger proteger_rol_perfil también lo bloquea
 // en la BD como defensa en profundidad).
 const ROLES_ASIGNABLES = ROLES.filter((r) => r.id !== 'superadmin')
-
-function fmtFecha(s) {
-  if (!s) return '—'
-  return new Date(s).toLocaleDateString('es-PE')
-}
 
 // Genera una contraseña inicial razonable (12 caracteres, sin ambiguos).
 function generarPassword() {

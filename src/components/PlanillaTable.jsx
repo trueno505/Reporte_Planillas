@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-table'
 import { ChevronUp, ChevronDown, ChevronsUpDown, Printer, AlertTriangle, Search } from 'lucide-react'
 import { mapAlertasPlanilla } from '../lib/alertas'
+import { fmtMoneda } from '../lib/formato'
 import { imprimirBoletaMeses } from '../lib/imprimirBoleta'
 import { supabase } from '../lib/supabaseClient'
 import Paginacion from './Paginacion'
@@ -13,7 +14,6 @@ import BoletaMesesModal from './BoletaMesesModal'
 import toast from 'react-hot-toast'
 
 const TOTAL_KEYS = new Set(['t_ingreso', 't_dsctos', 't_liquido'])
-const MONEY_FMT = (v) => Number(v).toLocaleString('es-PE', { minimumFractionDigits: 2 })
 
 function InlineCell({ value: initialValue, col, rowId, planilla, puedeEditar }) {
   const [editing, setEditing] = useState(false)
@@ -64,7 +64,7 @@ function InlineCell({ value: initialValue, col, rowId, planilla, puedeEditar }) 
       <span className="text-gray-300">—</span>
     ) : col.type === 'money' ? (
       <span className={`tabular-nums ${TOTAL_KEYS.has(col.key) ? 'font-semibold text-primary' : ''}`}>
-        {MONEY_FMT(initialValue)}
+        {fmtMoneda(initialValue)}
       </span>
     ) : (
       String(initialValue)

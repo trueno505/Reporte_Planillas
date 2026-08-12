@@ -3,29 +3,9 @@ import * as XLSX from 'xlsx'
 import { PencilLine, X, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { fetchAllRows } from '../lib/db'
+import { castValor } from '../lib/casteo'
 import { getSeccionesCalculo } from '../config/planillas'
 import toast from 'react-hot-toast'
-
-// Castea el valor leído del Excel al tipo de la columna destino.
-function castValue(val, type) {
-  if (val === '' || val === null || val === undefined) return null
-  if (type === 'dni' || type === 'int') {
-    const n = parseInt(String(val).trim(), 10)
-    return isNaN(n) ? null : n
-  }
-  if (type === 'money') {
-    const n = parseFloat(String(val).trim().replace(',', '.'))
-    return isNaN(n) ? null : n
-  }
-  if (type === 'date') {
-    if (typeof val === 'number') {
-      const d = XLSX.SSF.parse_date_code(val)
-      return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`
-    }
-    return String(val).trim()
-  }
-  return String(val).trim()
-}
 
 export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy, periodo = null }) {
   const { tabla, columnas, label } = planilla
@@ -152,7 +132,7 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
         if (isNaN(dni)) { invalidos++; continue }
         if (vistos.has(dni)) continue // ignora DNIs repetidos en el archivo
         vistos.add(dni)
-        const valor = castValue(row[valHeader], colMeta.type)
+        const valor = castValor(row[valHeader], colMeta.type)
         if (!dniIndex.has(dni)) {
           noEncontrados.push(dni)
           continue

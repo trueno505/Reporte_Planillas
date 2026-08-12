@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { X, Calculator, ShieldAlert } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { calcularTotales, round2 } from '../lib/calculos'
+import { castValor } from '../lib/casteo'
+import { fmtMoneda } from '../lib/formato'
 import { getSeccionesCalculo, esColumnaIdentidad } from '../config/planillas'
 import CorregirIdentidad from './CorregirIdentidad'
 import { formatPeriodo } from '../lib/periodo'
@@ -9,13 +11,6 @@ import toast from 'react-hot-toast'
 
 function emptyRecord(columnas) {
   return Object.fromEntries(columnas.map((c) => [c.key, '']))
-}
-
-function castValue(val, type) {
-  if (val === '' || val === null || val === undefined) return null
-  if (type === 'dni' || type === 'int') return parseInt(val, 10)
-  if (type === 'money') return parseFloat(val)
-  return val
 }
 
 // Sistema de pensiones para el campo S.N.P. en el alta rápida (soloBasicos)
@@ -28,8 +23,6 @@ const MESES_VACACIONES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
-
-const fmtMoney = (n) => (n ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 const MAX_RETENCIONES = 10
 
@@ -77,7 +70,7 @@ function CampoFormula({ col, form, setForm }) {
   return (
     <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-gray-500">Base: S/ {fmtMoney(base)}</span>
+        <span className="text-xs text-gray-500">Base: S/ {fmtMoneda(base)}</span>
         <label className="flex items-center gap-1.5 text-xs text-gray-600">
           N° retenciones
           <select
@@ -106,14 +99,14 @@ function CampoFormula({ col, form, setForm }) {
             className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <span className="text-sm font-medium text-primary w-28 text-right shrink-0">
-            S/ {fmtMoney(montos[i])}
+            S/ {fmtMoneda(montos[i])}
           </span>
         </div>
       ))}
 
       <div className="flex items-center justify-between pt-2 border-t border-gray-200 text-sm font-semibold text-primary">
         <span>Total {col.label}</span>
-        <span>S/ {fmtMoney(total)}</span>
+        <span>S/ {fmtMoneda(total)}</span>
       </div>
     </div>
   )
@@ -235,7 +228,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
 
     const payload = {}
     for (const col of columnas) {
-      payload[col.key] = castValue(form[col.key], col.type)
+      payload[col.key] = castValor(form[col.key], col.type)
       if (col.detalleKey) {
         payload[col.detalleKey] = (form[col.detalleKey] ?? []).map((p) => parseFloat(p) || 0)
       }

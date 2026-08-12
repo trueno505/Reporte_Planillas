@@ -5,18 +5,13 @@ import { supabase } from '../lib/supabaseClient'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
+import { fmtFechaHora } from '../lib/formato'
 
 const ACCION_COLOR = {
   INSERT: 'bg-green-100 text-green-700',
   UPDATE: 'bg-blue-100 text-blue-700',
   DELETE: 'bg-red-100 text-red-700',
   GENERACION: 'bg-purple-100 text-purple-700',
-}
-
-function fmtFecha(s) {
-  if (!s) return '—'
-  const d = new Date(s)
-  return d.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })
 }
 
 // 'perfiles' agrupa los cambios de rol (usuarios); el resto son nombres de tabla.
@@ -132,7 +127,7 @@ export default function Auditoria() {
                     const datos = r.datos_nue ?? r.datos_ant ?? {}
                     return (
                       <tr key={r.id} className={i % 2 === 0 ? 'bg-white' : 'bg-surface'}>
-                        <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{fmtFecha(r.created_at)}</td>
+                        <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{fmtFechaHora(r.created_at)}</td>
                         <td className="px-4 py-2 text-gray-700 whitespace-nowrap">{tablaLabel(r.tabla)}</td>
                         <td className="px-4 py-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-semibold ${ACCION_COLOR[r.accion] ?? 'bg-gray-100 text-gray-600'}`}>
