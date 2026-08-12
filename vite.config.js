@@ -5,28 +5,16 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Separar librerías pesadas en chunks propios: cada una lleva su propio hash
-    // en el nombre y se sirve con `Cache-Control: immutable` (ver vercel.json),
-    // así el navegador las cachea a largo plazo y solo re-descarga el código de
-    // la app cuando cambia — no todo el bundle en cada despliegue.
-    rollupOptions: {
-      output: {
-        // Rolldown (Vite 8) exige manualChunks como función.
-        manualChunks(id) {
-          const p = id.replace(/\\/g, '/')
-          if (!p.includes('/node_modules/')) return
-          if (p.includes('/@supabase/')) return 'supabase'
-          if (p.includes('/xlsx')) return 'xlsx'
-          if (p.includes('/jspdf') || p.includes('/html2canvas') || p.includes('/dompurify')) return 'pdf'
-          if (p.includes('/recharts') || p.includes('/d3-') || p.includes('/victory-') || p.includes('/internmap')) return 'charts'
-          if (p.includes('/@tanstack/')) return 'table'
-          if (p.includes('/react-router') || p.includes('/react-dom') || p.includes('/react/') || p.includes('/scheduler/')) return 'react-vendor'
-          return 'vendor'
-        },
-      },
-    },
-    // Los vendors grandes ya van en su chunk cacheable; subimos el umbral del
-    // aviso para no alarmar por chunks que son intencionalmente separados.
+    // NO se usa `manualChunks`. Antes agrupaba las librerías pesadas a mano
+    // (xlsx / jspdf / recharts / react…) buscando mejorar el caché, pero al
+    // introducir la carga diferida resultó contraproducente: forzar esos grupos
+    // hacía que Rolldown creara dependencias cruzadas entre ellos, de modo que
+    // el chunk de entrada acababa importando `pdf` y `charts` igualmente y el
+    // lazy loading no servía de nada.
+    //
+    // La división automática ya separa cada `import()` dinámico en su propio
+    // chunk, y todos llevan hash de contenido en el nombre, así que el beneficio
+    // de caché (con `Cache-Control: immutable`, ver vercel.json) se conserva.
     chunkSizeWarningLimit: 700,
   },
   test: {

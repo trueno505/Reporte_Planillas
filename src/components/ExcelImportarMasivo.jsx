@@ -1,5 +1,4 @@
 import { useRef, useState, useMemo, useEffect } from 'react'
-import * as XLSX from 'xlsx'
 import { Upload, X, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { fetchAllRows } from '../lib/db'
@@ -8,6 +7,9 @@ import { getSeccionesCalculo } from '../config/planillas'
 import toast from 'react-hot-toast'
 
 const norm = (s) => String(s).trim().toLowerCase()
+
+// `xlsx` (~1.35 MB) se carga solo al usar la importación, no en el arranque.
+const cargarXLSX = () => import('xlsx')
 
 export default function ExcelImportarMasivo({ planilla, periodo, onDone, onBusy }) {
   const { tabla, columnas, label } = planilla
@@ -56,12 +58,17 @@ export default function ExcelImportarMasivo({ planilla, periodo, onDone, onBusy 
     setFilasAll(null)
   }
 
-  const descargarPlantilla = () => {
-    const headers = columnasImportables.map((c) => c.label)
-    const ws = XLSX.utils.aoa_to_sheet([headers])
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Importar')
-    XLSX.writeFile(wb, `plantilla_importar_${tabla}.xlsx`)
+  const descargarPlantilla = async () => {
+    try {
+      const XLSX = await cargarXLSX()
+      const headers = columnasImportables.map((c) => c.label)
+      const ws = XLSX.utils.aoa_to_sheet([headers])
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Importar')
+      XLSX.writeFile(wb, `plantilla_importar_${tabla}.xlsx`)
+    } catch (e) {
+      toast.error(`No se pudo generar la plantilla: ${e.message}`)
+    }
   }
 
   const handleFile = async (e) => {
@@ -71,6 +78,7 @@ export default function ExcelImportarMasivo({ planilla, periodo, onDone, onBusy 
     setLoading(true)
 
     try {
+      const XLSX = await cargarXLSX()
       const buffer = await file.arrayBuffer()
       const wb = XLSX.read(buffer)
       const ws = wb.Sheets[wb.SheetNames[0]]

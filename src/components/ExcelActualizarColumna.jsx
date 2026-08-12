@@ -1,11 +1,13 @@
 import { useRef, useState, useMemo, useEffect } from 'react'
-import * as XLSX from 'xlsx'
 import { PencilLine, X, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { fetchAllRows } from '../lib/db'
 import { castValor } from '../lib/casteo'
 import { getSeccionesCalculo } from '../config/planillas'
 import toast from 'react-hot-toast'
+
+// `xlsx` (~1.35 MB) se carga solo al usar esta función, no en el arranque.
+const cargarXLSX = () => import('xlsx')
 
 export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy, periodo = null }) {
   const { tabla, columnas, label } = planilla
@@ -91,6 +93,7 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
     // XLSX.read lanza y sin el `finally` el modal quedaba colgado en «Leyendo…»
     // hasta recargar la página.
     try {
+      const XLSX = await cargarXLSX()
       const buffer = await file.arrayBuffer()
       const wb = XLSX.read(buffer)
       const ws = wb.Sheets[wb.SheetNames[0]]
@@ -179,19 +182,24 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
 
   // Descarga una plantilla con DNI + nombre + columna a llenar para todos los
   // registros actuales de la planilla.
-  const descargarPlantilla = () => {
+  const descargarPlantilla = async () => {
     if (!columna) { toast.error('Primero selecciona la columna a actualizar.'); return }
-    const datos = (filasAll ?? []).map((f) => ({
-      DNI: f.dni,
-      'Apellidos y Nombres': f.apellidos_y_nombres,
-      [colMeta.label]: f[columna] ?? '',
-    }))
-    const ws = XLSX.utils.json_to_sheet(
-      datos.length ? datos : [{ DNI: '', 'Apellidos y Nombres': '', [colMeta.label]: '' }]
-    )
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Actualizar')
-    XLSX.writeFile(wb, `plantilla_${tabla}_${columna}.xlsx`)
+    try {
+      const XLSX = await cargarXLSX()
+      const datos = (filasAll ?? []).map((f) => ({
+        DNI: f.dni,
+        'Apellidos y Nombres': f.apellidos_y_nombres,
+        [colMeta.label]: f[columna] ?? '',
+      }))
+      const ws = XLSX.utils.json_to_sheet(
+        datos.length ? datos : [{ DNI: '', 'Apellidos y Nombres': '', [colMeta.label]: '' }]
+      )
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Actualizar')
+      XLSX.writeFile(wb, `plantilla_${tabla}_${columna}.xlsx`)
+    } catch (e) {
+      toast.error(`No se pudo generar la plantilla: ${e.message}`)
+    }
   }
 
   return (

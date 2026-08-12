@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom'
 import { Users, FileText, Download, Loader2 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import Layout from '../components/Layout'
 import { PLANILLAS, GRUPOS, getPlanillaByTabla } from '../config/planillas'
 import { useAuth } from '../context/auth-context'
 import { supabase } from '../lib/supabaseClient'
-import { cargarDatosConsolidado, generarReporteConsolidado } from '../lib/reporteConsolidado'
 import { periodoActual, formatPeriodo } from '../lib/periodo'
 import { fmtMoneda } from '../lib/formato'
 import SiafModal from '../components/SiafModal'
@@ -27,6 +25,11 @@ const GRUPO_COLOR = {
   Pensionistas: '#2d9c8a',
   Autoridades: '#6b3fa0',
 }
+
+// Recharts (~344 KB) va en su propio chunk y se carga después del primer
+// pintado: los KPIs y la tabla —lo que de verdad se consulta— aparecen sin
+// esperar a la librería del gráfico.
+const GraficoPorGrupo = lazy(() => import('../components/GraficoPorGrupo'))
 
 export default function Dashboard() {
   const { perfil, puedeEditar } = useAuth()
@@ -71,6 +74,9 @@ export default function Dashboard() {
   const handleExportar = async () => {
     setExportando(true)
     try {
+      // reporteConsolidado arrastra xlsx-js-style (~1.35 MB): se carga al pulsar
+      // el botón, no al abrir el panel.
+      const { cargarDatosConsolidado } = await import('../lib/reporteConsolidado')
       const datos = await cargarDatosConsolidado(periodo)
 
       // Si alguna planilla no se pudo descargar, avisamos ANTES de generar: su
@@ -92,6 +98,7 @@ export default function Dashboard() {
       if (grupos.length > 0) {
         setSiafPendiente({ datos, grupos })
       } else {
+        const { generarReporteConsolidado } = await import('../lib/reporteConsolidado')
         generarReporteConsolidado(resumen, periodo, datos)
       }
     } catch (e) {
@@ -110,14 +117,19 @@ export default function Dashboard() {
           titulo="Nº Siaf por planilla — Reporte consolidado"
           grupos={siafPendiente.grupos}
           onCancel={() => setSiafPendiente(null)}
-          onConfirm={(valores) => {
+          onConfirm={async (valores) => {
+            const datos = siafPendiente.datos
+            setSiafPendiente(null)
+            setExportando(true)
             try {
-              generarReporteConsolidado(resumen, periodo, siafPendiente.datos, valores)
+              const { generarReporteConsolidado } = await import('../lib/reporteConsolidado')
+              generarReporteConsolidado(resumen, periodo, datos, valores)
             } catch (e) {
               console.error('Error al generar el reporte consolidado:', e)
               toast.error(`No se pudo generar el reporte: ${e.message}`)
+            } finally {
+              setExportando(false)
             }
-            setSiafPendiente(null)
           }}
         />
       )}
@@ -190,18 +202,15 @@ export default function Dashboard() {
         {!loadingResumen && chartData.length > 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
             <h2 className="text-sm font-semibold text-gray-700 mb-4">Total líquido por grupo (S/)</h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData} margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-                <XAxis dataKey="grupo" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={(v) => `S/${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`S/ ${fmtMoneda(v)}`, 'Líquido']} />
-                <Bar dataKey="liquido" radius={[4, 4, 0, 0]}>
-                  {chartData.map((entry) => (
-                    <Cell key={entry.grupo} fill={GRUPO_COLOR[entry.grupo] ?? '#003366'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center h-[200px]">
+                  <Loader2 size={22} className="animate-spin text-gray-300" />
+                </div>
+              }
+            >
+              <GraficoPorGrupo data={chartData} colores={GRUPO_COLOR} />
+            </Suspense>
           </div>
         )}
 

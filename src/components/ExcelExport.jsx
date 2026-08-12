@@ -1,9 +1,7 @@
 import { useState } from 'react'
-import XLSX from 'xlsx-js-style'
 import { Download } from 'lucide-react'
 import { fetchAllRows } from '../lib/db'
 import { formatPeriodo } from '../lib/periodo'
-import { construirHojaPlanilla, construirHojaResumenAreas, construirHojasDescuentos } from '../lib/excelEncabezado'
 import { getCuadroArea } from '../config/cuadrosPresupuestales'
 import SiafModal from './SiafModal'
 import toast from 'react-hot-toast'
@@ -14,8 +12,13 @@ export default function ExcelExport({ planilla, periodo = null }) {
   // pide el Nº Siaf de cada área presente en los datos del mes.
   const [pendiente, setPendiente] = useState(null) // { filas, areas: string[] }
 
-  const descargar = (filas, siafPorArea) => {
+  const descargar = async (filas, siafPorArea) => {
     const { label } = planilla
+    // xlsx-js-style (~1.35 MB) y los constructores de hoja se cargan solo al
+    // exportar, no en el bundle inicial.
+    const [{ default: XLSX }, { construirHojaPlanilla, construirHojaResumenAreas, construirHojasDescuentos }] =
+      await Promise.all([import('xlsx-js-style'), import('../lib/excelEncabezado')])
+
     const ws = construirHojaPlanilla(planilla, filas, periodo, siafPorArea)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, label.slice(0, 31))
@@ -67,7 +70,11 @@ export default function ExcelExport({ planilla, periodo = null }) {
     }
 
     if (!areas.length) {
-      descargar(filas, {})
+      try {
+        await descargar(filas, {})
+      } catch (e) {
+        toast.error(`No se pudo generar el Excel: ${e.message}`)
+      }
       setLoading(false)
       return
     }
@@ -91,7 +98,10 @@ export default function ExcelExport({ planilla, periodo = null }) {
           grupos={[{ id: planilla.slug, label: planilla.label, areas: pendiente.areas }]}
           onCancel={() => setPendiente(null)}
           onConfirm={(valores) => {
+            setLoading(true)
             descargar(pendiente.filas, valores[planilla.slug] ?? {})
+              .catch((e) => toast.error(`No se pudo generar el Excel: ${e.message}`))
+              .finally(() => setLoading(false))
             setPendiente(null)
           }}
         />

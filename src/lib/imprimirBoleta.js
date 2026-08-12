@@ -1,5 +1,4 @@
 import { supabase } from './supabaseClient'
-import { generarBoletaPdf, generarBoletaPdfMultiple } from './boletaPdf'
 import { ultimosPeriodos } from './periodo'
 
 /**
@@ -20,6 +19,11 @@ export async function imprimirBoletaMeses(planilla, dni, periodoBase, nMeses) {
 
   if (error) throw new Error('No se pudo obtener la boleta del trabajador.')
   if (!data || data.length === 0) throw new Error('No hay datos para generar la boleta.')
+
+  // jsPDF (~657 KB) se carga solo aquí, la primera vez que alguien imprime una
+  // boleta, en vez de venir en el bundle inicial. Quien nunca imprime, nunca lo
+  // descarga. Los llamadores ya muestran un spinner mientras esperan.
+  const { generarBoletaPdf, generarBoletaPdfMultiple } = await import('./boletaPdf')
 
   if (data.length === 1) {
     generarBoletaPdf(planilla, data[0])
