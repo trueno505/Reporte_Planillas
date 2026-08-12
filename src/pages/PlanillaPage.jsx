@@ -103,8 +103,12 @@ export default function PlanillaPage() {
       .eq('id', deleteTarget.id)
     setDeleting(false)
     setDeleteTarget(null)
-    if (err) toast.error(err.message)
-    else toast.success('Registro eliminado.')
+    if (err) { toast.error(err.message); return }
+    toast.success('Registro eliminado.')
+    // Refresca explícitamente: Realtime también dispara un refetch, pero si la
+    // tabla no está en la publicación o el WebSocket se cayó, la fila borrada
+    // seguiría visible. El refetch es idempotente, así que duplicarlo no daña.
+    refetch()
   }
 
   const nuevoMes = siguientePeriodo(periodoAbierto)

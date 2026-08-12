@@ -6,6 +6,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { PASSWORD_MIN, validarPassword } from '../lib/password'
 
 // Los cuatro roles del sistema. La seguridad real la impone RLS en la BD; aquí
 // solo se asigna el valor de perfiles.rol.
@@ -79,8 +80,9 @@ function NuevoUsuarioModal({ onClose, onCreado }) {
       toast.error('Correo electrónico inválido.')
       return
     }
-    if (password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres.')
+    const errPass = validarPassword(password)
+    if (errPass) {
+      toast.error(errPass)
       return
     }
     setEnviando(true)
@@ -170,7 +172,7 @@ function NuevoUsuarioModal({ onClose, onCreado }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={PASSWORD_MIN}
                 autoComplete="new-password"
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
@@ -227,8 +229,9 @@ function CambiarPasswordModal({ usuario, onClose }) {
 
   const submit = async (e) => {
     e.preventDefault()
-    if (password.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres.')
+    const errPass = validarPassword(password)
+    if (errPass) {
+      toast.error(errPass)
       return
     }
     setEnviando(true)
@@ -276,7 +279,7 @@ function CambiarPasswordModal({ usuario, onClose }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={PASSWORD_MIN}
                 autoComplete="new-password"
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
               />

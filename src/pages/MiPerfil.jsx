@@ -4,6 +4,7 @@ import Layout from '../components/Layout'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
+import { PASSWORD_MIN, validarPassword } from '../lib/password'
 
 const ROL_INFO = {
   superadmin: { label: 'Superadmin', Icon: Crown, badge: 'bg-purple-700 text-white' },
@@ -96,12 +97,9 @@ function FormPassword() {
 
   const cambiar = async (e) => {
     e.preventDefault()
-    if (pass1.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres.')
-      return
-    }
-    if (pass1 !== pass2) {
-      toast.error('Las contraseñas no coinciden.')
+    const errPass = validarPassword(pass1, pass2)
+    if (errPass) {
+      toast.error(errPass)
       return
     }
     setCambiando(true)
@@ -128,7 +126,7 @@ function FormPassword() {
             type="password"
             value={pass1}
             onChange={(e) => setPass1(e.target.value)}
-            placeholder="Mínimo 6 caracteres"
+            placeholder={`Mínimo ${PASSWORD_MIN} caracteres`}
             autoComplete="new-password"
             className={inputClass}
           />

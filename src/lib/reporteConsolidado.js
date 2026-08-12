@@ -10,17 +10,24 @@ import { getCuadroArea } from '../config/cuadrosPresupuestales'
  * áreas presentes que tienen cuadro presupuestal (para pedir sus Nº Siaf
  * antes de generar el consolidado). La clave '*' representa el cuadro único
  * de una planilla sin áreas.
- * @returns {Promise<Array<{ planilla, filas, areas: string[] }>>}
+ *
+ * Si una planilla falla al descargarse, su entrada lleva `error` con el
+ * motivo: sin eso, esa planilla salía como una hoja VACÍA dentro de un
+ * reporte oficial y nadie se enteraba de que faltaban datos.
+ *
+ * @returns {Promise<Array<{ planilla, filas, areas: string[], error: string|null }>>}
  */
 export async function cargarDatosConsolidado(periodo = null) {
   const datos = []
   for (const planilla of PLANILLAS) {
     // Trae todas las filas (bloques de 1000) para no truncar el consolidado
     let filas
+    let error = null
     try {
       filas = await fetchAllRows(planilla.tabla, { order: 'apellidos_y_nombres', periodo })
-    } catch {
+    } catch (e) {
       filas = []
+      error = e.message
     }
     let areas = []
     if (planilla.areas?.length) {
@@ -30,7 +37,7 @@ export async function cargarDatosConsolidado(periodo = null) {
     } else if (filas.length && getCuadroArea(planilla.slug, null)) {
       areas = ['*']
     }
-    datos.push({ planilla, filas, areas })
+    datos.push({ planilla, filas, areas, error })
   }
   return datos
 }

@@ -55,10 +55,14 @@ export default function BusquedaGlobal() {
     setLoading(false)
 
     if (error) {
-      setResultados([])
-    } else {
-      setResultados(data ?? [])
+      // Antes se mostraba "Sin resultados", indistinguible de una búsqueda
+      // legítima sin coincidencias. Ahora se distingue el fallo del vacío.
+      console.error('Error en la búsqueda global:', error)
+      toast.error(`No se pudo completar la búsqueda: ${error.message}`)
+      setResultados(null)
+      return
     }
+    setResultados(data ?? [])
   }
 
   // Agrupar resultados por tabla

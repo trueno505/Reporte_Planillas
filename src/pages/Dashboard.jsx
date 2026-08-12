@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabaseClient'
 import { cargarDatosConsolidado, generarReporteConsolidado } from '../lib/reporteConsolidado'
 import { periodoActual, formatPeriodo } from '../lib/periodo'
 import SiafModal from '../components/SiafModal'
+import toast from 'react-hot-toast'
 
 const GRUPO_ICON = {
   Obreros: '👷',
@@ -42,14 +43,18 @@ export default function Dashboard() {
   useEffect(() => {
     setLoadingResumen(true)
     supabase.rpc('resumen_planillas', { p_periodo: periodo }).then(({ data, error }) => {
-      if (!error && data) {
+      if (error) {
+        // Antes se ignoraba: los KPIs quedaban en 0 como si no hubiera datos.
+        console.error('Error al cargar el resumen:', error)
+        toast.error(`No se pudo cargar el resumen: ${error.message}`)
+        setResumen([])
+      } else {
         // Enriquecer con label de la config
-        const enriched = data.map((r) => ({
+        setResumen((data ?? []).map((r) => ({
           ...r,
           label: getPlanillaByTabla(r.tabla)?.label ?? r.tabla,
           grupo: getPlanillaByTabla(r.tabla)?.grupo ?? 'Otros',
-        }))
-        setResumen(enriched)
+        })))
       }
       setLoadingResumen(false)
     })
@@ -70,6 +75,19 @@ export default function Dashboard() {
     setExportando(true)
     try {
       const datos = await cargarDatosConsolidado(periodo)
+
+      // Si alguna planilla no se pudo descargar, avisamos ANTES de generar: su
+      // hoja saldría vacía y el reporte es un documento oficial.
+      const fallidas = datos.filter((d) => d.error)
+      if (fallidas.length) {
+        toast.error(
+          `No se pudieron leer ${fallidas.length} planilla(s): ` +
+          `${fallidas.map((d) => d.planilla.label).join(', ')}. ` +
+          'Sus hojas saldrán vacías.',
+          { duration: 8000 },
+        )
+      }
+
       // Planillas con áreas que llevan cuadro presupuestal → pedir Nº Siaf.
       const grupos = datos
         .filter((d) => d.areas.length > 0)
@@ -79,6 +97,10 @@ export default function Dashboard() {
       } else {
         generarReporteConsolidado(resumen, periodo, datos)
       }
+    } catch (e) {
+      // Antes no había catch: un fallo aquí no mostraba absolutamente nada.
+      console.error('Error al generar el reporte consolidado:', e)
+      toast.error(`No se pudo generar el reporte: ${e.message}`)
     } finally {
       setExportando(false)
     }
@@ -92,7 +114,12 @@ export default function Dashboard() {
           grupos={siafPendiente.grupos}
           onCancel={() => setSiafPendiente(null)}
           onConfirm={(valores) => {
-            generarReporteConsolidado(resumen, periodo, siafPendiente.datos, valores)
+            try {
+              generarReporteConsolidado(resumen, periodo, siafPendiente.datos, valores)
+            } catch (e) {
+              console.error('Error al generar el reporte consolidado:', e)
+              toast.error(`No se pudo generar el reporte: ${e.message}`)
+            }
             setSiafPendiente(null)
           }}
         />

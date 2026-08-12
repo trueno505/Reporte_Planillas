@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/auth-context'
 import toast from 'react-hot-toast'
+import { PASSWORD_MIN, validarPassword } from '../lib/password'
 
 // Página a la que llega el enlace del correo de recuperación. Supabase valida
 // el token del enlace y abre una sesión temporal; aquí el usuario define su
@@ -19,12 +20,9 @@ export default function Restablecer() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (pass1.length < 6) {
-      toast.error('La contraseña debe tener al menos 6 caracteres.')
-      return
-    }
-    if (pass1 !== pass2) {
-      toast.error('Las contraseñas no coinciden.')
+    const errPass = validarPassword(pass1, pass2)
+    if (errPass) {
+      toast.error(errPass)
       return
     }
     setGuardando(true)
@@ -66,7 +64,7 @@ export default function Restablecer() {
                 autoFocus
                 autoComplete="new-password"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="Mínimo 6 caracteres"
+                placeholder={`Mínimo ${PASSWORD_MIN} caracteres`}
               />
             </div>
             <div>

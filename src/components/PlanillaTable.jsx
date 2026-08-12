@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useRef } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -18,24 +18,45 @@ const MONEY_FMT = (v) => Number(v).toLocaleString('es-PE', { minimumFractionDigi
 function InlineCell({ value: initialValue, col, rowId, planilla, puedeEditar }) {
   const [editing, setEditing] = useState(false)
   const [val, setVal] = useState(initialValue)
+  // Enter llama a save() y desmonta el input, lo que puede disparar onBlur →
+  // save() otra vez. Este guard evita enviar el UPDATE dos veces.
+  const guardandoRef = useRef(false)
 
   const save = useCallback(async () => {
+    if (guardandoRef.current) return
+    guardandoRef.current = true
     setEditing(false)
-    let parsed = val
-    if (col.type === 'money' || col.type === 'dni' || col.type === 'int') {
-      parsed = col.type === 'money' ? parseFloat(val) : parseInt(val, 10)
-      if (isNaN(parsed)) { setVal(initialValue); return }
-    }
-    if (parsed === initialValue) return
+    try {
+      const vacio = val === '' || val === null || val === undefined
+      let parsed = val
+      if (vacio) {
+        // Dejar la celda en blanco la vacía (NULL). Antes parseFloat('') daba
+        // NaN y se revertía al valor anterior: no había forma de borrar un dato.
+        parsed = null
+      } else if (col.type === 'money' || col.type === 'dni' || col.type === 'int') {
+        parsed = col.type === 'money' ? parseFloat(val) : parseInt(val, 10)
+        if (isNaN(parsed)) {
+          toast.error(`"${col.label}" debe ser un número.`)
+          setVal(initialValue)
+          return
+        }
+      }
+      // Comparación laxa (==) a propósito: PostgREST puede devolver los NUMERIC
+      // como string ("50.00") mientras `parsed` ya es número; con === se
+      // reenviaría siempre el mismo valor. Cubre además null/undefined entre sí.
+      if (parsed == initialValue) return
 
-    // Solo enviamos el campo editado: el trigger de la BD recalcula los totales
-    // de forma atómica, sin condiciones de carrera entre ediciones simultáneas.
-    const { error } = await supabase
-      .from(planilla.tabla)
-      .update({ [col.key]: parsed })
-      .eq('id', rowId)
-    if (error) { toast.error(error.message); setVal(initialValue) }
-    else toast.success(`"${col.label}" actualizado.`)
+      // Solo enviamos el campo editado: el trigger de la BD recalcula los
+      // totales de forma atómica, sin carreras entre ediciones simultáneas.
+      const { error } = await supabase
+        .from(planilla.tabla)
+        .update({ [col.key]: parsed })
+        .eq('id', rowId)
+      if (error) { toast.error(error.message); setVal(initialValue) }
+      else toast.success(`"${col.label}" actualizado.`)
+    } finally {
+      guardandoRef.current = false
+    }
   }, [val, initialValue, col, rowId, planilla])
 
   const displayValue =

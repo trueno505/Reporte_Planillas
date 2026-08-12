@@ -39,17 +39,31 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
   // La planilla en pantalla está paginada (50 filas), pero validar los DNIs y
   // generar la plantilla requiere TODOS los registros. Si el padre no nos pasa
   // `filas`, los traemos bajo demanda al abrir el modal.
+  //
+  // `cargandoFilas` y `errorFilas` son estados explícitos (no se derivan de
+  // `filasAll == null`): si la carga fallaba, filasAll se quedaba en null para
+  // siempre y los botones no volvían a habilitarse nunca.
   const [filasFetched, setFilasFetched] = useState(null)
+  const [cargandoFilas, setCargandoFilas] = useState(false)
+  const [errorFilas, setErrorFilas] = useState(null)
+  const [intento, setIntento] = useState(0)
   const filasAll = filas ?? filasFetched
-  const cargandoFilas = filasAll == null
 
   useEffect(() => {
-    if (open && filas == null && filasFetched == null) {
-      fetchAllRows(tabla, { order: 'apellidos_y_nombres', periodo })
-        .then(setFilasFetched)
-        .catch((e) => toast.error(`No se pudieron cargar los registros: ${e.message}`))
-    }
-  }, [open, filas, filasFetched, tabla, periodo])
+    if (!open || filas != null || filasFetched != null) return
+    let cancelado = false
+    setCargandoFilas(true)
+    setErrorFilas(null)
+    fetchAllRows(tabla, { order: 'apellidos_y_nombres', periodo })
+      .then((data) => { if (!cancelado) setFilasFetched(data) })
+      .catch((e) => {
+        if (cancelado) return
+        setErrorFilas(e.message)
+        toast.error(`No se pudieron cargar los registros: ${e.message}`)
+      })
+      .finally(() => { if (!cancelado) setCargandoFilas(false) })
+    return () => { cancelado = true }
+  }, [open, filas, filasFetched, tabla, periodo, intento])
 
   // Columnas que se pueden actualizar: todas menos el DNI. Si la planilla
   // calcula totales automáticamente, se excluyen las columnas de total
@@ -75,6 +89,13 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
     setPreview(null)
     // Limpiamos la caché para que la próxima apertura traiga datos frescos.
     setFilasFetched(null)
+    setErrorFilas(null)
+  }
+
+  // Vuelve a intentar la carga tras un fallo (sin cerrar el modal).
+  const reintentarCarga = () => {
+    setErrorFilas(null)
+    setIntento((n) => n + 1)
   }
 
   const colMeta = columnas.find((c) => c.key === columna)
@@ -86,62 +107,72 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
     if (!columna) { toast.error('Primero selecciona la columna a actualizar.'); return }
     setLoading(true)
 
-    const buffer = await file.arrayBuffer()
-    const wb = XLSX.read(buffer)
-    const ws = wb.Sheets[wb.SheetNames[0]]
-    const rawRows = XLSX.utils.sheet_to_json(ws, { defval: null })
-
-    if (rawRows.length === 0) {
-      setLoading(false)
-      toast.error('El archivo no tiene filas.')
-      return
-    }
-
-    // Detectar la columna de DNI y la columna de valor en el Excel.
-    const headers = Object.keys(rawRows[0])
-    const dniHeader =
-      headers.find((h) => String(h).trim().toLowerCase() === 'dni') ?? headers[0]
-    // El valor: cabecera que coincida con la etiqueta de la columna elegida,
-    // o "VALOR" / "MONTO" / "NUEVO", o la primera columna distinta del DNI.
-    const norm = (s) => String(s).trim().toLowerCase()
-    const valHeader =
-      headers.find((h) => norm(h) === norm(colMeta.label)) ??
-      headers.find((h) => ['valor', 'monto', 'nuevo', 'valor nuevo'].includes(norm(h))) ??
-      headers.find((h) => h !== dniHeader)
-
-    if (!valHeader) {
-      setLoading(false)
-      toast.error('El Excel debe tener una columna DNI y otra con el valor.')
-      return
-    }
-
-    const actualizar = []
-    const noEncontrados = []
-    let invalidos = 0
-    const vistos = new Set()
-
-    for (const row of rawRows) {
-      const dni = parseInt(String(row[dniHeader] ?? '').trim(), 10)
-      if (isNaN(dni)) { invalidos++; continue }
-      if (vistos.has(dni)) continue // ignora DNIs repetidos en el archivo
-      vistos.add(dni)
-      const valor = castValue(row[valHeader], colMeta.type)
-      if (!dniIndex.has(dni)) {
-        noEncontrados.push(dni)
-        continue
+    // Todo el parseo va dentro del try/finally: si el archivo está corrupto,
+    // XLSX.read lanza y sin el `finally` el modal quedaba colgado en «Leyendo…»
+    // hasta recargar la página.
+    try {
+      const buffer = await file.arrayBuffer()
+      const wb = XLSX.read(buffer)
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      if (!ws) {
+        toast.error('El archivo no tiene ninguna hoja legible.')
+        return
       }
-      actualizar.push({ dni, valor, nombre: dniIndex.get(dni) })
-    }
+      const rawRows = XLSX.utils.sheet_to_json(ws, { defval: null })
 
-    setLoading(false)
-    setPreview({
-      columna,
-      colLabel: colMeta.label,
-      colType: colMeta.type,
-      actualizar,
-      noEncontrados,
-      invalidos,
-    })
+      if (rawRows.length === 0) {
+        toast.error('El archivo no tiene filas.')
+        return
+      }
+
+      // Detectar la columna de DNI y la columna de valor en el Excel.
+      const headers = Object.keys(rawRows[0])
+      const dniHeader =
+        headers.find((h) => String(h).trim().toLowerCase() === 'dni') ?? headers[0]
+      // El valor: cabecera que coincida con la etiqueta de la columna elegida,
+      // o "VALOR" / "MONTO" / "NUEVO", o la primera columna distinta del DNI.
+      const norm = (s) => String(s).trim().toLowerCase()
+      const valHeader =
+        headers.find((h) => norm(h) === norm(colMeta.label)) ??
+        headers.find((h) => ['valor', 'monto', 'nuevo', 'valor nuevo'].includes(norm(h))) ??
+        headers.find((h) => h !== dniHeader)
+
+      if (!valHeader) {
+        toast.error('El Excel debe tener una columna DNI y otra con el valor.')
+        return
+      }
+
+      const actualizar = []
+      const noEncontrados = []
+      let invalidos = 0
+      const vistos = new Set()
+
+      for (const row of rawRows) {
+        const dni = parseInt(String(row[dniHeader] ?? '').trim(), 10)
+        if (isNaN(dni)) { invalidos++; continue }
+        if (vistos.has(dni)) continue // ignora DNIs repetidos en el archivo
+        vistos.add(dni)
+        const valor = castValue(row[valHeader], colMeta.type)
+        if (!dniIndex.has(dni)) {
+          noEncontrados.push(dni)
+          continue
+        }
+        actualizar.push({ dni, valor, nombre: dniIndex.get(dni) })
+      }
+
+      setPreview({
+        columna,
+        colLabel: colMeta.label,
+        colType: colMeta.type,
+        actualizar,
+        noEncontrados,
+        invalidos,
+      })
+    } catch (err) {
+      toast.error(`No se pudo leer el Excel: ${err.message}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleConfirm = async () => {
@@ -227,27 +258,39 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
                   (cabecera <strong>«{colMeta.label}»</strong> o <strong>«VALOR»</strong>). Solo se
                   actualizarán los DNI que existan en esta planilla.
                 </p>
-                <div className="flex gap-2 mb-1 items-center">
-                  <button
-                    onClick={descargarPlantilla}
-                    disabled={cargandoFilas}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-60"
-                  >
-                    <Download size={14} />
-                    Descargar plantilla
-                  </button>
-                  <button
-                    onClick={() => inputRef.current?.click()}
-                    disabled={loading || cargandoFilas}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition disabled:opacity-60"
-                  >
-                    <PencilLine size={14} />
-                    {loading ? 'Leyendo…' : 'Subir Excel'}
-                  </button>
-                  {cargandoFilas && (
-                    <span className="text-xs text-gray-400">Cargando registros…</span>
-                  )}
-                </div>
+                {errorFilas ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+                    <p className="mb-2">No se pudieron cargar los registros: {errorFilas}</p>
+                    <button
+                      onClick={reintentarCarga}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-red-600 hover:bg-red-700 transition"
+                    >
+                      Reintentar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 mb-1 items-center">
+                    <button
+                      onClick={descargarPlantilla}
+                      disabled={cargandoFilas}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-60"
+                    >
+                      <Download size={14} />
+                      Descargar plantilla
+                    </button>
+                    <button
+                      onClick={() => inputRef.current?.click()}
+                      disabled={loading || cargandoFilas}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition disabled:opacity-60"
+                    >
+                      <PencilLine size={14} />
+                      {loading ? 'Leyendo…' : 'Subir Excel'}
+                    </button>
+                    {cargandoFilas && (
+                      <span className="text-xs text-gray-400">Cargando registros…</span>
+                    )}
+                  </div>
+                )}
               </>
             )}
 

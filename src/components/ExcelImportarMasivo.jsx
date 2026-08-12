@@ -102,6 +102,10 @@ export default function ExcelImportarMasivo({ planilla, periodo, onDone, onBusy 
       const buffer = await file.arrayBuffer()
       const wb = XLSX.read(buffer)
       const ws = wb.Sheets[wb.SheetNames[0]]
+      if (!ws) {
+        toast.error('El archivo no tiene ninguna hoja legible.')
+        return
+      }
       const rawRows = XLSX.utils.sheet_to_json(ws, { defval: null })
 
       if (rawRows.length === 0) {
@@ -175,6 +179,11 @@ export default function ExcelImportarMasivo({ planilla, periodo, onDone, onBusy 
       }
 
       setPreview({ crear, yaExisten, conflictos, invalidas })
+    } catch (err) {
+      // Sin este catch, un .xlsx corrupto dejaba una promesa rechazada sin
+      // manejar y el usuario no veía ningún mensaje.
+      console.error('Error al leer el Excel:', err)
+      toast.error(`No se pudo leer el Excel: ${err.message}`)
     } finally {
       setLoading(false)
     }
