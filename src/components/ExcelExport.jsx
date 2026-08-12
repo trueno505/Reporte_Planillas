@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Download } from 'lucide-react'
 import { fetchAllRows } from '../lib/db'
 import { formatPeriodo } from '../lib/periodo'
+import { crearNombradorHojas } from '../lib/hojaExcel'
 import { getCuadroArea } from '../config/cuadrosPresupuestales'
 import SiafModal from './SiafModal'
 import toast from 'react-hot-toast'
@@ -19,26 +20,21 @@ export default function ExcelExport({ planilla, periodo = null }) {
     const [{ default: XLSX }, { construirHojaPlanilla, construirHojaResumenAreas, construirHojasDescuentos }] =
       await Promise.all([import('xlsx-js-style'), import('../lib/excelEncabezado')])
 
+    // Todos los nombres de hoja pasan por el mismo asignador: recorta a 31,
+    // quita los caracteres que Excel prohíbe y evita duplicados.
+    const nombrar = crearNombradorHojas()
+
     const ws = construirHojaPlanilla(planilla, filas, periodo, siafPorArea)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, label.slice(0, 31))
+    XLSX.utils.book_append_sheet(wb, ws, nombrar(label))
     const wsResumen = construirHojaResumenAreas(planilla, filas, periodo)
-    if (wsResumen) XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen por áreas'.slice(0, 31))
+    if (wsResumen) XLSX.utils.book_append_sheet(wb, wsResumen, nombrar('Resumen por áreas'))
 
     // Una hoja aparte por cada concepto de descuento (Rimac, cooperativas...)
     // con al menos un trabajador afectado ese mes, para poder entregarla
-    // directamente a cada entidad. Se evitan nombres de hoja repetidos.
-    const nombresUsados = new Set(wb.SheetNames)
+    // directamente a cada entidad.
     for (const { nombre, hoja } of construirHojasDescuentos(planilla, filas, periodo)) {
-      let nombreFinal = nombre || 'Descuento'
-      let n = 2
-      while (nombresUsados.has(nombreFinal)) {
-        const sufijoN = ` (${n})`
-        nombreFinal = `${nombre.slice(0, 31 - sufijoN.length)}${sufijoN}`
-        n += 1
-      }
-      nombresUsados.add(nombreFinal)
-      XLSX.utils.book_append_sheet(wb, hoja, nombreFinal)
+      XLSX.utils.book_append_sheet(wb, hoja, nombrar(nombre))
     }
 
     const sufijo = periodo ? `_${formatPeriodo(periodo).replace(' ', '_')}` : ''

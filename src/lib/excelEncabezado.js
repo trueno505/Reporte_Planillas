@@ -602,11 +602,6 @@ function fechaLarga(d) {
   return `Ica, ${d.getDate()} de ${mes.charAt(0).toUpperCase()}${mes.slice(1)} del ${d.getFullYear()}`
 }
 
-// Excel prohíbe : \ / ? * [ ] en el nombre de una hoja y lo limita a 31 caracteres.
-function nombreHoja(base) {
-  return base.replace(/[:\\/?*[\]]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 31)
-}
-
 /**
  * Construye la hoja de un solo concepto de descuento: N°, Apellidos y
  * Nombres, monto — solo los trabajadores con monto != 0 en `col.key` — y al
@@ -672,6 +667,10 @@ function construirHojaDescuentoConcepto(planilla, filas, periodo, col) {
  * trabajador con monto != 0 ese mes. `[]` si la planilla no tiene descuentos
  * calculados (`sinAutoTotales`) o ninguno con datos.
  *
+ * `nombre` es la etiqueta en crudo de la columna: sanearla y garantizar que
+ * sea única dentro del libro es responsabilidad de quien la añade, con
+ * `crearNombradorHojas()` (lib/hojaExcel.js).
+ *
  * @returns {{ nombre: string, hoja: object }[]}
  */
 export function construirHojasDescuentos(planilla, filas, periodo = null) {
@@ -686,7 +685,7 @@ export function construirHojasDescuentos(planilla, filas, periodo = null) {
     const filasConDescuento = filas.filter((f) => (parseFloat(f[key]) || 0) !== 0)
     if (!filasConDescuento.length) continue
     hojas.push({
-      nombre: nombreHoja(col.label),
+      nombre: col.label,
       hoja: construirHojaDescuentoConcepto(planilla, filasConDescuento, periodo, col),
     })
   }

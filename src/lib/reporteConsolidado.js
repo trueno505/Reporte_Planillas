@@ -3,6 +3,7 @@ import { fetchAllRows } from './db'
 import { PLANILLAS } from '../config/planillas'
 import { formatPeriodo } from './periodo'
 import { construirHojaPlanilla } from './excelEncabezado'
+import { crearNombradorHojas } from './hojaExcel'
 import { getCuadroArea } from '../config/cuadrosPresupuestales'
 
 /**
@@ -72,14 +73,21 @@ export function generarReporteConsolidado(resumenData, periodo, datos, siafPorPl
     })
   }
 
+  // Todos los nombres de hoja pasan por el mismo asignador: recorta a 31,
+  // quita los caracteres prohibidos y evita duplicados. Aquí importa más que
+  // en la exportación individual, porque el libro lleva 14 hojas y varias
+  // etiquetas ya se cortan en el carácter 31 (p. ej. "Empleados Contrato
+  // Plazo Indeterminado"): sin esto, dos planillas de nombre parecido harían
+  // fallar la descarga entera.
+  const nombrar = crearNombradorHojas()
+
   const wsResumen = XLSX.utils.json_to_sheet(resumenRows)
-  XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen')
+  XLSX.utils.book_append_sheet(wb, wsResumen, nombrar('Resumen'))
 
   // Una hoja por planilla
   for (const { planilla, filas } of datos) {
     const ws = construirHojaPlanilla(planilla, filas, periodo, siafPorPlanilla[planilla.slug] ?? {})
-    // Nombre de hoja máx 31 chars
-    XLSX.utils.book_append_sheet(wb, ws, planilla.label.slice(0, 31))
+    XLSX.utils.book_append_sheet(wb, ws, nombrar(planilla.label))
   }
 
   const sufijo = periodo ? formatPeriodo(periodo).replace(' ', '_') : hoy()
