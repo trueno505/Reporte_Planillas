@@ -21,6 +21,14 @@ function castValue(val, type) {
 // Sistema de pensiones para el campo S.N.P. en el alta rápida (soloBasicos)
 const AFP_OPCIONES = ['AFP Integra', 'Prima AFP', 'AFP Habitat', 'Profuturo AFP']
 
+// 'Vacaciones' (Empleados Permanentes) es texto libre a nivel de columna,
+// pero solo admite el nombre de un mes (o vacío): se restringe con un
+// <select> aquí y con un CHECK en la BD (ver migracion_vacaciones_texto.sql).
+const MESES_VACACIONES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
+
 const fmtMoney = (n) => (n ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 const MAX_RETENCIONES = 10
@@ -173,6 +181,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
 
   // ¿Es obligatorio este campo?
   //  - Totales automáticos: nunca (son de solo lectura, los calcula la BD).
+  //  - Vacaciones: nunca (excepción explícita; no todos los meses hay vacaciones).
   //  - Alta rápida (soloBasicos): todos los campos visibles.
   //  - Al EDITAR: todos los campos → obliga a completar los que quedaron vacíos.
   //  - Al crear normal: solo DNI y los marcados `required` en la config.
@@ -180,6 +189,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
     if (secciones && totalKeys.has(col.key)) return false
     if (col.formulaBase) return false // se calcula solo (ver CampoFormula)
     if (esFijaBloqueada(col.key)) return false // identidad en solo lectura al editar
+    if (col.key === 'vacaciones') return false
     if (soloBasicos) return true
     if (isEdit) return true
     return col.type === 'dni' || col.required
@@ -290,6 +300,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             const requerido = esRequerido(col)
             const esSnpBasico = soloBasicos && col.key === 'snp'
             const esAreaSelect = col.key === 'area' && (planilla.areas?.length ?? 0) > 0
+            const esVacacionesSelect = col.key === 'vacaciones'
             const fijaBloqueada = esFijaBloqueada(col.key)
             return (
               <div
@@ -355,6 +366,20 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
                           {a}
                         </option>
                       ))}
+                  </select>
+                ) : esVacacionesSelect ? (
+                  <select
+                    value={form.vacaciones ?? ''}
+                    onChange={(e) => handleChange('vacaciones', e.target.value)}
+                    required={requerido}
+                    className={inputClass}
+                  >
+                    <option value="">Seleccione mes…</option>
+                    {MESES_VACACIONES.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
                   </select>
                 ) : col.type === 'text' ? (
                   <input

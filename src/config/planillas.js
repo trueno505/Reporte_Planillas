@@ -407,7 +407,6 @@ export const PLANILLAS = [
     label: 'Empleados Permanentes',
     titulo: 'PLANILLA ÚNICA DE PAGO DEL PERSONAL EMPLEADOS PERMANENTES - RÉGIMEN LABORAL D. L. N° 276',
     grupo: 'Empleados',
-    excluirCalculo: ['vacaciones'], // 'Vacaciones' es informativa; no se suma a t_ingreso
     areas: [
       'DESARROLLAR EL PLANEAMIENTO DE LA GESTION - C.O.S',
       'GERENCIAR RECURSOS MATERIALES, HUMANOS Y FINANCIEROS - G. A',
@@ -429,7 +428,7 @@ export const PLANILLAS = [
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'cargo', label: 'Cargo', type: 'text' },
-      { key: 'vacaciones', label: 'Vacaciones', type: 'money' },
+      { key: 'vacaciones', label: 'Vacaciones', type: 'text' }, // solo nombre de mes (o vacío); ver MESES_VACACIONES en RecordForm.jsx
       { key: 'niv_rem', label: 'Niv. Rem.', type: 'text' },
       { key: 'snp', label: 'S.N.P.', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },

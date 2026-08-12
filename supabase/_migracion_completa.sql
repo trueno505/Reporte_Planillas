@@ -3031,3 +3031,17 @@ CREATE POLICY "perfiles_admin_select_all" ON public.perfiles
     (select get_my_rol()) = 'superadmin'
     OR ((select get_my_rol()) = 'administrador' AND rol <> 'superadmin')
   );
+
+-- =====================================================================
+-- 'Vacaciones' (Empleados Permanentes): de monto a texto, solo nombre de mes.
+-- Integrado desde supabase/migracion_vacaciones_texto.sql
+-- =====================================================================
+ALTER TABLE public.empleados_permanentes
+  ALTER COLUMN vacaciones TYPE TEXT USING NULL;
+
+ALTER TABLE public.empleados_permanentes DROP CONSTRAINT IF EXISTS empleados_permanentes_vacaciones_check;
+ALTER TABLE public.empleados_permanentes ADD CONSTRAINT empleados_permanentes_vacaciones_check
+  CHECK (vacaciones IS NULL OR vacaciones IN (
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ));
