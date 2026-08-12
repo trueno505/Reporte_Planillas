@@ -2,7 +2,7 @@
 
 > Documento de referencia que explica **todo lo que está creado e implementado** en el
 > proyecto. Generado a partir de una revisión completa del código fuente.
-> **Última revisión:** 2026-08-10
+> **Última revisión:** 2026-08-11
 
 ---
 
@@ -172,7 +172,10 @@ Editar esas constantes actualiza todas las planillas afectadas a la vez.
 | Autoridades | Gerente Municipal | `gerente-municipal` | `gerente_municipal` |
 | Autoridades | Alcalde** | `alcalde` | `alcalde` |
 
-\* `empleados-permanentes` usa `excluirCalculo: ['vacaciones']` (columna informativa).
+\* `empleados-permanentes` tiene la columna informativa **`vacaciones`** (`type: 'text'`):
+solo admite el nombre de un mes (Enero…Diciembre) elegido con un `<select>` en
+`RecordForm`, reforzado con un `CHECK` en la BD; es la única columna con excepción
+explícita en `esRequerido` — nunca es obligatoria, ni siquiera al editar (ver 8.2).
 \** `alcalde` usa `excluirCalculo: ['base']` porque la columna `base` no es un descuento.
 
 > **CAS:** originalmente había 7 subplanillas CAS; se eliminaron 6 (`cas-choferes`,
@@ -379,7 +382,9 @@ operaciones masivas de Excel / recálculo.
 - Modal con todos los campos según el tipo de columna.
 - **Obligatoriedad por contexto** (`esRequerido`): al **editar**, **todos** los campos son
   obligatorios (obliga a completar los que quedaron vacíos en el alta rápida); en el alta
-  rápida, los 4 básicos; los totales automáticos nunca (son de solo lectura). La validación
+  rápida, los 4 básicos; los totales automáticos nunca (son de solo lectura). **Excepción
+  explícita: `vacaciones`** (Empleados Permanentes) nunca es obligatoria, ni siquiera al
+  editar — no todos los meses hay vacaciones. La validación
   se hace en JS al guardar (el botón está fuera del `<form>`, el `required` nativo no basta)
   y muestra un toast *"Completa todos los campos: …"* sin enviar nada si falta algo.
 - **Auto-cálculo en vivo:** al cambiar cualquier ingreso o descuento se recalculan
@@ -434,10 +439,20 @@ Se detectan tres tipos por fila:
     números, replicado en todas sus áreas —, montos en blanco y FECHA autocompletada
     con el día de la descarga).
 
+  Cada trabajador queda encerrado en un **borde grueso** que lo separa visualmente del
+  siguiente (además del borde fino que llevan todas las celdas de su bloque, incluidas
+  las que no tienen valor — sin eso quedaban huecos sin línea entre columnas).
+
   Además agrega la hoja **"Resumen por áreas"**: una fila por área con **todas** las
   columnas de montos de la planilla y una fila TOTAL GENERAL que suma cada columna.
   Las planillas sin áreas (Cesantes) llevan una fila TOTAL GENERAL + un bloque único
   al final de la hoja.
+
+  Por cada **concepto de descuento** (Rimac, cooperativas, F. Pens., etc.) con al
+  menos un trabajador con monto ≠ 0 ese mes, se agrega una **hoja aparte**
+  (`construirHojasDescuentos`): N°, Apellidos y Nombres, monto — solo los afectados —,
+  fila TOTAL y la fecha de generación, para poder entregarla directamente a cada
+  entidad. No sale hoja si nadie tiene ese descuento ese mes.
 - **Actualizar columna** (`ExcelActualizarColumna`): se elige **una** columna, se sube un
   Excel con `DNI + valor`, muestra una **vista previa** (emparejados / no encontrados /
   inválidos) y hace un **UPDATE atómico por DNI** vía el RPC `actualizar_columna_planilla`.
@@ -506,10 +521,13 @@ se mantienen archivos sueltos por número.
 > **Parches sobre una BD ya instalada:** cuando un cambio de esquema afecta a una base con
 > datos, se aplica un parche puntual en vez de reinstalar. Hoy existe
 > `supabase/migracion_rename_observaciones.sql` (renombra `observaciones →
-> tipo_acto_administrativo` en las 13 tablas, idempotente, conservando los datos) y
+> tipo_acto_administrativo` en las 13 tablas, idempotente, conservando los datos),
 > `supabase/migracion_ret_jud_detalle.sql` (agrega `ret_jud_detalle JSONB` a `alcalde`
-> para el widget de fórmula de Ret. Jud., ver 3 y 8.2 — ya aplicado en producción). El
-> `_migracion_completa.sql` ya refleja ambos cambios para instalaciones desde cero.
+> para el widget de fórmula de Ret. Jud., ver 3 y 8.2), `supabase/migracion_restringir_superadmin.sql`
+> (bloquea ascender a alguien a `superadmin` y oculta su fila a los `administrador`, ver
+> 10) y `supabase/migracion_vacaciones_texto.sql` (columna `vacaciones` de monto a texto,
+> ver 4 y 8.2) — los cuatro ya aplicados en producción. El `_migracion_completa.sql` ya
+> refleja todos estos cambios para instalaciones desde cero.
 
 El archivo contiene, en orden:
 
@@ -559,8 +577,8 @@ manuales (INSERT): `abrir_periodo` marca la transacción con el GUC
     recálculo). **No** gestiona usuarios ni ve la auditoría.
   - **`administrador`** — control total: datos + **gestión de usuarios** + **auditoría**.
   - **`superadmin`** — **exactamente los mismos privilegios que `administrador`** en toda
-    la RLS y los RPCs, más tres diferencias (añadido el 2026-07-22, ver
-    `supabase/migracion_rol_superadmin.sql`):
+    la RLS y los RPCs, más cinco diferencias (añadido el 2026-07-22, ver
+    `supabase/migracion_rol_superadmin.sql` y `supabase/migracion_restringir_superadmin.sql`):
     1. **Cuenta y rol permanentes**: el trigger `proteger_rol_perfil` revierte cualquier
        intento de cambiar el `rol` de una fila que ya es `superadmin` (lo intente quien lo
        intente, incluso otro superadmin); `proteger_superadmin_ban` (`BEFORE UPDATE` en
@@ -577,10 +595,20 @@ manuales (INSERT): `abrir_periodo` marca la transacción con el GUC
        `registrar_cambio_rol`), y esas filas son visibles **solo** para superadmin — un
        administrador normal sigue viendo el resto de la auditoría, pero no el historial de
        cambios de rol.
-    - **Decisión de diseño deliberada**: ascender a alguien a `administrador` o
-      `superadmin` **no** está restringido — cualquier admin o superadmin actual puede
-      hacerlo desde `/usuarios`. Solo se restringió la parte de (des)activar cuentas de
-      administrador, no la de otorgar el rol.
+    4. **Nadie puede ascender a alguien a `superadmin` desde la app** (añadido el
+       2026-08-11, ver `supabase/migracion_restringir_superadmin.sql`): el trigger
+       `proteger_rol_perfil` revierte cualquier `UPDATE` que fije `rol = 'superadmin'` en
+       una fila que no lo era ya, sin importar quién llame (incluida la Edge Function
+       `crear-usuario`, que corre con `service_role`). Un segundo superadmin solo puede
+       crearse a mano, directo en la BD. En la UI, `ROLES_ASIGNABLES` (`Usuarios.jsx`) y
+       `ROLES_VALIDOS` (`crear-usuario`) ya ni siquiera ofrecen `'superadmin'` como opción.
+    5. **Un `administrador` no puede saber quién es el superadmin**: la política
+       `perfiles_admin_select_all` excluye las filas `rol = 'superadmin'` cuando quien
+       consulta es `administrador` (solo el propio superadmin, o el dueño de la fila, la
+       ven). En cascada y sin más cambios de código: su fila desaparece de `/usuarios`
+       para un admin, `admin-usuarios` (`listar`) filtra su correo/estado, y el embed
+       `perfiles(nombre)` de `/auditoria` muestra `—` en vez de su nombre en las filas que
+       generó.
 - `AuthContext` expone `isAdmin` (= `true` para `administrador` **o** `superadmin` — úsalo
   para todo lo que deba comportarse igual entre ambos), `isSuperadmin` (= `true` solo para
   `superadmin`, para las tres diferencias de arriba), `isEditor`, `isConsultor` y el

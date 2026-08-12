@@ -8,10 +8,11 @@ Permite ver cada planilla en tabla con **paginación de 50 en 50 (server-side) y
 vivo** (Realtime), búsqueda/orden y edición en línea, editar/eliminar registros con
 **cálculo automático de totales**, un **alta rápida** global (solo datos básicos + S.N.P. +
 Área; las planillas no tienen alta propia), **exportar Excel estilizado** (agrupado por
-área, con resumen de conceptos, ESSALUD 9%, comprobación y **cuadro presupuestal por área**
-con Nº Siaf —solo números— pedido al descargar), **importar trabajadores nuevos de forma
-masiva** y **actualizar columnas** por **Excel**, generar **boletas PDF** y un **reporte
-consolidado**, buscar a un trabajador por DNI o
+área, con recuadro por trabajador, resumen de conceptos, ESSALUD 9%, comprobación,
+**cuadro presupuestal por área** con Nº Siaf —solo números— pedido al descargar, y una
+**hoja aparte por cada concepto de descuento** con al menos un afectado ese mes),
+**importar trabajadores nuevos de forma masiva** y **actualizar columnas** por **Excel**,
+generar **boletas PDF** y un **reporte consolidado**, buscar a un trabajador por DNI o
 nombre en las 13 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
 de cambios, **gestión de usuarios/roles**, **histórico mensual permanente** (cada mes se
 conserva; ver abajo) y actualizaciones en **tiempo real** (Supabase Realtime).
@@ -74,11 +75,13 @@ Cuatro roles, almacenados en `public.perfiles.rol` (la seguridad real la impone 
 | **consultor** | Consultar, exportar a Excel y descargar boletas PDF (solo lectura). |
 | **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, alta rápida, importar registros y actualizar columnas por Excel, recálculo). **No** gestiona usuarios ni ve la auditoría. |
 | **administrador** | Control total: datos + **gestión de usuarios** + **auditoría**. |
-| **superadmin** | Igual que administrador en todo, **más**: su cuenta y su rol son **permanentes** (nadie puede desactivarla, eliminarla ni reasignarle otro rol — ni siquiera otro superadmin), solo un superadmin puede (des)activar la cuenta de un administrador, y ve un registro de auditoría de **cambios de rol** que un administrador normal no ve. |
+| **superadmin** | Igual que administrador en todo, **más**: su cuenta y su rol son **permanentes** (nadie puede desactivarla, eliminarla ni reasignarle otro rol — ni siquiera otro superadmin), solo un superadmin puede (des)activar la cuenta de un administrador, ve un registro de auditoría de **cambios de rol** que un administrador normal no ve, **nadie puede ascender a alguien a superadmin desde la app** (solo se crea a mano en la BD) y **un administrador no puede saber quién es el superadmin** (su fila queda oculta en `/usuarios` y `/auditoria`). |
 
 Un **administrador** (o **superadmin**) gestiona las cuentas que usan la app desde la
 página **Usuarios** (`/usuarios`): puede **crear** cuentas (nombre, correo, rol y
-contraseña inicial), **asignar el rol** de cada usuario, **cambiar la contraseña** de
+contraseña inicial) y **asignar el rol** de cada usuario, entre **consultor / editor /
+administrador** — `superadmin` no es un rol asignable desde la app, es una cuenta única
+que solo se crea a mano en la base de datos —, **cambiar la contraseña** de
 cualquier persona y **desactivar/reactivar** cuentas (no puede cambiar su propio rol ni
 desactivarse a sí mismo, para evitar quedar bloqueado). Las cuentas **no se eliminan**:
 desactivar impide el inicio de sesión pero conserva el perfil y la auditoría, y se puede
