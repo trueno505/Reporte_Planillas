@@ -42,6 +42,13 @@ const ROLES = [
 
 const ROL_INFO = Object.fromEntries(ROLES.map((r) => [r.id, r]))
 
+// Roles asignables desde la app (crear usuario / cambiar rol). 'superadmin'
+// queda fuera: esa cuenta es única y permanente, solo se crea a mano en la
+// base de datos; nadie —ni siquiera otro superadmin— puede ascender a nadie
+// a ese rol desde la UI (el trigger proteger_rol_perfil también lo bloquea
+// en la BD como defensa en profundidad).
+const ROLES_ASIGNABLES = ROLES.filter((r) => r.id !== 'superadmin')
+
 function fmtFecha(s) {
   if (!s) return '—'
   return new Date(s).toLocaleDateString('es-PE')
@@ -148,7 +155,7 @@ function NuevoUsuarioModal({ onClose, onCreado }) {
               onChange={(e) => setRol(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
-              {ROLES.map((r) => (
+              {ROLES_ASIGNABLES.map((r) => (
                 <option key={r.id} value={r.id}>{r.label}</option>
               ))}
             </select>
@@ -414,12 +421,14 @@ export default function Usuarios() {
           </button>
         </div>
         <p className="text-gray-500 text-sm mb-4">
-          Crea cuentas y asigna a cada usuario uno de los cuatro roles.
+          Crea cuentas y asigna a cada usuario un rol (Administrador, Editor o Consultor).
+          El rol Superadmin no se puede asignar desde aquí: esa cuenta es única y permanente.
         </p>
 
-        {/* Leyenda de roles */}
+        {/* Leyenda de roles. La tarjeta de Superadmin solo se muestra al propio
+            superadmin: un administrador no debe saber que ese rol/cuenta existe. */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
-          {ROLES.map(({ id, label, desc, Icon, badge }) => (
+          {(isSuperadmin ? ROLES : ROLES_ASIGNABLES).map(({ id, label, desc, Icon, badge }) => (
             <div key={id} className="rounded-lg border border-gray-200 bg-white p-3">
               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${badge}`}>
                 <Icon size={12} />
@@ -488,7 +497,9 @@ export default function Usuarios() {
                           }
                           className="border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {ROLES.map((r) => (
+                          {/* Si la fila ya es superadmin (rol bloqueado, select deshabilitado) se
+                              incluye esa opción solo para que se siga viendo el rol actual. */}
+                          {(rolBloqueado ? ROLES : ROLES_ASIGNABLES).map((r) => (
                             <option key={r.id} value={r.id}>{r.label}</option>
                           ))}
                         </select>

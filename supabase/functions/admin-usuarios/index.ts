@@ -5,6 +5,9 @@
 // SERVICE_ROLE_KEY:
 //
 //   • listar            → devuelve [{ id, email, banned_until }] de los usuarios.
+//                         Si quien llama es administrador (no superadmin), la
+//                         cuenta superadmin se excluye del resultado: un
+//                         administrador no debe poder saber quién es.
 //   • cambiar_password  → restablece la contraseña de cualquier usuario.
 //   • desactivar        → inhabilita la cuenta (ban): no podrá iniciar sesión.
 //   • activar           → reactiva una cuenta desactivada.
@@ -126,6 +129,19 @@ Deno.serve(async (req) => {
       if (data.users.length < 1000) break
       page++
     }
+
+    // Un administrador (no superadmin) no debe poder saber quién es el
+    // superadmin: se excluye su correo/estado de la lista igual que su fila
+    // de perfiles ya queda oculta por RLS (perfiles_admin_select_all).
+    if (callerRol !== 'superadmin') {
+      const { data: superadmins } = await admin
+        .from('perfiles')
+        .select('id')
+        .eq('rol', 'superadmin')
+      const idsSuperadmin = new Set((superadmins ?? []).map((p) => p.id))
+      return json({ ok: true, usuarios: usuarios.filter((u) => !idsSuperadmin.has(u.id)) })
+    }
+
     return json({ ok: true, usuarios })
   }
 

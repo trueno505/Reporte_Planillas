@@ -3004,3 +3004,30 @@ $function$;
 -- generar el mes siguiente (usa information_schema, no una lista fija).
 -- =====================================================================
 ALTER TABLE public.alcalde ADD COLUMN IF NOT EXISTS ret_jud_detalle JSONB;
+
+-- =====================================================================
+-- Restringe el rol superadmin (nadie puede crear otro; administrador no
+-- puede ver su perfil). Integrado desde supabase/migracion_restringir_superadmin.sql
+-- =====================================================================
+CREATE OR REPLACE FUNCTION public.proteger_rol_perfil()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
+BEGIN
+  IF OLD.rol = 'superadmin' AND NEW.rol IS DISTINCT FROM OLD.rol THEN
+    NEW.rol := OLD.rol;
+  ELSIF NEW.rol = 'superadmin' AND OLD.rol IS DISTINCT FROM 'superadmin' THEN
+    NEW.rol := OLD.rol;
+  ELSIF NEW.rol IS DISTINCT FROM OLD.rol
+        AND (SELECT public.get_my_rol()) NOT IN ('administrador', 'superadmin') THEN
+    NEW.rol := OLD.rol;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+DROP POLICY IF EXISTS "perfiles_admin_select_all" ON public.perfiles;
+CREATE POLICY "perfiles_admin_select_all" ON public.perfiles
+  FOR SELECT TO authenticated
+  USING (
+    (select get_my_rol()) = 'superadmin'
+    OR ((select get_my_rol()) = 'administrador' AND rol <> 'superadmin')
+  );
