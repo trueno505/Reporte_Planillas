@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Muni Sheets — Sistema de Planillas MPI</title>
+<style>
+  :root{
+    --navy:#003366;
+    --navy-800:#0a2947;
+    --blue:#0f76bc;
+    --blue-soft:#e8f1f9;
+    --teal:#2d9c8a;
+    --amber:#c47f17;
+    --ink:#1b2733;
+    --muted:#5b6b7c;
+    --line:#dfe6ed;
+    --paper:#ffffff;
+    --wash:#f5f8fb;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  @page{ size:A4; margin:0; }
+
+  body{
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+    font-size:10.5pt;
+    line-height:1.55;
+  }
+
+  .page{
+    width:210mm; min-height:297mm; padding:18mm 17mm 15mm;
+    page-break-after:always; position:relative; background:var(--paper);
+    display:flex; flex-direction:column;
+  }
+  .page:last-child{page-break-after:auto}
+
+  /* ---------- Portada ---------- */
+  .cover{
+    background:linear-gradient(155deg,var(--navy) 0%,var(--navy-800) 55%,#06182b 100%);
+    color:#fff; justify-content:space-between; padding:22mm 17mm 15mm;
+  }
+  .cover-top{display:flex;align-items:center;gap:10px;opacity:.85;
+    font-size:9pt;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+  .cover-rule{height:2px;width:52px;background:var(--blue);border-radius:2px}
+  .cover h1{font-size:47pt;line-height:1.02;font-weight:800;letter-spacing:-.025em;margin:0}
+  .cover .sub{font-size:15pt;font-weight:400;color:#a9c8e4;margin-top:14px;max-width:135mm;line-height:1.45}
+  .cover .tagline{
+    margin-top:26px;padding-left:16px;border-left:3px solid var(--blue);
+    font-size:11.5pt;color:#cfe2f3;max-width:130mm;line-height:1.5
+  }
+  /* Vista previa del panel en la portada: llena el espacio central y enseña el
+     producto antes de la primera página de contenido. */
+  .cover-shot{
+    margin:12mm auto 0;width:152mm;border-radius:10px;overflow:hidden;
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 18px 46px rgba(0,0,0,.42);
+  }
+  .cover-shot img{width:100%;display:block}
+  .cover-stats{display:flex;gap:9mm;margin-top:auto;padding-top:10mm}
+  .cover-stat .n{font-size:26pt;font-weight:800;color:#fff;line-height:1}
+  .cover-stat .l{font-size:8.5pt;color:#8fb3d4;margin-top:5px;letter-spacing:.05em;text-transform:uppercase}
+  .cover-foot{margin-top:14mm;padding-top:7mm;border-top:1px solid rgba(255,255,255,.16);
+    display:flex;justify-content:space-between;font-size:8.5pt;color:#8fb3d4}
+
+  /* ---------- Cabeceras internas ---------- */
+  .eyebrow{
+    font-size:8pt;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--blue);font-weight:700;margin-bottom:7px
+  }
+  h2{font-size:23pt;font-weight:800;color:var(--navy);letter-spacing:-.02em;line-height:1.12}
+  .lead{font-size:11pt;color:var(--muted);margin-top:9px;max-width:158mm;line-height:1.55}
+  .hr{height:3px;width:46px;background:var(--blue);border-radius:2px;margin:14px 0 20px}
+
+  h3{font-size:12pt;font-weight:700;color:var(--navy);margin-bottom:5px}
+
+  /* ---------- Bloques ---------- */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:5mm}
+
+  .card{
+    border:1px solid var(--line);border-radius:9px;padding:13px 15px;background:var(--paper);
+  }
+  .card.wash{background:var(--wash)}
+  .card p{font-size:9.6pt;color:var(--muted);line-height:1.5}
+
+  .pain{border-left:3px solid #c0392b;background:#fdf4f3;border-radius:0 8px 8px 0;
+    padding:12px 15px;margin-bottom:9px}
+  .pain h3{color:#a5321f;font-size:11pt}
+  .pain p{font-size:9.6pt;color:#6b4a44;line-height:1.5}
+
+  .win{border-left:3px solid var(--teal);background:#f0faf7;border-radius:0 8px 8px 0;
+    padding:12px 15px;margin-bottom:9px}
+  .win h3{color:#1d6d5f;font-size:11pt}
+  .win p{font-size:9.6pt;color:#3f6c63;line-height:1.5}
+
+  .feat{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .feat:last-child{border-bottom:none}
+  .feat .ico{
+    flex:0 0 27px;height:27px;border-radius:7px;background:var(--blue-soft);
+    color:var(--navy);display:flex;align-items:center;justify-content:center;
+    font-size:12pt;font-weight:800
+  }
+  .feat .t{font-size:10.2pt;font-weight:700;color:var(--navy)}
+  .feat .d{font-size:9.3pt;color:var(--muted);line-height:1.48;margin-top:2px}
+
+  /* ---------- Métricas ---------- */
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:5mm 0}
+  .metric{border:1px solid var(--line);border-radius:9px;padding:12px;text-align:center;background:var(--wash)}
+  .metric .n{font-size:19pt;font-weight:800;color:var(--navy);line-height:1}
+  .metric .l{font-size:7.8pt;color:var(--muted);margin-top:5px;line-height:1.3}
+
+  /* ---------- Demo ---------- */
+  /* Las capturas son 2880×1800 (ratio 0,625). A 176 mm de ancho útil cada una
+     mide ~416 px de alto, así que solo entran dos por página y sin encabezado.
+     Se limitan al 95 % para dejar holgura y evitar que una línea extra de pie
+     empuje la segunda captura a la página siguiente. */
+  .shot{margin-bottom:6mm;break-inside:avoid}
+  .shot img{width:95%;display:block;margin:0 auto;border:1px solid var(--line);border-radius:8px}
+  .shot .cap{display:flex;gap:9px;align-items:baseline;margin-top:7px}
+  .shot .num{
+    flex:0 0 auto;font-size:8pt;font-weight:800;color:#fff;background:var(--navy);
+    border-radius:4px;padding:2px 7px;letter-spacing:.04em
+  }
+  .shot .cap-t{font-size:10.2pt;font-weight:700;color:var(--navy)}
+  .shot .cap-d{font-size:9.2pt;color:var(--muted);line-height:1.45;margin-top:3px}
+
+  /* ---------- Roadmap ---------- */
+  .road{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);break-inside:avoid}
+  .road:last-child{border-bottom:none}
+  .road .step{
+    flex:0 0 30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11pt
+  }
+  .road .body{flex:1}
+  .road .t{font-size:11.5pt;font-weight:700;color:var(--navy)}
+  .road .d{font-size:9.5pt;color:var(--muted);line-height:1.5;margin-top:4px}
+  .road .why{font-size:9.3pt;color:#3f6c63;background:#f0faf7;border-left:2px solid var(--teal);
+    padding:6px 10px;border-radius:0 5px 5px 0;margin-top:7px;line-height:1.45}
+  .tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+  .tag{font-size:7.6pt;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    padding:3px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .tag.hi{background:#fdf3e5;border-color:#f0d4a8;color:var(--amber)}
+  .tag.lo{background:#eef8f5;border-color:#bfe3d9;color:#1d6d5f}
+  .tag.md{background:var(--blue-soft);border-color:#c4dcf0;color:var(--navy)}
+
+  /* ---------- Objetivos ---------- */
+  .goal{display:flex;gap:11px;align-items:flex-start;padding:9px 0}
+  .goal .chk{flex:0 0 19px;height:19px;border-radius:5px;background:var(--teal);color:#fff;
+    font-size:10pt;display:flex;align-items:center;justify-content:center;font-weight:800;margin-top:1px}
+  .goal .chk.pend{background:#fff;border:2px solid var(--line);color:transparent}
+  .goal .g-t{font-size:10.2pt;font-weight:700;color:var(--navy)}
+  .goal .g-d{font-size:9.3pt;color:var(--muted);line-height:1.45}
+
+  .band{background:var(--navy);color:#fff;border-radius:10px;padding:17px 20px;margin-top:auto}
+  .band h3{color:#fff;font-size:13pt;margin-bottom:6px}
+  .band p{font-size:9.8pt;color:#bcd6ec;line-height:1.55}
+
+  .note{font-size:8.6pt;color:var(--muted);font-style:italic;line-height:1.5}
+
+  /* Aviso destacado: separa sin ambigüedad lo implementado de lo propuesto.
+     Sin esto, un lector puede confundir el roadmap con funciones existentes. */
+  .aviso{
+    background:#fdf6e9;border:1px solid #f0d4a8;border-left:4px solid var(--amber);
+    border-radius:0 8px 8px 0;padding:11px 14px;font-size:9.4pt;color:#7a5410;
+    line-height:1.5;margin-bottom:5mm
+  }
+  .aviso strong{color:#5f4008}
+
+  /* Leyenda de estado en la página de objetivos. */
+  .leyenda{display:flex;gap:16px;font-size:8.6pt;color:var(--muted);margin-bottom:5mm;align-items:center}
+  .leyenda span{display:flex;gap:6px;align-items:center}
+  .leyenda i{width:15px;height:15px;border-radius:4px;display:inline-flex;align-items:center;
+    justify-content:center;font-style:normal;font-size:8.5pt;font-weight:800}
+  .leyenda i.ok{background:var(--teal);color:#fff}
+  .leyenda i.no{background:#fff;border:2px solid var(--line)}
+
+  .foot{
+    position:absolute;bottom:9mm;left:17mm;right:17mm;display:flex;justify-content:space-between;
+    font-size:7.8pt;color:#93a3b3;border-top:1px solid var(--line);padding-top:6px
+  }
+
+  table{width:100%;border-collapse:collapse;font-size:9.3pt;margin-top:4mm}
+  th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-size:8.4pt;
+    text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)}
+  td strong{color:var(--ink);font-weight:600}
+  tr:nth-child(even) td{background:var(--wash)}
+</style>
+</head>
+<body>
+
+<!-- ══════════ 1. PORTADA ══════════ -->
+<section class="page cover">
+  <div>
+    <div class="cover-top"><span class="cover-rule"></span> Municipalidad Provincial de Ica</div>
+    <h1>Muni&nbsp;Sheets</h1>
+    <div class="sub">Sistema de gestión de planillas de remuneraciones</div>
+    <div class="tagline">
+      Las <strong>13 planillas</strong> de la Municipalidad en un solo sistema:
+      cálculo automático, histórico mensual permanente y trazabilidad de cada cambio.
+    </div>
+
+    <div class="cover-shot"><img src="capturas/02-dashboard.png" alt="Panel de planillas"></div>
+  </div>
+
+  <div>
+    <div class="cover-stats">
+      <div class="cover-stat"><div class="n">13</div><div class="l">Planillas</div></div>
+      <div class="cover-stat"><div class="n">5</div><div class="l">Regímenes</div></div>
+      <div class="cover-stat"><div class="n">497</div><div class="l">Conceptos</div></div>
+      <div class="cover-stat"><div class="n">4</div><div class="l">Roles</div></div>
+      <div class="cover-stat"><div class="n">64</div><div class="l">Áreas</div></div>
+    </div>
+    <div class="cover-foot">
+      <span>Oficina de Gestión de Recursos Humanos · Área de Remuneraciones</span>
+      <span>Agosto 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 2. EL PROBLEMA ══════════ -->
+<section class="page">
+  <div class="eyebrow">El punto de partida</div>
+  <h2>Trece planillas, cinco regímenes<br>y una hoja de cálculo por cada una</h2>
+  <div class="hr"></div>
+  <p class="lead">
+    La Municipalidad paga a su personal bajo cinco regímenes laborales distintos, cada uno con
+    sus propios conceptos de ingreso y descuento. Gestionar eso en archivos Excel sueltos genera
+    cinco problemas concretos, todos con costo real.
+  </p>
+
+  <div style="margin-top:6mm">
+    <div class="pain">
+      <h3>El cálculo depende de fórmulas que cualquiera puede romper</h3>
+      <p>Un arrastre mal hecho o una celda sobrescrita altera el líquido a pagar sin que nadie lo note
+        hasta que el trabajador reclama. No hay validación ni forma de detectar el descuadre.</p>
+    </div>
+    <div class="pain">
+      <h3>No se sabe quién cambió qué, ni cuándo</h3>
+      <p>Los archivos se copian, se renombran y circulan por correo. Ante una observación de control
+        interno no existe registro de quién modificó un monto ni con qué sustento.</p>
+    </div>
+    <div class="pain">
+      <h3>El histórico se pierde o se sobrescribe</h3>
+      <p>Reconstruir lo que se pagó hace ocho meses implica buscar entre versiones de archivos, sin
+        garantía de que el que se encuentre sea el definitivo.</p>
+    </div>
+    <div class="pain">
+      <h3>Un mismo trabajador puede aparecer en dos planillas</h3>
+      <p>Nada impide registrar el mismo DNI en dos regímenes el mismo mes. El error se detecta tarde,
+        normalmente cuando el pago ya salió.</p>
+    </div>
+    <div class="pain">
+      <h3>Cada reporte oficial se arma a mano</h3>
+      <p>Los cuadros presupuestales por área, el aporte a ESSALUD, las relaciones de descuento por
+        entidad y las boletas se rehacen manualmente mes a mes.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>2</span></div>
+</section>
+
+<!-- ══════════ 3. LA SOLUCIÓN ══════════ -->
+<section class="page">
+  <div class="eyebrow">La solución</div>
+  <h2>Un sistema web donde el cálculo<br>lo hace la base de datos</h2>
+  <div class="hr"></div>
+  <p class="lead">
+    Muni Sheets reemplaza los archivos por una aplicación web con base de datos. Cada capacidad
+    descrita aquí está implementada y en funcionamiento.
+  </p>
+
+  <div class="metrics">
+    <div class="metric"><div class="n">13</div><div class="l">Planillas configuradas</div></div>
+    <div class="metric"><div class="n">497</div><div class="l">Conceptos definidos</div></div>
+    <div class="metric"><div class="n">64</div><div class="l">Áreas con cuadro presupuestal</div></div>
+    <div class="metric"><div class="n">67</div><div class="l">Pruebas automatizadas</div></div>
+  </div>
+
+  <div style="margin-top:3mm">
+    <div class="feat">
+      <div class="ico">Σ</div>
+      <div>
+        <div class="t">Los totales los calcula la base de datos, no la persona</div>
+        <div class="d">Total Ingreso, Total Descuentos y Total Líquido se recalculan con un
+          <em>trigger</em> en PostgreSQL cada vez que se guarda un dato. Es imposible sobrescribirlos
+          desde fuera. El sistema además marca líquidos negativos, totales descuadrados y faltas excesivas.</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="ico">📅</div>
+      <div>
+        <div class="t">Histórico mensual permanente</div>
+        <div class="d">Cada mes queda archivado como una fotografía independiente. El mes en curso es
+          editable; los anteriores quedan bloqueados a nivel de base de datos. «Generar mes siguiente»
+          crea el mes nuevo copiando los datos del anterior y dejando las faltas en blanco.</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="ico">🔒</div>
+      <div>
+        <div class="t">Cuatro roles y seguridad aplicada en el servidor</div>
+        <div class="d">Consultor, Editor, Administrador y Superadmin. Los permisos se imponen con
+          <em>Row Level Security</em> en las 16 tablas: aunque alguien manipulara el navegador, la base
+          rechaza la operación. La interfaz solo oculta botones.</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="ico">📋</div>
+      <div>
+        <div class="t">Auditoría de cada inserción, edición y eliminación</div>
+        <div class="d">Queda registrado qué cambió, quién lo hizo y cuándo, con el valor anterior y el
+          nuevo. Las filas generadas al abrir un mes se distinguen de las altas manuales.</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="ico">📊</div>
+      <div>
+        <div class="t">Reportes oficiales generados, no digitados</div>
+        <div class="d">Excel con membrete institucional, agrupado por área, con subtotales, resumen de
+          conceptos, aporte a ESSALUD del 9%, comprobación cuadrada, cuadro presupuestal por área y una
+          hoja aparte por cada concepto de descuento. Boletas de pago en PDF por trabajador.</div>
+      </div>
+    </div>
+    <div class="feat">
+      <div class="ico">🛡</div>
+      <div>
+        <div class="t">Un DNI no puede repetirse entre planillas el mismo mes</div>
+        <div class="d">Una restricción a nivel de base de datos lo impide, y la carga masiva por Excel
+          avisa del conflicto antes de crear nada.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>3</span></div>
+</section>
+
+<!-- ══════════ 4. DEMO VISUAL ══════════ -->
+<section class="page">
+  <div class="eyebrow">Demo visual</div>
+  <h2>El sistema en funcionamiento</h2>
+  <div class="hr"></div>
+  <p class="lead" style="margin-bottom:7mm">
+    Capturas tomadas de la aplicación real. Los datos mostrados son ficticios: las planillas
+    contienen información personal de trabajadores que no debe salir de la entidad.
+  </p>
+
+  <div class="shot">
+    <img src="capturas/02-dashboard.png" alt="Panel de planillas">
+    <div class="cap">
+      <span class="num">01</span>
+      <div>
+        <div class="cap-t">Panel de control</div>
+        <div class="cap-d">Estado del mes de un vistazo: número de trabajadores, total a pagar,
+          distribución del líquido por régimen y detalle por planilla. Desde aquí se genera el reporte
+          consolidado de las 13 planillas en un solo Excel.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>4</span></div>
+</section>
+
+<section class="page">
+  <div class="shot">
+    <img src="capturas/03-planilla.png" alt="Vista de una planilla">
+    <div class="cap">
+      <span class="num">02</span>
+      <div>
+        <div class="cap-t">Planilla del mes</div>
+        <div class="cap-d">Tabla con edición directa por doble clic, búsqueda por nombre o DNI, filtro
+          por área y selector de mes. En la barra superior: exportar e importar Excel, actualización
+          masiva de una columna, recálculo de totales y generación del mes siguiente.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="capturas/04-busqueda.png" alt="Búsqueda global">
+    <div class="cap">
+      <span class="num">03</span>
+      <div>
+        <div class="cap-t">Búsqueda en las 13 planillas a la vez</div>
+        <div class="cap-d">Localiza a un trabajador por DNI o nombre sin saber en qué régimen está, para
+          el mes que se elija. Detecta de inmediato si una persona figura en más de una planilla, e
+          imprime su boleta desde el propio resultado.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>5</span></div>
+</section>
+
+<section class="page">
+  <div class="shot">
+    <img src="capturas/07-auditoria.png" alt="Historial de cambios">
+    <div class="cap">
+      <span class="num">04</span>
+      <div>
+        <div class="cap-t">Historial de cambios</div>
+        <div class="cap-d">Registro completo de operaciones con filtros por planilla y tipo. Responde
+          con evidencia a la pregunta de control interno: quién tocó qué y cuándo.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="capturas/06-usuarios.png" alt="Gestión de usuarios">
+    <div class="cap">
+      <span class="num">05</span>
+      <div>
+        <div class="cap-t">Gestión de usuarios y roles</div>
+        <div class="cap-d">Alta de cuentas, asignación de rol, restablecimiento de contraseña y
+          desactivación. Las cuentas nunca se eliminan: desactivar impide el acceso pero conserva el
+          perfil y su rastro en la auditoría.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>6</span></div>
+</section>
+
+<!-- ══════════ 5. OBJETIVOS ══════════ -->
+<section class="page">
+  <div class="eyebrow">Objetivos</div>
+  <h2>Dónde está hoy y hacia dónde va</h2>
+  <div class="hr"></div>
+
+  <div class="leyenda">
+    <span><i class="ok">✓</i> Implementado y en uso</span>
+    <span><i class="no"></i> Propuesto — aún no desarrollado</span>
+  </div>
+
+  <h3 style="font-size:13pt">Ya conseguido</h3>
+  <div style="margin-bottom:8mm">
+    <div class="goal"><div class="chk">✓</div><div>
+      <div class="g-t">Las 13 planillas operando sobre una sola base de datos</div>
+      <div class="g-d">Cinco regímenes, 497 conceptos y 64 áreas configurados y en uso.</div></div></div>
+    <div class="goal"><div class="chk">✓</div><div>
+      <div class="g-t">Histórico mensual desde junio 2026, con meses cerrados protegidos</div>
+      <div class="g-d">Ningún mes anterior puede alterarse, ni siquiera por error.</div></div></div>
+    <div class="goal"><div class="chk">✓</div><div>
+      <div class="g-t">Reportes oficiales y boletas generados automáticamente</div>
+      <div class="g-d">Excel institucional con cuadros presupuestales y boletas PDF por trabajador.</div></div></div>
+    <div class="goal"><div class="chk">✓</div><div>
+      <div class="g-t">Control de acceso por rol y auditoría completa</div>
+      <div class="g-d">Seguridad aplicada en la base de datos, no solo en la pantalla.</div></div></div>
+    <div class="goal"><div class="chk">✓</div><div>
+      <div class="g-t">Base técnica estable</div>
+      <div class="g-d">67 pruebas automatizadas y carga inicial optimizada para conexiones lentas.</div></div></div>
+  </div>
+
+  <h3 style="font-size:13pt">Corto plazo — próximos 3 a 6 meses</h3>
+  <div style="margin-bottom:8mm">
+    <div class="goal"><div class="chk pend">·</div><div>
+      <div class="g-t">Completar un ciclo anual íntegro dentro del sistema</div>
+      <div class="g-d">Doce meses consecutivos sin recurrir a archivos externos.</div></div></div>
+    <div class="goal"><div class="chk pend">·</div><div>
+      <div class="g-t">Eliminar la entrega física de boletas</div>
+      <div class="g-d">Envío digital al trabajador con constancia de entrega.</div></div></div>
+    <div class="goal"><div class="chk pend">·</div><div>
+      <div class="g-t">Dar a Gerencia visibilidad de la evolución del gasto</div>
+      <div class="g-d">Comparativos mes a mes sobre el histórico ya almacenado.</div></div></div>
+  </div>
+
+  <h3 style="font-size:13pt">Mediano plazo — 6 a 18 meses</h3>
+  <div>
+    <div class="goal"><div class="chk pend">·</div><div>
+      <div class="g-t">Conectar la planilla con las declaraciones del Estado</div>
+      <div class="g-d">Que el dato salga del sistema hacia PLAME y AFPnet sin volver a digitarse.</div></div></div>
+    <div class="goal"><div class="chk pend">·</div><div>
+      <div class="g-t">Boleta electrónica con valor legal</div>
+      <div class="g-d">Firma digital que permita prescindir formalmente del papel.</div></div></div>
+  </div>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>7</span></div>
+</section>
+
+<!-- ══════════ 6. ROADMAP ══════════ -->
+<section class="page">
+  <div class="eyebrow">Lo que aún no existe</div>
+  <h2>Roadmap de mejoras propuestas</h2>
+  <div class="hr"></div>
+  <p class="lead" style="margin-bottom:4mm">
+    Cuatro mejoras concretas, ordenadas por relación entre esfuerzo e impacto. Las dos primeras se
+    apoyan en información que el sistema <em>ya</em> almacena.
+  </p>
+
+  <div class="aviso">
+    <strong>Ninguna de estas cuatro funciones está implementada todavía.</strong>
+    Son propuestas de desarrollo, no capacidades actuales del sistema. Lo que el sistema hace hoy
+    está descrito en la página 3.
+  </div>
+
+  <div class="road">
+    <div class="step">1</div>
+    <div class="body">
+      <div class="t">Analítica histórica y proyección presupuestal</div>
+      <div class="d">Evolución del costo de planilla mes a mes, comparativo por régimen y por área, y
+        proyección del cierre anual. Hoy el panel muestra únicamente el mes seleccionado.</div>
+      <div class="why"><strong>Por qué primero:</strong> el histórico ya está guardado desde junio 2026.
+        Es la única mejora que no requiere ningún dato nuevo — solo explotar el que ya existe.</div>
+      <div class="tags"><span class="tag lo">Esfuerzo bajo</span><span class="tag hi">Impacto directivo alto</span></div>
+    </div>
+  </div>
+
+  <div class="road">
+    <div class="step">2</div>
+    <div class="body">
+      <div class="t">Envío automático de boletas al trabajador</div>
+      <div class="d">Distribución masiva por correo de la boleta mensual, con registro de envío y
+        reenvío individual. Hoy las boletas se descargan una por una desde la tabla.</div>
+      <div class="why"><strong>Por qué:</strong> la generación del PDF ya está construida y funcionando.
+        Es la mejora más visible para el trabajador y elimina la impresión y el reparto físico.</div>
+      <div class="tags"><span class="tag lo">Esfuerzo bajo-medio</span><span class="tag hi">Ahorro operativo alto</span></div>
+    </div>
+  </div>
+
+  <div class="road">
+    <div class="step">3</div>
+    <div class="body">
+      <div class="t">Integración con PLAME/SUNAT y AFPnet</div>
+      <div class="d">Generar los archivos de declaración mensual directamente desde los datos ya
+        calculados, en lugar de volver a digitarlos en el PDT.</div>
+      <div class="why"><strong>Por qué:</strong> es el trabajo más repetitivo del área y donde un error
+        de tipeo se convierte en multa. El sistema ya calcula ONP, AFP y el aporte a ESSALUD.</div>
+      <div class="tags"><span class="tag md">Esfuerzo medio-alto</span><span class="tag hi">Reduce riesgo de multa</span></div>
+    </div>
+  </div>
+
+  <div class="road">
+    <div class="step">4</div>
+    <div class="body">
+      <div class="t">Boleta con firma digital</div>
+      <div class="d">Firmar electrónicamente la boleta conforme a la normativa peruana de documentos
+        electrónicos, con verificación de autenticidad.</div>
+      <div class="why"><strong>Por qué:</strong> junto con la mejora 2, cierra el ciclo del papel y da
+        respaldo legal al documento entregado. Requiere el certificado digital de la entidad.</div>
+      <div class="tags"><span class="tag md">Esfuerzo medio</span><span class="tag md">Cumplimiento</span></div>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:6mm">
+    Los niveles de esfuerzo son estimaciones técnicas relativas entre estas cuatro mejoras, no
+    compromisos de plazo.
+  </p>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>8</span></div>
+</section>
+
+<!-- ══════════ 7. PROPUESTA DE VALOR ══════════ -->
+<section class="page">
+  <div class="eyebrow">Propuesta de valor</div>
+  <h2>Por qué consolidar el sistema ahora</h2>
+  <div class="hr"></div>
+
+  <div style="margin-top:4mm">
+    <div class="win">
+      <h3>El trabajo difícil ya está hecho</h3>
+      <p>Los 497 conceptos de las 13 planillas, los 64 cuadros presupuestales y las reglas de cálculo
+        de cada régimen ya están configurados y validados. Ese modelado es la parte costosa de un
+        sistema de planillas, y no hay que volver a hacerla.</p>
+    </div>
+    <div class="win">
+      <h3>El histórico solo tiene valor si es continuo</h3>
+      <p>El archivo mensual arrancó en junio 2026. Cada mes que se opera dentro del sistema aumenta su
+        valor como respaldo; cada mes que se opera fuera deja un vacío que después no se puede llenar.</p>
+    </div>
+    <div class="win">
+      <h3>Responde a control interno con evidencia, no con memoria</h3>
+      <p>Ante una observación, el sistema muestra qué se pagó, quién lo registró y cuándo, con el valor
+        anterior y el nuevo. Es el tipo de respaldo que un archivo Excel no puede ofrecer.</p>
+    </div>
+    <div class="win">
+      <h3>Reduce la dependencia de una sola persona</h3>
+      <p>Cuando el cálculo vive en fórmulas de un archivo, se vuelve conocimiento de quien lo armó. Aquí
+        las reglas están en la base de datos y documentadas, y cualquier usuario autorizado opera igual.</p>
+    </div>
+    <div class="win">
+      <h3>Las mejoras siguientes son incrementales</h3>
+      <p>Las cuatro del roadmap se apoyan en lo ya construido: la analítica sobre el histórico existente,
+        el envío de boletas sobre la generación de PDF que ya funciona. No requieren rehacer nada.</p>
+    </div>
+  </div>
+
+  <div class="band">
+    <h3>En una frase</h3>
+    <p>La inversión de modelar las planillas de la Municipalidad ya está realizada y operando.
+      Lo que queda por decidir no es si construir el sistema, sino cuánto valor extraerle a partir de aquí.</p>
+  </div>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>9</span></div>
+</section>
+
+<!-- ══════════ 8. PRÓXIMOS PASOS ══════════ -->
+<section class="page">
+  <div class="eyebrow">Cierre</div>
+  <h2>Próximos pasos</h2>
+  <div class="hr"></div>
+  <p class="lead">
+    Tres decisiones concretas para avanzar, en orden de prioridad.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:32px">#</th><th>Acción</th><th style="width:120px">Quién decide</th><th style="width:90px">Plazo</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1</strong></td>
+        <td><strong>Confirmar la operación íntegra dentro del sistema</strong><br>
+          Establecer que la planilla oficial de cada mes es la del sistema, y no un archivo paralelo.</td>
+        <td>Jefatura de RR.HH.</td>
+        <td>Inmediato</td>
+      </tr>
+      <tr>
+        <td><strong>2</strong></td>
+        <td><strong>Habilitar el envío digital de boletas</strong><br>
+          Requiere validar el correo de cada trabajador y definir el mes de inicio.</td>
+        <td>RR.HH. + Informática</td>
+        <td>1 a 2 meses</td>
+      </tr>
+      <tr>
+        <td><strong>3</strong></td>
+        <td><strong>Priorizar el resto del roadmap</strong><br>
+          Definir si la siguiente inversión va a analítica presupuestal o a la integración con PLAME.</td>
+        <td>Gerencia Municipal</td>
+        <td>1 trimestre</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:9mm">
+    <h3 style="font-size:13pt;margin-bottom:4mm">Lo que se necesita de la entidad</h3>
+    <div class="grid3">
+      <div class="card wash">
+        <h3 style="font-size:10.5pt">Correos del personal</h3>
+        <p>Un correo verificado por trabajador para poder entregar la boleta digital.</p>
+      </div>
+      <div class="card wash">
+        <h3 style="font-size:10.5pt">Certificado digital</h3>
+        <p>Necesario para firmar electrónicamente la boleta con validez legal.</p>
+      </div>
+      <div class="card wash">
+        <h3 style="font-size:10.5pt">Un responsable designado</h3>
+        <p>Una contraparte en RR.HH. que valide los reportes de cada mes.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <h3>Muni Sheets</h3>
+    <p>Sistema de gestión de planillas de remuneraciones · Oficina de Gestión de Recursos Humanos ·
+      Área de Remuneraciones · Municipalidad Provincial de Ica · Agosto 2026</p>
+  </div>
+
+  <div class="foot"><span>Muni Sheets — Municipalidad Provincial de Ica</span><span>10</span></div>
+</section>
+
+</body>
+</html>
