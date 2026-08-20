@@ -42,11 +42,17 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 | Tecnología | Versión | Para qué se usa |
 |---|---|---|
 | **@tanstack/react-table** | ^8.21.3 | Renderizado de tablas (orden, filtros, edición en línea, alertas) |
-| **xlsx-js-style** | ^1.2.0 | Exportes Excel **estilizados**: encabezado institucional, agrupación por área, resúmenes (RESÚMEN / ESSALUD 9% / COMPROBACIÓN), cuadros presupuestales y reporte consolidado |
-| **xlsx** (SheetJS) | 0.20.3 | **Lectura** de archivos Excel (importar registros nuevos, actualizar columna por DNI, plantillas) |
+| **xlsx-js-style** | ^1.2.0 | **Toda** la manipulación de Excel: lectura de archivos subidos (importación masiva, actualizar columna por DNI, plantillas) y exportes **estilizados** (encabezado institucional, agrupación por área, resúmenes RESÚMEN / ESSALUD 9% / COMPROBACIÓN, cuadros presupuestales y reporte consolidado) |
 | **jspdf** | ^4.2.1 | Generación de PDF (boletas de pago individuales) |
 | **jspdf-autotable** | ^5.0.8 | Tablas dentro de los PDF |
 | **recharts** | ^3.8.1 | Gráficos del Dashboard (barras de líquido total por grupo) |
+
+> **Una sola librería de Excel.** El proyecto tenía además `xlsx` (SheetJS 0.20.3)
+> solo para *leer* archivos, mientras `xlsx-js-style` se usaba para *escribir*.
+> Como la segunda es un fork de la primera y lee de forma idéntica (verificado,
+> incluidos los seriales de fecha), se eliminó la dependencia duplicada: el
+> bundle bajó **161 kB gzip**. **No vuelvas a añadir `xlsx`**: usa
+> `xlsx-js-style` también para leer.
 
 ## Backend / Base de datos
 
@@ -64,12 +70,19 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 - **Row Level Security (RLS)** — control de acceso por rol (`consultor` / `editor` / `administrador` / `superadmin`).
 - **Funciones (PL/pgSQL y SQL)** — `get_my_rol()`, `recalcular_totales()`,
   `actualizar_columna_planilla()`, `abrir_periodo()`, `corregir_identidad()`,
-  `buscar_trabajador()`, `resumen_planillas()`, `sync_dni_registro()`, etc.
-- **Triggers** — totales calculados en la BD, auditoría automática, DNI único global,
+  `buscar_trabajador()`, `resumen_planillas()`, `sync_dni_registro()`,
+  `calcular_aportes_pension()` + `afp_canonica()` / `comision_canonica()`
+  (aportes previsionales ONP/AFP), etc.
+- **Triggers** — totales **y aportes previsionales** calculados en la BD (el cliente no
+  puede fijarlos), auditoría automática, DNI único global,
   protección de la cuenta `superadmin` (`proteger_rol_perfil`, `proteger_superadmin_ban`,
   `proteger_superadmin_delete`).
 - **Vistas** — `vw_dni_todos` (con `security_invoker`).
 - **Extensiones** — `moddatetime` (timestamps) y `pg_trgm` (búsqueda por nombre con índices GIN).
+- **Índices parciales `UNIQUE`** — en `parametros_aportes`, porque en un `UNIQUE` normal
+  los `NULL` de `afp` se consideran distintos y dejarían duplicar la fila de ONP.
+- **Políticas RLS separadas por acción** — una política `FOR ALL` cuenta también como
+  política de `SELECT`; separarlas evita evaluar dos permisivas en cada lectura.
 
 ## Pruebas (testing)
 

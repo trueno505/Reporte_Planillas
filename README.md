@@ -6,8 +6,8 @@ Pensionistas y Autoridades).
 
 Permite ver cada planilla en tabla con **paginación de 50 en 50 (server-side) y refresco en
 vivo** (Realtime), búsqueda/orden y edición en línea, editar/eliminar registros con
-**cálculo automático de totales**, un **alta rápida** global (solo datos básicos + S.N.P. +
-Área; las planillas no tienen alta propia), **exportar Excel estilizado** (agrupado por
+**cálculo automático de totales y de los aportes previsionales ONP/AFP**, un **alta
+rápida** global (solo datos básicos + afiliación + Área; las planillas no tienen alta propia), **exportar Excel estilizado** (agrupado por
 área, con recuadro por trabajador, resumen de conceptos, ESSALUD 9%, comprobación,
 **cuadro presupuestal por área** con Nº Siaf —solo números— pedido al descargar, y una
 **hoja aparte por cada concepto de descuento** con al menos un afectado ese mes),
@@ -21,7 +21,7 @@ conserva; ver abajo) y actualizaciones en **tiempo real** (Supabase Realtime).
 
 - **React 19** + **Vite 8** + **react-router-dom 7**
 - **Tailwind CSS 3** (color institucional `primary #003366`)
-- **@tanstack/react-table** · **xlsx-js-style** (exportes estilizados) · **xlsx** (lectura) · **jspdf** + **jspdf-autotable** · **recharts** · **lucide-react** · **react-hot-toast**
+- **@tanstack/react-table** · **xlsx-js-style** (lectura y exportes estilizados) · **jspdf** + **jspdf-autotable** · **recharts** · **lucide-react** · **react-hot-toast**
 - **Supabase** (PostgreSQL + Auth + Realtime + RLS + RPC + Edge Functions) como backend
 
 ## Puesta en marcha
@@ -106,8 +106,8 @@ Configuration → Redirect URLs**. Para producción conviene configurar un SMTP 
 Cada planilla guarda una fila por **(trabajador, mes)** mediante una columna `periodo`
 (primer día del mes). Los datos **no se sobrescriben**: cada mes queda archivado.
 
-- Las columnas **fijas** (DNI, Apellidos y Nombres, Fecha de Ingreso, S.N.P., Tipo de
-  acto administrativo) se mantienen iguales todos los meses; las demás varían.
+- Las columnas **fijas** (DNI, Apellidos y Nombres, Fecha de Ingreso, **AFIL. A :**, Área,
+  Tipo de acto administrativo) se mantienen iguales todos los meses; las demás varían.
 - El **mes actual** es editable; los **meses anteriores** quedan en **solo lectura**.
 - En cada planilla, el botón **«Generar mes siguiente»** crea el mes nuevo copiando **todos**
   los datos del mes anterior (montos, cargo, identidad, etc.), salvo las columnas de
@@ -122,6 +122,40 @@ Cada planilla guarda una fila por **(trabajador, mes)** mediante una columna `pe
   meses y años anteriores. Para corregir un dato fijo, **«Corregir datos fijos»** lo cambia
   en todos los meses del trabajador.
 - El histórico arranca en **junio 2026** con los datos ya cargados.
+
+## Aportes previsionales automáticos
+
+Los descuentos de pensiones **los calcula la base de datos**, sobre el **Total de
+Ingresos** de cada trabajador, cada vez que se guarda un registro:
+
+| Afiliación | Descuentos aplicados |
+|---|---|
+| **ONP** | Descuento S.N.P. = 13 % |
+| **AFP**, comisión sobre el **flujo** | F. Pens. 10 % · P. Seg. 1,37 % · C. Var. según la AFP (Integra 1,55 · Profuturo 1,69 · Habitat 1,47 · Prima 1,60) |
+| **AFP**, comisión sobre el **saldo** | F. Pens. 10 % · P. Seg. 1,37 % (sin comisión variable) |
+
+Esas cuatro columnas quedan de **solo lectura** en el formulario. Si la afiliación no
+es reconocible, no se toca ningún monto.
+
+Los porcentajes **no están en el código**: viven en la tabla `parametros_aportes` y se
+editan desde **`/parametros-aportes`**, visible solo para el **superadmin**.
+
+Al **generar el mes siguiente**, quien ya cumplió **65 años** al primer día de ese mes
+pasa automáticamente a *Comisión sobre el saldo* (cumplir el 20 de agosto surte efecto
+en setiembre).
+
+## Rendimiento
+
+- **Una sola librería de Excel** (`xlsx-js-style`, que lee y escribe): se eliminó la
+  dependencia `xlsx` duplicada → **−161 kB gzip** de bundle.
+- **Carga diferida** de las pantallas y de las librerías pesadas (Excel, PDF, gráficos):
+  el arranque descarga ~138 kB gzip.
+- **Conteo bajo demanda** en la paginación: cambiar de página o de orden ya no ejecuta un
+  `COUNT` exacto sobre toda la planilla; solo se recuenta al cambiar los filtros o cuando
+  Realtime avisa de altas/bajas.
+- **Caché en memoria** (`src/lib/cache.js`) para catálogos y parámetros (lista de meses,
+  porcentajes de aportes), con TTL, invalidación explícita y deduplicación de peticiones
+  simultáneas. Los **importes nunca se cachean**: se leen siempre frescos.
 
 ## Documentación
 

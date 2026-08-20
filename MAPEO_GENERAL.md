@@ -20,7 +20,7 @@ Permite:
 - Editar / eliminar registros con **cálculo automático de totales**. El **alta** se hace
   únicamente desde *Nuevo registro* (global); las planillas ya no tienen botón de alta propio.
 - **Alta rápida** desde *Nuevo registro* (solo DNI, Apellidos y Nombres, Fecha de Ingreso,
-  S.N.P., Área — en planillas con `areas` — y Tipo de acto administrativo).
+  AFIL. A :, Área — en planillas con `areas` — y Tipo de acto administrativo).
 - Exportar datos en **Excel estilizado** (agrupado por área, con resumen de conceptos,
   aporte a ESSALUD al 9%, comprobación y **cuadro presupuestal por área** con Nº Siaf
   pedido al descargar), **importar trabajadores nuevos masivamente** (plantilla en blanco +
@@ -42,7 +42,7 @@ Permite:
 | Ruteo | **react-router-dom 7** |
 | Estilos | **Tailwind CSS 3** (color institucional `primary #003366`) |
 | Tablas | **@tanstack/react-table 8** |
-| Excel | **xlsx-js-style** (exportes estilizados) + **xlsx (SheetJS)** (lectura de archivos) |
+| Excel | **xlsx-js-style** — lectura de archivos subidos Y exportes estilizados (única librería; ver nota en `TECNOLOGIAS.md`) |
 | PDF | **jspdf** + **jspdf-autotable** |
 | Gráficos | **recharts** |
 | Iconos | **lucide-react** |
@@ -151,6 +151,18 @@ Editar esas constantes actualiza todas las planillas afectadas a la vez.
   - `money` **entre** `t_ingreso` y `t_dsctos` → **descuentos** (se suman → `t_dsctos`)
   - `t_liquido = t_ingreso − t_dsctos`
 - `GRUPOS` — lista de grupos únicos.
+- `rotulosAceptados(col)` — rótulos válidos para esa columna al leer un Excel: el actual
+  primero y luego los históricos (p. ej. `afiliacion` sigue aceptando el viejo `"S.N.P."`).
+- `emparejarEncabezados(columnas, headers)` — mapea clave de columna → encabezado del
+  Excel en **dos pasadas** (primero todos los rótulos vigentes, después los alias sobre
+  los encabezados sobrantes), para que un alias histórico nunca le robe el encabezado a
+  una columna que hoy usa ese mismo texto. Ej.: `"S.N.P."` y `"Descuento S.N.P."` conviven
+  sin confundirse.
+- `esColumnaIdentidad(key)` / `getColumnasIdentidad(planilla)` — columnas fijas mes a mes.
+
+**Marcas opcionales de columna**: `excluirExcel` (existe y se edita en la web pero no
+sale en el Excel descargado), `opcional` (exenta de la regla «al editar todo es
+obligatorio»), `opciones: [...]` (se renderiza como `<select>` de lista cerrada).
 
 ---
 
@@ -221,16 +233,21 @@ Reporte_Planillas/
 │   │   └── auth-context.js    Contexto + hook useAuth() (separado por Fast Refresh)
 │   │
 │   ├── hooks/
-│   │   ├── usePlanillaPaginada.js  ★ Paginación server-side (50/pág) + búsqueda/orden + conteo real
+│   │   ├── usePlanillaPaginada.js  ★ Paginación server-side (50/pág) + búsqueda/orden;
+│   │   │                      pide el conteo exacto SOLO cuando cambian los filtros
 │   │   ├── usePlanilla.js     Carga TODAS las filas (heredado; reemplazado por usePlanillaPaginada en la planilla)
+│   │   ├── useParametrosAportes.js  Porcentajes ONP/AFP (cacheados) para la vista previa
 │   │   └── useRealtime.js     Suscripción a cambios en tiempo real (filtra por tabla = planilla)
 │   │
 │   ├── lib/
 │   │   ├── supabaseClient.js  Inicializa el cliente Supabase
-│   │   ├── calculos.js        Cálculo de totales (ingreso/dscto/líquido)
+│   │   ├── calculos.js        Cálculo de totales (ingreso/dscto/líquido) + aportes en vivo
+│   │   ├── aportes.js         ★ Espejo EXACTO del SQL de aportes ONP/AFP (solo vista previa)
+│   │   ├── redondeo.js        round2() — única implementación (evita el ciclo calculos↔aportes)
+│   │   ├── cache.js           Caché con TTL + deduplicación de peticiones en vuelo
 │   │   ├── alertas.js         Detección de alertas por fila
 │   │   ├── boletaPdf.js       Boleta de pago individual en PDF
-│   │   ├── periodo.js         Helpers de periodo (formatear, mes actual/siguiente, primer día)
+│   │   ├── periodo.js         Helpers de periodo + cargarPeriodos()/invalidarPeriodos() (cacheado)
 │   │   ├── db.js              Consultas paginadas/masivas (filtran por periodo)
 │   │   ├── excelEncabezado.js Hojas Excel estilizadas: encabezado institucional, filas por
 │   │   │                      área con subtotal, RESÚMEN + ESSALUD 9% + COMPROBACIÓN,
@@ -260,6 +277,7 @@ Reporte_Planillas/
 │       ├── PlanillaPage.jsx   Página de una planilla (orquesta todo)
 │       ├── NuevoRegistro.jsx  Alta rápida: elegir grupo → planilla → datos básicos
 │       ├── BusquedaGlobal.jsx Búsqueda en las 13 planillas + imprimir boleta
+│       ├── ParametrosAportes.jsx  Porcentajes ONP/AFP (solo superadmin)
 │       ├── MiPerfil.jsx       Perfil propio: nombre/celular + cambiar contraseña
 │       ├── Auditoria.jsx      Historial de cambios (admin/superadmin)
 │       └── Usuarios.jsx       Gestión de usuarios: crear, rol, contraseña, desactivar/activar (admin/superadmin)
@@ -298,6 +316,7 @@ Reporte_Planillas/
 | `Dashboard` | `/dashboard` | Cualquier usuario autenticado |
 | `PlanillaPage` | `/planilla/:slug` | Cualquier usuario autenticado |
 | `BusquedaGlobal` | `/buscar` | Cualquier usuario autenticado |
+| `ParametrosAportes` | `/parametros-aportes` | **Solo superadmin** (porcentajes de aportes) |
 | `MiPerfil` | `/perfil` | Cualquier usuario autenticado |
 | `Auditoria` | `/auditoria` | **Administrador o superadmin** |
 | `Usuarios` | `/usuarios` | **Administrador o superadmin** |
@@ -391,18 +410,18 @@ operaciones masivas de Excel / recálculo.
   `t_ingreso`, `t_dsctos` y `t_liquido` (campos de total en solo lectura).
 - Maneja error de DNI duplicado (código `23505`).
 - **Modo alta rápida (`soloBasicos`):** lo usa *Nuevo registro* (`NuevoRegistro.jsx`).
-  Muestra solo **DNI**, **Apellidos y Nombres**, **Fecha de Ingreso**, **S.N.P.**,
+  Muestra solo **DNI**, **Apellidos y Nombres**, **Fecha de Ingreso**, **AFIL. A :**,
   **Área** (selector, solo en planillas con `areas`) y **Tipo de acto administrativo**, todos
-  **obligatorios** (validados al guardar). El campo **S.N.P.** es un selector
+  **obligatorios** (validados al guardar). El campo **AFIL. A :** es un selector
   **ONP / AFP**; si se elige *AFP* aparece un segundo selector con las cuatro AFP
   (*AFP Integra, Prima AFP, AFP Habitat, Profuturo AFP*) y se guarda el **nombre completo**
-  de la AFP en la columna `snp` (o `"ONP"`). El selector de **Área** ordena sus opciones
+  de la AFP en la columna `afiliacion` (o `"ONP"`). El selector de **Área** ordena sus opciones
   **alfabéticamente** al renderizar (`localeCompare`, es) y ocupa **todo el ancho de la fila**
   para leer completo el nombre de la actividad. El resto de columnas quedan en blanco y los
   totales los calcula el trigger.
 - **Campo fórmula (`CampoFormula`) — "Ret. Jud." de Alcalde:** la única columna con
   `formulaBase`/`detalleKey` hoy. En vez de un input de monto normal, muestra la **Base**
-  calculada (Total Ingreso − (Fdo. Pens. + P. Seg. + C. Var. + IR 5ta Cat.)), un selector
+  calculada (Total Ingreso − (F. Pens. + P. Seg. + C. Var. + IR 5ta Cat.)), un selector
   **"N° retenciones"** (0 a 10) y un input de **%** por cada retención con su monto
   calculado en vivo al lado (2 decimales). El **Total** (suma de los montos) es el valor
   real que se guarda en `ret_jud` — sigue siendo una columna de descuento normal, así que
@@ -503,6 +522,52 @@ los errores se muestran con `react-hot-toast`.
 ### 8.8 Recálculo global (`PlanillaPage.jsx`)
 Botón "Recalcular totales" (admin/editor) que recalcula todas las filas de la planilla
 mediante el RPC atómico `recalcular_totales` (un UPDATE que dispara el trigger de totales).
+
+### 8.9 Aportes previsionales automáticos (ONP / AFP)
+
+Los descuentos de pensiones **los calcula la base de datos**, no el cliente. Dentro del
+trigger de totales de cada planilla, entre `t_ingreso` (que es su base) y `t_dsctos` (que
+ya suma los montos recién calculados):
+
+| Afiliación | `descuento_snp` | `f_pens` | `p_seg` | `c_var` |
+|---|---|---|---|---|
+| **ONP** | 13 % del Total de Ingresos | 0 | 0 | 0 |
+| **AFP** · comisión sobre el **flujo** | 0 | 10 % | 1,37 % | según AFP: Integra 1,55 · Profuturo 1,69 · Habitat 1,47 · Prima 1,60 |
+| **AFP** · comisión sobre el **saldo** | 0 | 10 % | 1,37 % | **0** |
+| No reconocible (vacía, `"SI"`, `"NO"`…) | *no se toca* | *no se toca* | *no se toca* | *no se toca* |
+
+- La base es el **Total de Ingresos** (decisión explícita; el histórico previo usaba la
+  Remuneración Básica, por eso los importes cambiaron al migrar).
+- Esas 4 columnas quedan de **solo lectura** en `RecordForm`.
+- `afp_canonica()` reconoce la AFP **por palabra clave**, no por cadena exacta: los datos
+  traían `"AFP Prima"` y `"Prima AFP"`, e `"integra"` en minúscula.
+- Sin `tipo_comision_afp` registrado se asume **flujo**.
+- Porcentajes en la tabla **`parametros_aportes`** (nunca en el código), legibles por
+  todos y editables **solo por superadmin** desde `/parametros-aportes`.
+- `src/lib/aportes.js` es el **espejo exacto** del SQL, usado solo para la vista previa en
+  vivo del formulario. Si cambias uno, cambia el otro.
+
+**Regla de los 65 años**: al **generar el mes siguiente**, `abrir_periodo` pasa a
+*Comisión sobre el saldo* a quien ya cumplió 65 al primer día de ese mes (cumplir el
+20-AGO surte efecto en setiembre). Solo afiliados a una AFP y con `fecha_nacimiento`.
+
+### 8.10 Rendimiento y caché
+
+- **Una sola librería de Excel**: se eliminó `xlsx` (solo leía) porque `xlsx-js-style` ya
+  lee idéntico → **−161 kB gzip** de bundle.
+- **Conteo bajo demanda**: `count: 'exact'` recorre todas las filas del filtro. Como
+  cambiar de página u orden no altera el total, `usePlanillaPaginada` guarda una firma
+  (`tabla|periodo|búsqueda|área`) y solo pide el conteo cuando cambia. `refetch()`
+  (Realtime, operaciones masivas) **sí** lo fuerza, porque ahí puede haber altas/bajas.
+- **`src/lib/cache.js`** — `crearCache({ ttlMs, nombre })`: TTL, deduplicación de
+  peticiones en vuelo (N llamadas simultáneas = 1 consulta), `invalidar()` por clave o
+  prefijo, y **no cachea errores**. Lo usan `cargarPeriodos()` (la lista de meses se
+  pedía en cada montaje de `PlanillaPage`; se invalida tras `abrir_periodo`) y
+  `useParametrosAportes`.
+- **Nunca se cachean importes** (totales, líquidos, resúmenes): un valor viejo ahí es un
+  error de nómina. El caché es solo para catálogos y parámetros.
+- Caché HTTP en `vercel.json`: `/assets/*` con `max-age=31536000, immutable` (nombres con
+  hash); el HTML revalida siempre.
 
 ---
 
