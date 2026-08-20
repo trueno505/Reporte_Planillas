@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import * as XLSX from 'xlsx'
+import * as XLSX from 'xlsx-js-style'
 import { supabase } from '../lib/supabaseClient'
 import ExcelActualizarColumna from './ExcelActualizarColumna'
 
@@ -10,7 +10,7 @@ vi.mock('../lib/supabaseClient', () => ({
   supabase: { rpc: vi.fn() },
 }))
 
-vi.mock('xlsx', () => ({
+vi.mock('xlsx-js-style', () => ({
   read: vi.fn(() => ({ SheetNames: ['Hoja1'], Sheets: { Hoja1: {} } })),
   utils: {
     sheet_to_json: vi.fn(),

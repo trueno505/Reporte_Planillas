@@ -83,12 +83,39 @@ function genTotalesTrigger(planilla) {
   const dsc = suma(sec.descuentoKeys)
   const t = planilla.tabla
 
+  // Aportes previsionales: solo en las planillas que tienen las columnas
+  // necesarias (las 12 que no son cesantes). Se calculan DESPUÉS de t_ingreso
+  // —que es su base— y ANTES de t_dsctos, para que la suma de descuentos ya
+  // incluya los montos recién calculados.
+  const tiene = (k) => planilla.columnas.some((c) => c.key === k)
+  const conAportes =
+    ['afiliacion', 'tipo_comision_afp', 'descuento_snp', 'f_pens', 'p_seg', 'c_var'].every(tiene)
+
+  // Cuando la afiliación no se reconoce, calcular_aportes_pension devuelve las
+  // cuatro columnas en NULL; el COALESCE hace que se conserve el valor que ya
+  // traía la fila. Así no hace falta ni IF ni variables declaradas.
+  const bloqueAportes = conAportes
+    ? `
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+`
+    : ''
+
   return `
 -- ${t}
 CREATE OR REPLACE FUNCTION public.calc_totales_${t}()
-RETURNS TRIGGER LANGUAGE plpgsql AS $func$
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
 BEGIN
   NEW.t_ingreso := ROUND((${ing})::numeric, 2);
+${bloqueAportes}
   NEW.t_dsctos  := ROUND((${dsc})::numeric, 2);
   NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
   RETURN NEW;

@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_permanentes (
   apellidos_y_nombres TEXT NOT NULL,
   f_ingreso DATE,
   dias_lab INTEGER,
-  snp TEXT,
+  afiliacion TEXT,
   rem_bas NUMERIC(12,2),
   rem NUMERIC(12,2),
   cv_historial NUMERIC(12,2),
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_permanentes (
   t_ingreso NUMERIC(12,2),
   descuento_snp NUMERIC(12,2),
   reunif NUMERIC(12,2),
-  fdo_pens NUMERIC(12,2),
+  f_pens NUMERIC(12,2),
   p_seg NUMERIC(12,2),
   positiva_vida NUMERIC(12,2),
   c_var NUMERIC(12,2),
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_plazo_indeterminado (
   apellidos_y_nombres TEXT NOT NULL,
   fecha_ing DATE,
   dias_lab INTEGER,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   mov_p2014 NUMERIC(12,2),
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_mandato_judicial (
   apellidos_y_nombres TEXT NOT NULL,
   fecha_ing DATE,
   dias_lab INTEGER,
-  snp TEXT,
+  afiliacion TEXT,
   rem_cont_plazo_indet NUMERIC(12,2),
   neg_col_ds313_23 NUMERIC(12,2),
   riesgo_salud NUMERIC(12,2),
@@ -269,7 +269,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_concurso (
   apellidos_y_nombres TEXT NOT NULL,
   fecha_ing DATE,
   dias_lab INTEGER,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   rem_reunificada NUMERIC(12,2),
   rem_cont_plazo_indet NUMERIC(12,2),
@@ -322,7 +322,7 @@ CREATE TABLE IF NOT EXISTS public.obreros_necesidad_mercado (
   apellidos_y_nombres TEXT NOT NULL,
   fecha_ing DATE,
   dias_lab INTEGER,
-  snp TEXT,
+  afiliacion TEXT,
   t_ingreso NUMERIC(12,2),
   t_dsctos NUMERIC(12,2),
   t_liquido NUMERIC(12,2),
@@ -347,7 +347,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_permanentes (
   cargo TEXT,
   vacaciones NUMERIC(12,2),
   niv_rem TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   b_familiar NUMERIC(12,2),
@@ -370,7 +370,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_permanentes (
   ref_mov NUMERIC(12,2),
   t_ingreso NUMERIC(12,2),
   descuento_snp NUMERIC(12,2),
-  fdo_pens NUMERIC(12,2),
+  f_pens NUMERIC(12,2),
   p_seg NUMERIC(12,2),
   c_var NUMERIC(12,2),
   ir_5ta_cat NUMERIC(12,2),
@@ -414,7 +414,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_contrato_plazo_indet (
   apellidos_y_nombres TEXT NOT NULL,
   fecha_ing DATE,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   rem_cont NUMERIC(12,2),
   neg_cent_2024 NUMERIC(12,2),
   otros_r NUMERIC(12,2),
@@ -465,7 +465,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_contrato_provisional (
   apellidos_y_nombres TEXT NOT NULL,
   fecha_ing DATE,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   rem_cont NUMERIC(12,2),
   neg_cent_2024 NUMERIC(12,2),
   otros_r NUMERIC(12,2),
@@ -516,7 +516,7 @@ CREATE TABLE IF NOT EXISTS public.empleados_mandato_judicial_24041 (
   apellidos_y_nombres TEXT NOT NULL,
   fecha_ing DATE,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   rem_cont NUMERIC(12,2),
   inc_neg_col_ds314_23 NUMERIC(12,2),
   inc_neg_col_ds268_24 NUMERIC(12,2),
@@ -565,7 +565,7 @@ CREATE TABLE IF NOT EXISTS public.cas_general (
   fecha_ing DATE,
   faltas INTEGER,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   retrib_contr NUMERIC(12,2),
@@ -617,7 +617,7 @@ CREATE TABLE IF NOT EXISTS public.cas_choferes (
   fecha_ing DATE,
   faltas INTEGER,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   retrib_contr NUMERIC(12,2),
@@ -669,7 +669,7 @@ CREATE TABLE IF NOT EXISTS public.cas_i_2025 (
   fecha_ing DATE,
   faltas INTEGER,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   retrib_contr NUMERIC(12,2),
@@ -721,7 +721,7 @@ CREATE TABLE IF NOT EXISTS public.cas_ii_2023 (
   fecha_ing DATE,
   faltas INTEGER,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   retrib_contr NUMERIC(12,2),
@@ -773,7 +773,7 @@ CREATE TABLE IF NOT EXISTS public.cas_ii_2024 (
   fecha_ing DATE,
   faltas INTEGER,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   retrib_contr NUMERIC(12,2),
@@ -825,7 +825,7 @@ CREATE TABLE IF NOT EXISTS public.cas_iii_2025 (
   fecha_ing DATE,
   faltas INTEGER,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   retrib_contr NUMERIC(12,2),
@@ -877,7 +877,7 @@ CREATE TABLE IF NOT EXISTS public.cas_funcional (
   fecha_ing DATE,
   faltas INTEGER,
   cargo TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   r_basica NUMERIC(12,2),
   r_reunif NUMERIC(12,2),
   retrib_contr NUMERIC(12,2),
@@ -979,12 +979,12 @@ CREATE TABLE IF NOT EXISTS public.gerente_municipal (
   fecha_ing DATE,
   cargo TEXT,
   faltas INTEGER,
-  snp TEXT,
+  afiliacion TEXT,
   ds_413_19_ef NUMERIC(12,2),
   otros_r NUMERIC(12,2),
   t_ingreso NUMERIC(12,2),
   descuento_snp NUMERIC(12,2),
-  fdo_pens NUMERIC(12,2),
+  f_pens NUMERIC(12,2),
   p_seg NUMERIC(12,2),
   c_var NUMERIC(12,2),
   ir_5ta_cat NUMERIC(12,2),
@@ -1026,7 +1026,7 @@ CREATE TABLE IF NOT EXISTS public.alcalde (
   fecha_ing DATE,
   faltas INTEGER,
   niv_rem TEXT,
-  snp TEXT,
+  afiliacion TEXT,
   ds_413_19_ef NUMERIC(12,2),
   otros_r NUMERIC(12,2),
   inc_neg_col_ds314_23 NUMERIC(12,2),
@@ -1036,7 +1036,7 @@ CREATE TABLE IF NOT EXISTS public.alcalde (
   t_ingreso NUMERIC(12,2),
   base NUMERIC(12,2),
   descuento_snp NUMERIC(12,2),
-  fdo_pens NUMERIC(12,2),
+  f_pens NUMERIC(12,2),
   p_seg NUMERIC(12,2),
   c_var NUMERIC(12,2),
   ir_5ta_cat NUMERIC(12,2),
@@ -1474,7 +1474,7 @@ CREATE OR REPLACE FUNCTION public.calc_totales_obreros_permanentes()
 RETURNS TRIGGER LANGUAGE plpgsql AS $func$
 BEGIN
   NEW.t_ingreso := ROUND((COALESCE(NEW.rem_bas, 0) + COALESCE(NEW.rem, 0) + COALESCE(NEW.cv_historial, 0) + COALESCE(NEW.b_famil, 0) + COALESCE(NEW.p_pacto, 0) + COALESCE(NEW.mov_p2014, 0) + COALESCE(NEW.pacto_2013, 0) + COALESCE(NEW.pacto_2014, 0) + COALESCE(NEW.laudo_2019, 0) + COALESCE(NEW.inc_3_3, 0) + COALESCE(NEW.inc_10_23, 0) + COALESCE(NEW.inc_3, 0) + COALESCE(NEW.otros, 0) + COALESCE(NEW.riesgo_salud, 0) + COALESCE(NEW.neg_col_ds311_22, 0) + COALESCE(NEW.neg_col_ds265_24, 0) + COALESCE(NEW.neg_col_ds279_24, 0) + COALESCE(NEW.neg_col_ds325_25, 0) + COALESCE(NEW.otros_r, 0) + COALESCE(NEW.ref_mov_laudo_2019, 0) + COALESCE(NEW.ref_pacto_2014, 0) + COALESCE(NEW.asig_fam_10rmv, 0) + COALESCE(NEW.ref_mov_histor, 0))::numeric, 2);
-  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.reunif, 0) + COALESCE(NEW.fdo_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.positiva_vida, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_rehabilita, 0) + COALESCE(NEW.dscto_autoriz_ii, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.pichincha, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.fesalud, 0) + COALESCE(NEW.dscto_somun, 0) + COALESCE(NEW.coop_virgen_n, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.rta_5ta_cat, 0) + COALESCE(NEW.c_sindical, 0))::numeric, 2);
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.reunif, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.positiva_vida, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_rehabilita, 0) + COALESCE(NEW.dscto_autoriz_ii, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.pichincha, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.fesalud, 0) + COALESCE(NEW.dscto_somun, 0) + COALESCE(NEW.coop_virgen_n, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.rta_5ta_cat, 0) + COALESCE(NEW.c_sindical, 0))::numeric, 2);
   NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
   RETURN NEW;
 END;
@@ -1542,7 +1542,7 @@ CREATE OR REPLACE FUNCTION public.calc_totales_empleados_permanentes()
 RETURNS TRIGGER LANGUAGE plpgsql AS $func$
 BEGIN
   NEW.t_ingreso := ROUND((COALESCE(NEW.r_basica, 0) + COALESCE(NEW.r_reunif, 0) + COALESCE(NEW.b_familiar, 0) + COALESCE(NEW.b_pers, 0) + COALESCE(NEW.inc_neg_col_ds320_22, 0) + COALESCE(NEW.memo_159_2025_ogrrhh_mpi, 0) + COALESCE(NEW.c_vida_tph, 0) + COALESCE(NEW.reaj_c_vida_10, 0) + COALESCE(NEW.reaj_c_vida_7, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.m_jud_inc_ref_mov, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0) + COALESCE(NEW.inc_3_3, 0) + COALESCE(NEW.inc_10_23, 0) + COALESCE(NEW.inc_3, 0) + COALESCE(NEW.bonif_dif, 0) + COALESCE(NEW.reinteg, 0) + COALESCE(NEW.ref_mov, 0))::numeric, 2);
-  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.fdo_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.coop_la_rehabilitad, 0) + COALESCE(NEW.bco_pichincha, 0) + COALESCE(NEW.coop_s_cristobal, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.dsct_autorizado, 0) + COALESCE(NEW.coop_maria_magdalena, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.cuota_sindical, 0) + COALESCE(NEW.coop_virgen_nieves, 0) + COALESCE(NEW.descuento_sitramun, 0) + COALESCE(NEW.regularizacion, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.coop_la_rehabilitad, 0) + COALESCE(NEW.bco_pichincha, 0) + COALESCE(NEW.coop_s_cristobal, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.dsct_autorizado, 0) + COALESCE(NEW.coop_maria_magdalena, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.cuota_sindical, 0) + COALESCE(NEW.coop_virgen_nieves, 0) + COALESCE(NEW.descuento_sitramun, 0) + COALESCE(NEW.regularizacion, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
   NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
   RETURN NEW;
 END;
@@ -1746,7 +1746,7 @@ CREATE OR REPLACE FUNCTION public.calc_totales_gerente_municipal()
 RETURNS TRIGGER LANGUAGE plpgsql AS $func$
 BEGIN
   NEW.t_ingreso := ROUND((COALESCE(NEW.ds_413_19_ef, 0) + COALESCE(NEW.otros_r, 0))::numeric, 2);
-  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.fdo_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.d_aut_sit_mpi, 0) + COALESCE(NEW.dscto_otros, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.dscto_aut_varios, 0) + COALESCE(NEW.coop_m_magd, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.cep, 0) + COALESCE(NEW.c_sind_sit_mpi, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.d_aut_sit_mpi, 0) + COALESCE(NEW.dscto_otros, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.dscto_aut_varios, 0) + COALESCE(NEW.coop_m_magd, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.cep, 0) + COALESCE(NEW.c_sind_sit_mpi, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
   NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
   RETURN NEW;
 END;
@@ -1763,7 +1763,7 @@ CREATE OR REPLACE FUNCTION public.calc_totales_alcalde()
 RETURNS TRIGGER LANGUAGE plpgsql AS $func$
 BEGIN
   NEW.t_ingreso := ROUND((COALESCE(NEW.ds_413_19_ef, 0) + COALESCE(NEW.otros_r, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0))::numeric, 2);
-  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.fdo_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.d_aut_sit_mpi, 0) + COALESCE(NEW.dscto_otros, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.faltas_tarda, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.dscto_aut_varios, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.cep, 0) + COALESCE(NEW.c_sind_sit_mpi, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.d_aut_sit_mpi, 0) + COALESCE(NEW.dscto_otros, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.faltas_tarda, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.dscto_aut_varios, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.cep, 0) + COALESCE(NEW.c_sind_sit_mpi, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
   NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
   RETURN NEW;
 END;
@@ -2096,7 +2096,7 @@ $$;
 -- HISTORIZACIÓN MENSUAL (columna `periodo`)
 -- ---------------------------------------------------------------------
 -- Convierte cada planilla en un histórico mensual: una fila por
--- (trabajador, mes). La identidad (dni, nombres, fecha de ingreso, snp,
+-- (trabajador, mes). La identidad (dni, nombres, fecha de ingreso, afiliacion,
 -- tipo de acto) se mantiene igual cada mes; el resto varía. Los meses
 -- cerrados quedan en solo lectura. Este bloque es idempotente y, en una
 -- instalación desde cero, ajusta las tablas/funciones creadas arriba.
@@ -2343,7 +2343,7 @@ BEGIN
   SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position) INTO v_cols
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = p_tabla
-     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','snp','tipo_acto_administrativo');
+     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','tipo_acto_administrativo');
   EXECUTE format('INSERT INTO public.%I (periodo, %s) SELECT $1, %s FROM public.%I WHERE periodo = $2', p_tabla, v_cols, v_cols, p_tabla) USING p_periodo, v_src;
   GET DIAGNOSTICS n = ROW_COUNT;
   RETURN n;
@@ -2361,7 +2361,7 @@ $per$;
 CREATE OR REPLACE FUNCTION public.corregir_identidad(p_tabla TEXT, p_dni INTEGER, p_datos JSONB)
 RETURNS INTEGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $cor$
 DECLARE
-  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','snp','tipo_acto_administrativo'];
+  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','tipo_acto_administrativo'];
   v_cols TEXT[]; v_key TEXT; v_set TEXT := ''; n INTEGER;
 BEGIN
   IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN RAISE EXCEPTION 'No autorizado'; END IF;
@@ -2632,7 +2632,7 @@ BEGIN
   SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position) INTO v_cols
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = p_tabla
-     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo');
+     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','area','tipo_acto_administrativo');
   PERFORM set_config('app.generando_mes', '1', true);
   EXECUTE format('INSERT INTO public.%I (periodo, %s) SELECT $1, %s FROM public.%I WHERE periodo = $2', p_tabla, v_cols, v_cols, p_tabla) USING p_periodo, v_src;
   GET DIAGNOSTICS n = ROW_COUNT;
@@ -2644,7 +2644,7 @@ $function$;
 CREATE OR REPLACE FUNCTION public.corregir_identidad(p_tabla text, p_dni integer, p_datos jsonb)
  RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $function$
 DECLARE
-  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo'];
+  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','area','tipo_acto_administrativo'];
   v_cols TEXT[]; v_key TEXT; v_set TEXT := ''; n INTEGER;
 BEGIN
   IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador', 'superadmin') THEN RAISE EXCEPTION 'No autorizado'; END IF;
@@ -2803,6 +2803,7 @@ ALTER TABLE public.obreros_necesidad_mercado
   ADD COLUMN IF NOT EXISTS ds325_2024ef          NUMERIC(12,2),
   ADD COLUMN IF NOT EXISTS reintegro             NUMERIC(12,2),
   ADD COLUMN IF NOT EXISTS riesgo_salud          NUMERIC(12,2),
+  ADD COLUMN IF NOT EXISTS descuento_snp         NUMERIC(12,2),
   ADD COLUMN IF NOT EXISTS f_pens                NUMERIC(12,2),
   ADD COLUMN IF NOT EXISTS p_seg                 NUMERIC(12,2),
   ADD COLUMN IF NOT EXISTS c_var                 NUMERIC(12,2),
@@ -2820,12 +2821,12 @@ ALTER TABLE public.obreros_necesidad_mercado
   ADD COLUMN IF NOT EXISTS ir_5ta_cat            NUMERIC(12,2),
   ADD COLUMN IF NOT EXISTS cuota_sindical        NUMERIC(12,2);
 
--- 2) Función de totales (11 ingresos → t_ingreso, 15 descuentos → t_dsctos; faltas es int, no suma)
+-- 2) Función de totales (11 ingresos → t_ingreso, 16 descuentos → t_dsctos; faltas es int, no suma)
 CREATE OR REPLACE FUNCTION public.calc_totales_obreros_necesidad_mercado()
 RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
 BEGIN
   NEW.t_ingreso := ROUND((COALESCE(NEW.rem_bas, 0) + COALESCE(NEW.rem, 0) + COALESCE(NEW.rem_contrato, 0) + COALESCE(NEW.p_pacto, 0) + COALESCE(NEW.ds311_2022_ef, 0) + COALESCE(NEW.ds313_2023_ef, 0) + COALESCE(NEW.ds265_2024ef, 0) + COALESCE(NEW.ds279_2024ef, 0) + COALESCE(NEW.ds325_2024ef, 0) + COALESCE(NEW.reintegro, 0) + COALESCE(NEW.riesgo_salud, 0))::numeric, 2);
-  NEW.t_dsctos  := ROUND((COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.la_positiva_seguros, 0) + COALESCE(NEW.r_jud, 0) + COALESCE(NEW.autorizado_ii_suarez, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.cuota_sindical, 0))::numeric, 2);
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.la_positiva_seguros, 0) + COALESCE(NEW.r_jud, 0) + COALESCE(NEW.autorizado_ii_suarez, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.cuota_sindical, 0))::numeric, 2);
   NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
   RETURN NEW;
 END;
@@ -2881,7 +2882,7 @@ BEGIN
   SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position) INTO v_cols
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = p_tabla
-     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo');
+     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','area','tipo_acto_administrativo');
   EXECUTE format('INSERT INTO public.%I (periodo, %s) SELECT $1, %s FROM public.%I WHERE periodo = $2', p_tabla, v_cols, v_cols, p_tabla) USING p_periodo, v_src;
   GET DIAGNOSTICS n = ROW_COUNT;
   RETURN n;
@@ -2892,7 +2893,7 @@ $function$;
 CREATE OR REPLACE FUNCTION public.corregir_identidad(p_tabla text, p_dni integer, p_datos jsonb)
 RETURNS INTEGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $cor$
 DECLARE
-  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo'];
+  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','area','tipo_acto_administrativo'];
   v_cols TEXT[]; v_key TEXT; v_set TEXT := ''; n INTEGER;
 BEGIN
   IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN RAISE EXCEPTION 'No autorizado'; END IF;
@@ -2999,7 +3000,7 @@ $function$;
 --
 -- ret_jud pasa de ser un monto editable a un total calculado en el cliente:
 -- cada retención judicial aplica un % (hasta 10, guardados en
--- ret_jud_detalle) sobre (Total Ingreso − (Fdo. Pens. + P. Seg. + C. Var. +
+-- ret_jud_detalle) sobre (Total Ingreso − (F. Pens. + P. Seg. + C. Var. +
 -- IR 5ta Cat.)). abrir_periodo ya copia esta columna automáticamente al
 -- generar el mes siguiente (usa information_schema, no una lista fija).
 -- =====================================================================
@@ -3045,3 +3046,626 @@ ALTER TABLE public.empleados_permanentes ADD CONSTRAINT empleados_permanentes_va
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ));
+
+-- ════════════════════════════════════════════════════════════════════
+-- Fecha de Nacimiento + Tipo de Comisión AFP (12 planillas, no cesantes)
+-- Datos internos: visibles y editables en la web y presentes en las
+-- plantillas de Excel, pero excluidos del Excel de descarga de la planilla
+-- (marca `excluirExcel` en planillas.js). No son money: no afectan totales.
+-- Parche equivalente suelto: migracion_fecha_nac_comision_afp.sql
+-- ════════════════════════════════════════════════════════════════════
+DO $$
+DECLARE
+  t text;
+  tablas text[] := ARRAY[
+    'obreros_permanentes', 'obreros_plazo_indeterminado', 'obreros_mandato_judicial',
+    'obreros_concurso', 'obreros_necesidad_mercado', 'empleados_permanentes',
+    'empleados_contrato_plazo_indet', 'empleados_contrato_provisional',
+    'empleados_mandato_judicial_24041', 'cas_general', 'gerente_municipal', 'alcalde'
+  ];
+BEGIN
+  FOREACH t IN ARRAY tablas LOOP
+    EXECUTE format(
+      'ALTER TABLE public.%I
+         ADD COLUMN IF NOT EXISTS fecha_nacimiento  DATE,
+         ADD COLUMN IF NOT EXISTS tipo_comision_afp TEXT', t
+    );
+  END LOOP;
+END $$;
+
+NOTIFY pgrst, 'reload schema';
+
+-- ════════════════════════════════════════════════════════════════════
+-- APORTES PREVISIONALES AUTOMÁTICOS (ONP / AFP)
+-- Porcentajes en parametros_aportes (solo superadmin los edita) aplicados
+-- sobre el Total de Ingresos dentro del trigger de totales de cada planilla.
+-- Parche equivalente suelto: migracion_aportes_pension.sql
+-- ════════════════════════════════════════════════════════════════════
+-- ---------------------------------------------------------------------
+-- 1) Tabla de porcentajes
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.parametros_aportes (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sistema         TEXT NOT NULL CHECK (sistema IN ('ONP', 'AFP')),
+  afp             TEXT CHECK (afp IN ('Integra', 'Prima', 'Habitat', 'Profuturo')),
+  concepto        TEXT NOT NULL CHECK (concepto IN ('descuento_snp', 'f_pens', 'p_seg', 'c_var')),
+  porcentaje      NUMERIC(7,4) NOT NULL CHECK (porcentaje >= 0 AND porcentaje <= 100),
+  actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_por UUID REFERENCES public.perfiles(id) ON DELETE SET NULL,
+  -- ONP no tiene AFP ni comisiones; AFP no usa descuento_snp.
+  CONSTRAINT parametros_aportes_coherencia CHECK (
+    (sistema = 'ONP' AND afp IS     NULL AND concepto =  'descuento_snp') OR
+    (sistema = 'AFP' AND afp IS NOT NULL AND concepto IN ('f_pens', 'p_seg', 'c_var'))
+  )
+);
+
+-- UNIQUE en dos índices parciales: en un UNIQUE normal los NULL de `afp` se
+-- consideran distintos entre sí y dejarían meter la fila de ONP dos veces.
+CREATE UNIQUE INDEX IF NOT EXISTS parametros_aportes_onp_uk
+  ON public.parametros_aportes (sistema, concepto) WHERE afp IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS parametros_aportes_afp_uk
+  ON public.parametros_aportes (sistema, afp, concepto) WHERE afp IS NOT NULL;
+
+-- Valores iniciales (los vigentes según el cuadro de la MPI).
+INSERT INTO public.parametros_aportes (sistema, afp, concepto, porcentaje) VALUES
+  ('ONP', NULL, 'descuento_snp', 13.00),
+  ('AFP', 'Integra',   'f_pens', 10.00), ('AFP', 'Integra',   'p_seg', 1.37), ('AFP', 'Integra',   'c_var', 1.55),
+  ('AFP', 'Profuturo', 'f_pens', 10.00), ('AFP', 'Profuturo', 'p_seg', 1.37), ('AFP', 'Profuturo', 'c_var', 1.69),
+  ('AFP', 'Habitat',   'f_pens', 10.00), ('AFP', 'Habitat',   'p_seg', 1.37), ('AFP', 'Habitat',   'c_var', 1.47),
+  ('AFP', 'Prima',     'f_pens', 10.00), ('AFP', 'Prima',     'p_seg', 1.37), ('AFP', 'Prima',     'c_var', 1.60)
+ON CONFLICT DO NOTHING;
+
+-- RLS: todos leen (el formulario necesita los % para la vista previa en vivo),
+-- solo el superadmin escribe.
+ALTER TABLE public.parametros_aportes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS parametros_aportes_select ON public.parametros_aportes;
+CREATE POLICY parametros_aportes_select ON public.parametros_aportes
+  FOR SELECT TO authenticated USING (true);
+
+-- Una politica por accion: si la escritura fuera FOR ALL, contaria tambien
+-- como politica de SELECT y Postgres evaluaria dos permisivas en cada lectura.
+DROP POLICY IF EXISTS parametros_aportes_insert ON public.parametros_aportes;
+CREATE POLICY parametros_aportes_insert ON public.parametros_aportes
+  FOR INSERT TO authenticated
+  WITH CHECK ((SELECT public.get_my_rol()) = 'superadmin');
+
+DROP POLICY IF EXISTS parametros_aportes_update ON public.parametros_aportes;
+CREATE POLICY parametros_aportes_update ON public.parametros_aportes
+  FOR UPDATE TO authenticated
+  USING      ((SELECT public.get_my_rol()) = 'superadmin')
+  WITH CHECK ((SELECT public.get_my_rol()) = 'superadmin');
+
+DROP POLICY IF EXISTS parametros_aportes_delete ON public.parametros_aportes;
+CREATE POLICY parametros_aportes_delete ON public.parametros_aportes
+  FOR DELETE TO authenticated
+  USING ((SELECT public.get_my_rol()) = 'superadmin');
+
+CREATE INDEX IF NOT EXISTS idx_parametros_aportes_actualizado_por
+  ON public.parametros_aportes (actualizado_por);
+
+-- ---------------------------------------------------------------------
+-- 2) Normalizadores. Los datos reales traen variantes ('AFP Prima' y
+--    'Prima AFP', 'integra' en minúscula…), así que se reconoce la AFP por
+--    la palabra clave en vez de exigir una cadena exacta.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.afp_canonica(p_texto TEXT)
+RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE
+    WHEN p_texto IS NULL                        THEN NULL
+    WHEN lower(p_texto) LIKE '%integra%'        THEN 'Integra'
+    WHEN lower(p_texto) LIKE '%profuturo%'      THEN 'Profuturo'
+    WHEN lower(p_texto) LIKE '%habitat%'
+      OR lower(p_texto) LIKE '%hábitat%'        THEN 'Habitat'
+    WHEN lower(p_texto) LIKE '%prima%'          THEN 'Prima'
+    ELSE NULL
+  END
+$$;
+
+CREATE OR REPLACE FUNCTION public.comision_canonica(p_texto TEXT)
+RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE
+    WHEN p_texto IS NULL                  THEN NULL
+    WHEN lower(p_texto) LIKE '%flujo%'    THEN 'flujo'
+    WHEN lower(p_texto) LIKE '%saldo%'    THEN 'saldo'
+    ELSE NULL
+  END
+$$;
+
+-- ---------------------------------------------------------------------
+-- 3) Cálculo. Devuelve `aplica = false` cuando la afiliación no se
+--    reconoce, para que el trigger deje los montos como estaban.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.calcular_aportes_pension(
+  p_afiliacion    TEXT,
+  p_tipo_comision TEXT,
+  p_t_ingreso     NUMERIC
+)
+RETURNS TABLE (aplica BOOLEAN, descuento_snp NUMERIC, f_pens NUMERIC, p_seg NUMERIC, c_var NUMERIC)
+LANGUAGE plpgsql STABLE SET search_path TO 'public' AS $$
+DECLARE
+  v_base NUMERIC := COALESCE(p_t_ingreso, 0);
+  v_afp  TEXT;
+  v_com  TEXT;
+  v_pct  NUMERIC;
+BEGIN
+  aplica := false; descuento_snp := NULL; f_pens := NULL; p_seg := NULL; c_var := NULL;
+
+  IF p_afiliacion IS NULL OR btrim(p_afiliacion) = '' THEN
+    RETURN NEXT; RETURN;
+  END IF;
+
+  -- ONP: un único descuento.
+  IF upper(btrim(p_afiliacion)) = 'ONP' THEN
+    SELECT porcentaje INTO v_pct
+      FROM public.parametros_aportes
+     WHERE sistema = 'ONP' AND concepto = 'descuento_snp';
+    IF v_pct IS NULL THEN RETURN NEXT; RETURN; END IF;
+    aplica := true;
+    descuento_snp := ROUND(v_base * v_pct / 100, 2);
+    f_pens := 0; p_seg := 0; c_var := 0;
+    RETURN NEXT; RETURN;
+  END IF;
+
+  v_afp := public.afp_canonica(p_afiliacion);
+  IF v_afp IS NULL THEN                 -- 'SI', 'NO', texto libre… → no tocar
+    RETURN NEXT; RETURN;
+  END IF;
+
+  -- Sin tipo de comisión registrado se asume FLUJO, que es la modalidad por
+  -- defecto y la que refleja la planilla histórica.
+  v_com := COALESCE(public.comision_canonica(p_tipo_comision), 'flujo');
+
+  aplica := true;
+  descuento_snp := 0;
+
+  SELECT ROUND(v_base * porcentaje / 100, 2) INTO f_pens
+    FROM public.parametros_aportes WHERE sistema='AFP' AND afp=v_afp AND concepto='f_pens';
+  SELECT ROUND(v_base * porcentaje / 100, 2) INTO p_seg
+    FROM public.parametros_aportes WHERE sistema='AFP' AND afp=v_afp AND concepto='p_seg';
+
+  IF v_com = 'flujo' THEN
+    SELECT ROUND(v_base * porcentaje / 100, 2) INTO c_var
+      FROM public.parametros_aportes WHERE sistema='AFP' AND afp=v_afp AND concepto='c_var';
+  ELSE
+    c_var := 0;   -- comisión sobre el saldo: no se descuenta de la remuneración
+  END IF;
+
+  f_pens := COALESCE(f_pens, 0);
+  p_seg  := COALESCE(p_seg, 0);
+  c_var  := COALESCE(c_var, 0);
+  RETURN NEXT;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.calcular_aportes_pension(TEXT, TEXT, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.afp_canonica(TEXT)       TO authenticated;
+GRANT EXECUTE ON FUNCTION public.comision_canonica(TEXT)  TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
+
+
+-- Triggers de totales regenerados desde planillas.js CON el bloque de aportes
+-- (generados por scripts/genSql.mjs → supabase/09_totales.sql).
+
+-- obreros_permanentes
+CREATE OR REPLACE FUNCTION public.calc_totales_obreros_permanentes()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.rem_bas, 0) + COALESCE(NEW.rem, 0) + COALESCE(NEW.cv_historial, 0) + COALESCE(NEW.b_famil, 0) + COALESCE(NEW.p_pacto, 0) + COALESCE(NEW.mov_p2014, 0) + COALESCE(NEW.pacto_2013, 0) + COALESCE(NEW.pacto_2014, 0) + COALESCE(NEW.laudo_2019, 0) + COALESCE(NEW.inc_3_3, 0) + COALESCE(NEW.inc_10_23, 0) + COALESCE(NEW.inc_3, 0) + COALESCE(NEW.otros, 0) + COALESCE(NEW.riesgo_salud, 0) + COALESCE(NEW.neg_col_ds311_22, 0) + COALESCE(NEW.neg_col_ds265_24, 0) + COALESCE(NEW.neg_col_ds279_24, 0) + COALESCE(NEW.neg_col_ds325_25, 0) + COALESCE(NEW.otros_r, 0) + COALESCE(NEW.ref_mov_laudo_2019, 0) + COALESCE(NEW.ref_pacto_2014, 0) + COALESCE(NEW.asig_fam_10rmv, 0) + COALESCE(NEW.ref_mov_histor, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.reunif, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.positiva_vida, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_rehabilita, 0) + COALESCE(NEW.dscto_autoriz_ii, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.pichincha, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.fesalud, 0) + COALESCE(NEW.dscto_somun, 0) + COALESCE(NEW.coop_virgen_n, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.rta_5ta_cat, 0) + COALESCE(NEW.c_sindical, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_obreros_permanentes_trg ON public.obreros_permanentes;
+CREATE TRIGGER calc_totales_obreros_permanentes_trg
+  BEFORE INSERT OR UPDATE ON public.obreros_permanentes
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_obreros_permanentes();
+
+
+-- obreros_plazo_indeterminado
+CREATE OR REPLACE FUNCTION public.calc_totales_obreros_plazo_indeterminado()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.r_basica, 0) + COALESCE(NEW.r_reunif, 0) + COALESCE(NEW.mov_p2014, 0) + COALESCE(NEW.p_pacto, 0) + COALESCE(NEW.inc_anc10_m038_11_rh, 0) + COALESCE(NEW.rem_cont_plazo_indet, 0) + COALESCE(NEW.pacto_2013, 0) + COALESCE(NEW.pacto_2014, 0) + COALESCE(NEW.laudo_2019, 0) + COALESCE(NEW.inc_rmv_ds016_05, 0) + COALESCE(NEW.inc_rmv_ds022_07, 0) + COALESCE(NEW.inc_anc_mem005_09, 0) + COALESCE(NEW.niv_fe_errat_rga002_16, 0) + COALESCE(NEW.ref_pacto_2014, 0) + COALESCE(NEW.ref_mov_laudo_2019, 0) + COALESCE(NEW.asig_fam_10rmv, 0) + COALESCE(NEW.conv_col_ds325_25, 0) + COALESCE(NEW.conv_col_ds265_24, 0) + COALESCE(NEW.conv_col_ds279_24, 0) + COALESCE(NEW.neg_col_ds313_23, 0) + COALESCE(NEW.conv_col_ds311_22, 0) + COALESCE(NEW.riesgo_salud, 0) + COALESCE(NEW.ref_mov_98_ra005_22, 0) + COALESCE(NEW.otros_r, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.positiva_vida, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.pichincha, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_rehabilita, 0) + COALESCE(NEW.renta_5ta_cat, 0) + COALESCE(NEW.r_jud, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.somun, 0) + COALESCE(NEW.coop_virgen_n, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.fesalud, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.c_sind, 0) + COALESCE(NEW.dscto_autoriz, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_obreros_plazo_indeterminado_trg ON public.obreros_plazo_indeterminado;
+CREATE TRIGGER calc_totales_obreros_plazo_indeterminado_trg
+  BEFORE INSERT OR UPDATE ON public.obreros_plazo_indeterminado
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_obreros_plazo_indeterminado();
+
+
+-- obreros_mandato_judicial
+CREATE OR REPLACE FUNCTION public.calc_totales_obreros_mandato_judicial()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.rem_cont_plazo_indet, 0) + COALESCE(NEW.neg_col_ds313_23, 0) + COALESCE(NEW.riesgo_salud, 0) + COALESCE(NEW.asig_fam_10rmv, 0) + COALESCE(NEW.conv_col_ds265_24, 0) + COALESCE(NEW.conv_col_ds279_24, 0) + COALESCE(NEW.otros_r, 0) + COALESCE(NEW.conv_col_ds325_25, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_rehabilita, 0) + COALESCE(NEW.renta_5ta_cat, 0) + COALESCE(NEW.r_jud, 0) + COALESCE(NEW.pichincha, 0) + COALESCE(NEW.somun, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.fesalud, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.c_sind, 0) + COALESCE(NEW.dscto_ii, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_obreros_mandato_judicial_trg ON public.obreros_mandato_judicial;
+CREATE TRIGGER calc_totales_obreros_mandato_judicial_trg
+  BEFORE INSERT OR UPDATE ON public.obreros_mandato_judicial
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_obreros_mandato_judicial();
+
+
+-- obreros_concurso
+CREATE OR REPLACE FUNCTION public.calc_totales_obreros_concurso()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.r_basica, 0) + COALESCE(NEW.rem_reunificada, 0) + COALESCE(NEW.rem_cont_plazo_indet, 0) + COALESCE(NEW.ref_mov_ra1596_98_ampi, 0) + COALESCE(NEW.bonif_riesgo_salud_10, 0) + COALESCE(NEW.otros_personal_servicio, 0) + COALESCE(NEW.subv_financ_laudo_2014, 0) + COALESCE(NEW.ds311_2022_ef, 0) + COALESCE(NEW.ds313_23_ef, 0) + COALESCE(NEW.ds265_24_ef, 0) + COALESCE(NEW.asig_fam, 0) + COALESCE(NEW.neg_col_ctral_2024_2025, 0) + COALESCE(NEW.neg_col_ctral_2025_2026, 0) + COALESCE(NEW.otros_r, 0) + COALESCE(NEW.costo_vida_laudo_2019, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.comis_variable, 0) + COALESCE(NEW.retenc_judicial, 0) + COALESCE(NEW.rimac, 0) + COALESCE(NEW.cuota_sindical, 0) + COALESCE(NEW.coop_la_rehabilitadora, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_san_cristobal, 0) + COALESCE(NEW.coop_virgen_las_nieves, 0) + COALESCE(NEW.otros_r_dtos, 0) + COALESCE(NEW.dscto_ii, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_obreros_concurso_trg ON public.obreros_concurso;
+CREATE TRIGGER calc_totales_obreros_concurso_trg
+  BEFORE INSERT OR UPDATE ON public.obreros_concurso
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_obreros_concurso();
+
+
+-- obreros_necesidad_mercado
+CREATE OR REPLACE FUNCTION public.calc_totales_obreros_necesidad_mercado()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.rem_bas, 0) + COALESCE(NEW.rem, 0) + COALESCE(NEW.rem_contrato, 0) + COALESCE(NEW.p_pacto, 0) + COALESCE(NEW.ds311_2022_ef, 0) + COALESCE(NEW.ds313_2023_ef, 0) + COALESCE(NEW.ds265_2024ef, 0) + COALESCE(NEW.ds279_2024ef, 0) + COALESCE(NEW.ds325_2024ef, 0) + COALESCE(NEW.reintegro, 0) + COALESCE(NEW.riesgo_salud, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.la_positiva_seguros, 0) + COALESCE(NEW.r_jud, 0) + COALESCE(NEW.autorizado_ii_suarez, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.cuota_sindical, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_obreros_necesidad_mercado_trg ON public.obreros_necesidad_mercado;
+CREATE TRIGGER calc_totales_obreros_necesidad_mercado_trg
+  BEFORE INSERT OR UPDATE ON public.obreros_necesidad_mercado
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_obreros_necesidad_mercado();
+
+
+-- empleados_permanentes
+CREATE OR REPLACE FUNCTION public.calc_totales_empleados_permanentes()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.r_basica, 0) + COALESCE(NEW.r_reunif, 0) + COALESCE(NEW.b_familiar, 0) + COALESCE(NEW.b_pers, 0) + COALESCE(NEW.inc_neg_col_ds320_22, 0) + COALESCE(NEW.memo_159_2025_ogrrhh_mpi, 0) + COALESCE(NEW.c_vida_tph, 0) + COALESCE(NEW.reaj_c_vida_10, 0) + COALESCE(NEW.reaj_c_vida_7, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.m_jud_inc_ref_mov, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0) + COALESCE(NEW.inc_3_3, 0) + COALESCE(NEW.inc_10_23, 0) + COALESCE(NEW.inc_3, 0) + COALESCE(NEW.bonif_dif, 0) + COALESCE(NEW.reinteg, 0) + COALESCE(NEW.ref_mov, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.coop_la_rehabilitad, 0) + COALESCE(NEW.bco_pichincha, 0) + COALESCE(NEW.coop_s_cristobal, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.dsct_autorizado, 0) + COALESCE(NEW.coop_maria_magdalena, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.cuota_sindical, 0) + COALESCE(NEW.coop_virgen_nieves, 0) + COALESCE(NEW.descuento_sitramun, 0) + COALESCE(NEW.regularizacion, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_empleados_permanentes_trg ON public.empleados_permanentes;
+CREATE TRIGGER calc_totales_empleados_permanentes_trg
+  BEFORE INSERT OR UPDATE ON public.empleados_permanentes
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_empleados_permanentes();
+
+
+-- empleados_contrato_plazo_indet
+CREATE OR REPLACE FUNCTION public.calc_totales_empleados_contrato_plazo_indet()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.rem_cont, 0) + COALESCE(NEW.neg_cent_2024, 0) + COALESCE(NEW.otros_r, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0) + COALESCE(NEW.reintegro, 0) + COALESCE(NEW.ref, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_m_magd, 0) + COALESCE(NEW.desc_var, 0) + COALESCE(NEW.seguro_fe_salud, 0) + COALESCE(NEW.banco_pichincha, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.coop_la_rehabilitadora, 0) + COALESCE(NEW.coop_virgen_las_nieves, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_empleados_contrato_plazo_indet_trg ON public.empleados_contrato_plazo_indet;
+CREATE TRIGGER calc_totales_empleados_contrato_plazo_indet_trg
+  BEFORE INSERT OR UPDATE ON public.empleados_contrato_plazo_indet
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_empleados_contrato_plazo_indet();
+
+
+-- empleados_contrato_provisional
+CREATE OR REPLACE FUNCTION public.calc_totales_empleados_contrato_provisional()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.rem_cont, 0) + COALESCE(NEW.neg_cent_2024, 0) + COALESCE(NEW.otros_r, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0) + COALESCE(NEW.reintegro, 0) + COALESCE(NEW.ref, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_m_magd, 0) + COALESCE(NEW.desc_var, 0) + COALESCE(NEW.seguro_fe_salud, 0) + COALESCE(NEW.banco_pichincha, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.coop_la_rehabilitadora, 0) + COALESCE(NEW.coop_virgen_las_nieves, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_empleados_contrato_provisional_trg ON public.empleados_contrato_provisional;
+CREATE TRIGGER calc_totales_empleados_contrato_provisional_trg
+  BEFORE INSERT OR UPDATE ON public.empleados_contrato_provisional
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_empleados_contrato_provisional();
+
+
+-- empleados_mandato_judicial_24041
+CREATE OR REPLACE FUNCTION public.calc_totales_empleados_mandato_judicial_24041()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.rem_cont, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0) + COALESCE(NEW.reintegro, 0) + COALESCE(NEW.ref, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_m_magd, 0) + COALESCE(NEW.desc_var, 0) + COALESCE(NEW.seguro_fe_salud, 0) + COALESCE(NEW.banco_pichincha, 0) + COALESCE(NEW.fe_salud, 0) + COALESCE(NEW.coop_la_rehabilitadora, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_empleados_mandato_judicial_24041_trg ON public.empleados_mandato_judicial_24041;
+CREATE TRIGGER calc_totales_empleados_mandato_judicial_24041_trg
+  BEFORE INSERT OR UPDATE ON public.empleados_mandato_judicial_24041
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_empleados_mandato_judicial_24041();
+
+
+-- cas_general
+CREATE OR REPLACE FUNCTION public.calc_totales_cas_general()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.r_basica, 0) + COALESCE(NEW.r_reunif, 0) + COALESCE(NEW.retrib_contr, 0) + COALESCE(NEW.inc_10_23, 0) + COALESCE(NEW.inc_3, 0) + COALESCE(NEW.ds311_2022_ef, 0) + COALESCE(NEW.ds313_2023_ef, 0) + COALESCE(NEW.ds265_2024ef, 0) + COALESCE(NEW.ds279_2024ef, 0) + COALESCE(NEW.ds327_2025ef, 0) + COALESCE(NEW.ref, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.coop_la_rehab, 0) + COALESCE(NEW.dscto_fesalud, 0) + COALESCE(NEW.rimac_seg, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.la_positiva_seguros, 0) + COALESCE(NEW.r_jud, 0) + COALESCE(NEW.coop_san_ch, 0) + COALESCE(NEW.ret_4ta_categ, 0) + COALESCE(NEW.cop_nieves, 0) + COALESCE(NEW.san_miguel, 0) + COALESCE(NEW.coop_sta_mm, 0) + COALESCE(NEW.c_sind, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_cas_general_trg ON public.cas_general;
+CREATE TRIGGER calc_totales_cas_general_trg
+  BEFORE INSERT OR UPDATE ON public.cas_general
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_cas_general();
+
+
+-- cesantes_pensionistas
+CREATE OR REPLACE FUNCTION public.calc_totales_cesantes_pensionistas()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.rem_bas, 0) + COALESCE(NEW.rem_r, 0) + COALESCE(NEW.pens_viudez_rmv, 0) + COALESCE(NEW.art18_dl20530, 0) + COALESCE(NEW.bonif_pers, 0) + COALESCE(NEW.ds_276, 0) + COALESCE(NEW.costo_v_acumul_p_viud_ra, 0) + COALESCE(NEW.bonif_fam, 0) + COALESCE(NEW.ds16_06_1_74, 0) + COALESCE(NEW.acumulado_ds039_07_al_ds011_18, 0) + COALESCE(NEW.ds_009_19, 0) + COALESCE(NEW.ds_006_20, 0) + COALESCE(NEW.ds_006_21, 0) + COALESCE(NEW.ds_014_22, 0) + COALESCE(NEW.ds_007_23, 0) + COALESCE(NEW.ds_002_24, 0) + COALESCE(NEW.ds_003_25, 0) + COALESCE(NEW.reintegro_rem, 0) + COALESCE(NEW.ds_009_2026_ef, 0) + COALESCE(NEW.ref_mov, 0))::numeric, 2);
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.ss, 0) + COALESCE(NEW.otros, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.coop_san_miguel, 0) + COALESCE(NEW.coop_ac_sta_mm, 0) + COALESCE(NEW.coop_ac_san_ch, 0) + COALESCE(NEW.dscto_aut_ascejumi, 0) + COALESCE(NEW.ascejumi, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_cesantes_pensionistas_trg ON public.cesantes_pensionistas;
+CREATE TRIGGER calc_totales_cesantes_pensionistas_trg
+  BEFORE INSERT OR UPDATE ON public.cesantes_pensionistas
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_cesantes_pensionistas();
+
+
+-- gerente_municipal
+CREATE OR REPLACE FUNCTION public.calc_totales_gerente_municipal()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.ds_413_19_ef, 0) + COALESCE(NEW.otros_r, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.d_aut_sit_mpi, 0) + COALESCE(NEW.dscto_otros, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.dscto_aut_varios, 0) + COALESCE(NEW.coop_m_magd, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.cep, 0) + COALESCE(NEW.c_sind_sit_mpi, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_gerente_municipal_trg ON public.gerente_municipal;
+CREATE TRIGGER calc_totales_gerente_municipal_trg
+  BEFORE INSERT OR UPDATE ON public.gerente_municipal
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_gerente_municipal();
+
+
+-- alcalde
+CREATE OR REPLACE FUNCTION public.calc_totales_alcalde()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path TO 'public' AS $func$
+BEGIN
+  NEW.t_ingreso := ROUND((COALESCE(NEW.ds_413_19_ef, 0) + COALESCE(NEW.otros_r, 0) + COALESCE(NEW.inc_neg_col_ds314_23, 0) + COALESCE(NEW.inc_neg_col_ds268_24, 0) + COALESCE(NEW.inc_neg_col_ds280_24, 0) + COALESCE(NEW.inc_neg_col_ds326_25, 0))::numeric, 2);
+
+  -- Aportes previsionales (ONP / AFP) sobre el Total de Ingresos. Los
+  -- porcentajes viven en public.parametros_aportes y los edita el superadmin.
+  -- Afiliación no reconocible ('SI'/'NO', vacío…) → devuelve NULLs y el
+  -- COALESCE deja los montos como estaban.
+  SELECT COALESCE(ap.descuento_snp, NEW.descuento_snp),
+         COALESCE(ap.f_pens,        NEW.f_pens),
+         COALESCE(ap.p_seg,         NEW.p_seg),
+         COALESCE(ap.c_var,         NEW.c_var)
+    INTO NEW.descuento_snp, NEW.f_pens, NEW.p_seg, NEW.c_var
+    FROM public.calcular_aportes_pension(NEW.afiliacion, NEW.tipo_comision_afp, NEW.t_ingreso) ap;
+
+  NEW.t_dsctos  := ROUND((COALESCE(NEW.descuento_snp, 0) + COALESCE(NEW.f_pens, 0) + COALESCE(NEW.p_seg, 0) + COALESCE(NEW.c_var, 0) + COALESCE(NEW.ir_5ta_cat, 0) + COALESCE(NEW.mas_vida, 0) + COALESCE(NEW.seg_rimac, 0) + COALESCE(NEW.interseguro, 0) + COALESCE(NEW.d_aut_sit_mpi, 0) + COALESCE(NEW.dscto_otros, 0) + COALESCE(NEW.coop_s_crist, 0) + COALESCE(NEW.ccp, 0) + COALESCE(NEW.faltas_tarda, 0) + COALESCE(NEW.ret_jud, 0) + COALESCE(NEW.dscto_aut_varios, 0) + COALESCE(NEW.la_positiva_vida, 0) + COALESCE(NEW.cep, 0) + COALESCE(NEW.c_sind_sit_mpi, 0) + COALESCE(NEW.clap, 0))::numeric, 2);
+  NEW.t_liquido := ROUND((NEW.t_ingreso - NEW.t_dsctos)::numeric, 2);
+  RETURN NEW;
+END;
+$func$;
+
+DROP TRIGGER IF EXISTS calc_totales_alcalde_trg ON public.alcalde;
+CREATE TRIGGER calc_totales_alcalde_trg
+  BEFORE INSERT OR UPDATE ON public.alcalde
+  FOR EACH ROW EXECUTE FUNCTION public.calc_totales_alcalde();
+
+NOTIFY pgrst, 'reload schema';
+
+-- ════════════════════════════════════════════════════════════════════
+-- abrir_periodo: regla de los 65 años
+-- Al generar el mes nuevo, quien ya cumplió 65 al primer día de ese mes pasa
+-- automáticamente a "Comisión sobre el saldo" (cumplir el 20-AGO surte efecto
+-- en setiembre). El UPDATE dispara el trigger de totales, que pone c_var en 0
+-- y rehace t_dsctos / t_liquido. Solo afiliados a una AFP reconocible.
+-- ════════════════════════════════════════════════════════════════════
+CREATE OR REPLACE FUNCTION public.abrir_periodo(p_tabla text, p_periodo date)
+ RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+DECLARE v_src DATE; v_next DATE; v_cols TEXT; n INTEGER; n65 INTEGER := 0;
+BEGIN
+  IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador', 'superadmin') THEN RAISE EXCEPTION 'No autorizado'; END IF;
+  IF NOT public._es_tabla_planilla(p_tabla) THEN RAISE EXCEPTION 'Tabla no permitida: %', p_tabla; END IF;
+  p_periodo := date_trunc('month', p_periodo)::date;
+  EXECUTE format('SELECT MAX(periodo) FROM public.%I', p_tabla) INTO v_src;
+  IF v_src IS NULL THEN RAISE EXCEPTION 'La planilla no tiene datos del mes anterior para generar el nuevo mes.'; END IF;
+  v_next := (v_src + INTERVAL '1 month')::date;
+  IF p_periodo <> v_next THEN
+    RAISE EXCEPTION 'Solo se puede generar el mes inmediatamente siguiente (%). Intentaste generar % (ultimo mes existente: %).',
+      to_char(v_next, 'YYYY-MM'), to_char(p_periodo, 'YYYY-MM'), to_char(v_src, 'YYYY-MM');
+  END IF;
+  SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position) INTO v_cols
+    FROM information_schema.columns
+   WHERE table_schema = 'public' AND table_name = p_tabla
+     AND column_name NOT IN ('id', 'periodo', 'created_at', 'updated_at')
+     AND column_name !~ '^faltas';
+  PERFORM set_config('app.generando_mes', '1', true);
+  EXECUTE format('INSERT INTO public.%I (periodo, %s) SELECT $1, %s FROM public.%I WHERE periodo = $2', p_tabla, v_cols, v_cols, p_tabla) USING p_periodo, v_src;
+  GET DIAGNOSTICS n = ROW_COUNT;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema='public' AND table_name=p_tabla AND column_name='tipo_comision_afp'
+  ) THEN
+    EXECUTE format(
+      'UPDATE public.%I
+          SET tipo_comision_afp = %L
+        WHERE periodo = $1
+          AND fecha_nacimiento IS NOT NULL
+          AND (fecha_nacimiento + INTERVAL ''65 years'')::date <= $1
+          AND public.afp_canonica(afiliacion) IS NOT NULL
+          AND COALESCE(public.comision_canonica(tipo_comision_afp), ''flujo'') <> ''saldo''',
+      p_tabla, 'Comisión sobre el saldo'
+    ) USING p_periodo;
+    GET DIAGNOSTICS n65 = ROW_COUNT;
+  END IF;
+
+  PERFORM set_config('app.generando_mes', '0', true);
+  RETURN n;
+END
+$function$;
+
+NOTIFY pgrst, 'reload schema';

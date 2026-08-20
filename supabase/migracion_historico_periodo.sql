@@ -1,3 +1,11 @@
+--
+-- NOTA (rename snp -> afiliacion): las listas de columnas de identidad de este
+-- archivo nombran AMBAS, 'afiliacion' y 'snp'. La columna se renombro en
+-- migracion_rename_snp_afiliacion.sql; listar las dos hace que re-ejecutar este
+-- parche viejo sea inofensivo, porque tanto el filtro sobre information_schema
+-- como la lista blanca de corregir_identidad ignoran los nombres que no existen
+-- como columna real. No borres 'afiliacion' de esas listas.
+--
 -- ============================================================================
 -- migracion_historico_periodo.sql
 -- ----------------------------------------------------------------------------
@@ -406,7 +414,7 @@ BEGIN
     INTO v_cols
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = p_tabla
-     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','snp','tipo_acto_administrativo');
+     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','snp','tipo_acto_administrativo');
 
   EXECUTE format(
     'INSERT INTO public.%I (periodo, %s) SELECT $1, %s FROM public.%I WHERE periodo = $2',
@@ -435,7 +443,7 @@ CREATE OR REPLACE FUNCTION public.corregir_identidad(p_tabla TEXT, p_dni INTEGER
 RETURNS INTEGER
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $cor$
 DECLARE
-  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','snp','tipo_acto_administrativo'];
+  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','snp','tipo_acto_administrativo'];
   v_cols    TEXT[];
   v_key     TEXT;
   v_set     TEXT := '';

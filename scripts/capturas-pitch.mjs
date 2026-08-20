@@ -64,19 +64,19 @@ const FILAS = PERSONAS.map(([nombre, dni, cargo, basica, faltas], i) => {
   const b_familiar = 102.5
   const inc_10_23 = 150
   const t_ingreso = r_basica + r_reunif + b_familiar + inc_10_23
-  const fdo_pens = Math.round(t_ingreso * 0.10 * 100) / 100
+  const f_pens = Math.round(t_ingreso * 0.10 * 100) / 100
   const p_seg = Math.round(t_ingreso * 0.0136 * 100) / 100
   const c_var = Math.round(t_ingreso * 0.0155 * 100) / 100
   const seg_rimac = i % 3 === 0 ? 58.5 : 0
   const cuota_sindical = i % 2 === 0 ? 25 : 0
-  const t_dsctos = Math.round((fdo_pens + p_seg + c_var + seg_rimac + cuota_sindical) * 100) / 100
+  const t_dsctos = Math.round((f_pens + p_seg + c_var + seg_rimac + cuota_sindical) * 100) / 100
   return {
     id: i + 1, dni, apellidos_y_nombres: nombre, cargo,
     fecha_ing: `20${10 + (i % 12)}-0${(i % 8) + 1}-1${i % 9}`,
-    niv_rem: `SPE-${(i % 5) + 1}`, snp: i % 3 === 0 ? 'ONP' : 'AFP Integra',
+    niv_rem: `SPE-${(i % 5) + 1}`, afiliacion: i % 3 === 0 ? 'ONP' : 'AFP Integra',
     area: AREAS[i % AREAS.length], vacaciones: i === 2 ? 'Marzo' : null,
     r_basica, r_reunif, b_familiar, inc_10_23, faltas,
-    t_ingreso, fdo_pens, p_seg, c_var, seg_rimac, cuota_sindical, t_dsctos,
+    t_ingreso, f_pens, p_seg, c_var, seg_rimac, cuota_sindical, t_dsctos,
     t_liquido: Math.round((t_ingreso - t_dsctos) * 100) / 100,
     tipo_acto_administrativo: i % 4 === 0 ? 'R.G.A. N° 214-2026-GA-MPI' : 'Contrato D.L. 276',
     periodo: PERIODO,

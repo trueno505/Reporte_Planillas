@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ChevronDown, ChevronRight, Search, Clock, UserCog, FilePlus, UserCircle } from 'lucide-react'
+import { LayoutDashboard, ChevronDown, ChevronRight, Search, Clock, UserCog, FilePlus, UserCircle, Percent } from 'lucide-react'
 import { useState } from 'react'
 import { PLANILLAS, GRUPOS } from '../config/planillas'
 import { useAuth } from '../context/auth-context'
@@ -11,7 +11,7 @@ const navLinkClass = ({ isActive }) =>
 
 export default function Sidebar({ open, onClose }) {
   const [expanded, setExpanded] = useState({})
-  const { isAdmin, puedeEditar } = useAuth()
+  const { isAdmin, isSuperadmin, puedeEditar } = useAuth()
 
   const toggle = (g) => setExpanded((prev) => ({ ...prev, [g]: !prev[g] }))
 
@@ -72,6 +72,14 @@ export default function Sidebar({ open, onClose }) {
                 Usuarios
               </NavLink>
             </>
+          )}
+
+          {/* Solo superadmin: porcentajes de aportes previsionales */}
+          {isSuperadmin && (
+            <NavLink to="/parametros-aportes" onClick={onClose} className={navLinkClass}>
+              <Percent size={16} />
+              Aportes (%)
+            </NavLink>
           )}
 
           {/* Separador */}

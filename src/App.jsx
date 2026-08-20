@@ -17,6 +17,7 @@ const BusquedaGlobal = lazy(() => import('./pages/BusquedaGlobal'))
 const Auditoria = lazy(() => import('./pages/Auditoria'))
 const Usuarios = lazy(() => import('./pages/Usuarios'))
 const MiPerfil = lazy(() => import('./pages/MiPerfil'))
+const ParametrosAportes = lazy(() => import('./pages/ParametrosAportes'))
 
 // Mismo spinner que usa ProtectedRoute mientras resuelve la sesión, para que la
 // transición entre "cargando sesión" y "cargando página" se vea continua.
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/perfil" element={<ProtectedRoute><MiPerfil /></ProtectedRoute>} />
             <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
+            <Route path="/parametros-aportes" element={<ProtectedRoute><ParametrosAportes /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Suspense>

@@ -7,13 +7,26 @@
 //
 // Columnas id, created_at, updated_at se añaden automáticamente en el SQL generado.
 
+// Opciones del selector «Tipo de Comisión AFP» (las dos modalidades de ley).
+const COMISION_AFP = ['Comisión sobre el flujo', 'Comisión sobre el saldo']
+
+// Columnas añadidas al final de las 12 planillas (todas menos cesantes):
+//  · excluirExcel → no salen en el Excel de descarga de la planilla, pero sí
+//    en las plantillas de importación / actualizar columna.
+//  · opcional → no las exige la regla «al editar todo es obligatorio»,
+//    para no bloquear la edición de los registros que aún no las tienen.
+const COLS_EXTRA = () => [
+  { key: 'fecha_nacimiento', label: 'Fecha de Nacimiento', type: 'date', excluirExcel: true, opcional: true },
+  { key: 'tipo_comision_afp', label: 'Tipo de Comisión AFP', type: 'text', opciones: COMISION_AFP, excluirExcel: true, opcional: true },
+]
+
 const CAS_COLS = [
   { key: 'dni', label: 'DNI', type: 'dni' },
   { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
   { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
   { key: 'faltas', label: 'Faltas', type: 'int' },
   { key: 'cargo', label: 'Cargo', type: 'text' },
-  { key: 'snp', label: 'S.N.P.', type: 'text' },
+  { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
   { key: 'area', label: 'ÁREA', type: 'text' },
   { key: 'r_basica', label: 'R. Básica', type: 'money' },
   { key: 'r_reunif', label: 'R. Reunif.', type: 'money' },
@@ -47,6 +60,7 @@ const CAS_COLS = [
   { key: 't_liquido', label: 'Total Líquido', type: 'money' },
   { key: 'firma', label: 'Firma', type: 'text' },
   { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+  ...COLS_EXTRA(),
 ]
 
 const EMPL_PI_COLS = [
@@ -54,7 +68,7 @@ const EMPL_PI_COLS = [
   { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
   { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
   { key: 'cargo', label: 'Cargo', type: 'text' },
-  { key: 'snp', label: 'S.N.P.', type: 'text' },
+  { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
   { key: 'area', label: 'ÁREA', type: 'text' },
   { key: 'rem_cont', label: 'Rem. Cont.', type: 'money' },
   { key: 'neg_cent_2024', label: 'Neg. Cent. 2024', type: 'money' },
@@ -88,6 +102,7 @@ const EMPL_PI_COLS = [
   { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
   { key: 't_liquido', label: 'Total Líquido', type: 'money' },
   { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+  ...COLS_EXTRA(),
 ]
 
 export const PLANILLAS = [
@@ -116,7 +131,7 @@ export const PLANILLAS = [
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'f_ingreso', label: 'F. Ingreso', type: 'date' },
       { key: 'dias_lab', label: 'Días Lab.', type: 'int' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'rem_bas', label: 'Rem. Bas.', type: 'money' },
       { key: 'rem', label: 'Rem.', type: 'money' },
@@ -144,7 +159,7 @@ export const PLANILLAS = [
       { key: 't_ingreso', label: 'Total Ingreso', type: 'money' },
       { key: 'descuento_snp', label: 'Descuento S.N.P.', type: 'money' },
       { key: 'reunif', label: 'Reunif.', type: 'money' },
-      { key: 'fdo_pens', label: 'Fdo. Pens.', type: 'money' },
+      { key: 'f_pens', label: 'F. Pens.', type: 'money' },
       { key: 'p_seg', label: 'P. Seg.', type: 'money' },
       { key: 'positiva_vida', label: 'Positiva Vida', type: 'money' },
       { key: 'c_var', label: 'C. Var.', type: 'money' },
@@ -166,6 +181,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
   {
@@ -190,7 +206,7 @@ export const PLANILLAS = [
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'dias_lab', label: 'Días Lab.', type: 'int' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'r_basica', label: 'R. Básica', type: 'money' },
       { key: 'r_reunif', label: 'R. Reunif.', type: 'money' },
@@ -241,6 +257,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
   {
@@ -260,7 +277,7 @@ export const PLANILLAS = [
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'dias_lab', label: 'Días Lab.', type: 'int' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'rem_cont_plazo_indet', label: 'Rem. Cont. Plazo Indet.', type: 'money' },
       { key: 'neg_col_ds313_23', label: 'Neg. Col. DS313-23', type: 'money' },
@@ -292,6 +309,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
   {
@@ -310,7 +328,7 @@ export const PLANILLAS = [
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'dias_lab', label: 'Días Lab.', type: 'int' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'r_basica', label: 'R. Básica', type: 'money' },
       { key: 'rem_reunificada', label: 'Rem. Reunificada', type: 'money' },
@@ -346,6 +364,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
   {
@@ -360,45 +379,47 @@ export const PLANILLAS = [
       'MANTENIMIENTO DE PARQUES Y JARDINES',
     ],
     columnas: [
-      { key: 'dni', label: 'D.N.I.', type: 'dni' },
-      { key: 'apellidos_y_nombres', label: 'APELLIDOS Y NOMBRES', type: 'text', required: true },
-      { key: 'fecha_ing', label: 'Fecha Ing.', type: 'date' },
+      { key: 'dni', label: 'DNI', type: 'dni' },
+      { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
+      { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'dias_lab', label: 'Días Lab.', type: 'int' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       // Ingresos
-      { key: 'rem_bas', label: 'REM .BAS.', type: 'money' },
-      { key: 'rem', label: 'REM.', type: 'money' },
-      { key: 'rem_contrato', label: 'REMUNERACION CONTRATO', type: 'money' },
-      { key: 'p_pacto', label: 'P. PACTO', type: 'money' },
+      { key: 'rem_bas', label: 'Rem. Bas.', type: 'money' },
+      { key: 'rem', label: 'Rem.', type: 'money' },
+      { key: 'rem_contrato', label: 'Remuneración Contrato', type: 'money' },
+      { key: 'p_pacto', label: 'P. Pacto', type: 'money' },
       { key: 'ds311_2022_ef', label: 'DS311-2022-EF', type: 'money' },
       { key: 'ds313_2023_ef', label: 'DS313-2023-EF', type: 'money' },
-      { key: 'ds265_2024ef', label: '265-2024EF', type: 'money' },
-      { key: 'ds279_2024ef', label: '279-2024EF', type: 'money' },
-      { key: 'ds325_2024ef', label: 'DS325-2024EF', type: 'money' },
+      { key: 'ds265_2024ef', label: 'DS265-2024-EF', type: 'money' },
+      { key: 'ds279_2024ef', label: 'DS279-2024-EF', type: 'money' },
+      { key: 'ds325_2024ef', label: 'DS325-2024-EF', type: 'money' },
       { key: 'reintegro', label: 'Reintegro', type: 'money' },
       { key: 'riesgo_salud', label: 'Riesgo Salud', type: 'money' },
-      { key: 't_ingreso', label: 'T. INGRESO', type: 'money' },
+      { key: 't_ingreso', label: 'Total Ingreso', type: 'money' },
       // Descuentos
-      { key: 'f_pens', label: 'F. PENS.', type: 'money' },
-      { key: 'p_seg', label: 'P. SEG.', type: 'money' },
-      { key: 'c_var', label: 'C. VAR.', type: 'money' },
-      { key: 'mas_vida', label: '+ Vida', type: 'money' },
-      { key: 'fe_salud', label: 'FE SALUD', type: 'money' },
-      { key: 'rimac_seg', label: 'RIMAC Seg.', type: 'money' },
-      { key: 'interseguro', label: 'INTERSEGURO', type: 'money' },
+      { key: 'descuento_snp', label: 'Descuento S.N.P.', type: 'money' },
+      { key: 'f_pens', label: 'F. Pens.', type: 'money' },
+      { key: 'p_seg', label: 'P. Seg.', type: 'money' },
+      { key: 'c_var', label: 'C. Var.', type: 'money' },
+      { key: 'mas_vida', label: 'Más Vida', type: 'money' },
+      { key: 'fe_salud', label: 'Fe Salud', type: 'money' },
+      { key: 'rimac_seg', label: 'Rimac Seg.', type: 'money' },
+      { key: 'interseguro', label: 'Interseguro', type: 'money' },
       { key: 'la_positiva_seguros', label: 'La Positiva Seguros', type: 'money' },
       { key: 'faltas', label: 'Faltas', type: 'int' },
       { key: 'r_jud', label: 'R. Jud.', type: 'money' },
       { key: 'autorizado_ii_suarez', label: 'Autorizado II Suarez', type: 'money' },
-      { key: 'coop_san_miguel', label: 'Coop.. SanMiguel', type: 'money' },
-      { key: 'coop_san_ch', label: 'Coop. San C.H.', type: 'money' },
-      { key: 'coop_sta_mm', label: 'Coop Sta M.M.', type: 'money' },
-      { key: 'ir_5ta_cat', label: 'I.R. 5ta Cat', type: 'money' },
-      { key: 'cuota_sindical', label: 'CUOTA SINDICAL', type: 'money' },
-      { key: 't_dsctos', label: 'T. DSCTOS.', type: 'money' },
-      { key: 't_liquido', label: 'T. LIQUIDO', type: 'money' },
-      { key: 'tipo_acto_administrativo', label: 'OBSERVACIONES', type: 'text' },
+      { key: 'coop_san_miguel', label: 'Coop. San Miguel', type: 'money' },
+      { key: 'coop_san_ch', label: 'Coop. San Ch.', type: 'money' },
+      { key: 'coop_sta_mm', label: 'Coop. Sta. MM', type: 'money' },
+      { key: 'ir_5ta_cat', label: 'IR 5ta Cat.', type: 'money' },
+      { key: 'cuota_sindical', label: 'Cuota Sindical', type: 'money' },
+      { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
+      { key: 't_liquido', label: 'Total Líquido', type: 'money' },
+      { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
   {
@@ -430,7 +451,7 @@ export const PLANILLAS = [
       { key: 'cargo', label: 'Cargo', type: 'text' },
       { key: 'vacaciones', label: 'Vacaciones', type: 'text' }, // solo nombre de mes (o vacío); ver MESES_VACACIONES en RecordForm.jsx
       { key: 'niv_rem', label: 'Niv. Rem.', type: 'text' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'r_basica', label: 'R. Básica', type: 'money' },
       { key: 'r_reunif', label: 'R. Reunif.', type: 'money' },
@@ -454,7 +475,7 @@ export const PLANILLAS = [
       { key: 'ref_mov', label: 'Ref. Mov.', type: 'money' },
       { key: 't_ingreso', label: 'Total Ingreso', type: 'money' },
       { key: 'descuento_snp', label: 'Descuento S.N.P.', type: 'money' },
-      { key: 'fdo_pens', label: 'Fdo. Pens.', type: 'money' },
+      { key: 'f_pens', label: 'F. Pens.', type: 'money' },
       { key: 'p_seg', label: 'P. Seg.', type: 'money' },
       { key: 'c_var', label: 'C. Var.', type: 'money' },
       { key: 'ir_5ta_cat', label: 'IR 5ta Cat.', type: 'money' },
@@ -480,6 +501,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
   {
@@ -512,7 +534,7 @@ export const PLANILLAS = [
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'cargo', label: 'Cargo', type: 'text' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'rem_cont', label: 'Rem. Cont.', type: 'money' },
       { key: 'inc_neg_col_ds314_23', label: 'Inc. DS314-23', type: 'money' },
@@ -543,6 +565,7 @@ export const PLANILLAS = [
       { key: 't_dsctos', label: 'Total Descuentos', type: 'money' },
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
   {
@@ -629,13 +652,13 @@ export const PLANILLAS = [
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'cargo', label: 'Cargo', type: 'text' },
       { key: 'faltas', label: 'Faltas', type: 'int' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'ds_413_19_ef', label: 'DS-413-19-EF', type: 'money' },
       { key: 'otros_r', label: 'Otros R.', type: 'money' },
       { key: 't_ingreso', label: 'Total Ingreso', type: 'money' },
       { key: 'descuento_snp', label: 'Descuento S.N.P.', type: 'money' },
-      { key: 'fdo_pens', label: 'Fdo. Pens.', type: 'money' },
+      { key: 'f_pens', label: 'F. Pens.', type: 'money' },
       { key: 'p_seg', label: 'P. Seg.', type: 'money' },
       { key: 'c_var', label: 'C. Var.', type: 'money' },
       { key: 'ir_5ta_cat', label: 'IR 5ta Cat.', type: 'money' },
@@ -657,6 +680,7 @@ export const PLANILLAS = [
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'firma', label: 'Firma', type: 'text' },
       { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
   {
@@ -676,7 +700,7 @@ export const PLANILLAS = [
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'faltas', label: 'Faltas', type: 'int' },
       { key: 'niv_rem', label: 'Niv. Rem.', type: 'text' },
-      { key: 'snp', label: 'S.N.P.', type: 'text' },
+      { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },
       { key: 'ds_413_19_ef', label: 'DS-413-19-EF', type: 'money' },
       { key: 'otros_r', label: 'Otros R.', type: 'money' },
@@ -687,7 +711,7 @@ export const PLANILLAS = [
       { key: 't_ingreso', label: 'Total Ingreso', type: 'money' },
       { key: 'base', label: 'Base', type: 'money' },
       { key: 'descuento_snp', label: 'Descuento S.N.P.', type: 'money' },
-      { key: 'fdo_pens', label: 'Fdo. Pens.', type: 'money' },
+      { key: 'f_pens', label: 'F. Pens.', type: 'money' },
       { key: 'p_seg', label: 'P. Seg.', type: 'money' },
       { key: 'c_var', label: 'C. Var.', type: 'money' },
       { key: 'ir_5ta_cat', label: 'IR 5ta Cat.', type: 'money' },
@@ -706,7 +730,7 @@ export const PLANILLAS = [
         // Se calcula solo: cada retención judicial aplica un % sobre
         // (Total Ingreso − suma de formulaBase); `detalleKey` guarda los
         // porcentajes (hasta 10) para poder editarlos después. Ver RecordForm.
-        formulaBase: ['fdo_pens', 'p_seg', 'c_var', 'ir_5ta_cat'],
+        formulaBase: ['f_pens', 'p_seg', 'c_var', 'ir_5ta_cat'],
         detalleKey: 'ret_jud_detalle',
       },
       { key: 'dscto_aut_varios', label: 'Dscto. Aut. Varios', type: 'money' },
@@ -718,20 +742,21 @@ export const PLANILLAS = [
       { key: 't_liquido', label: 'Total Líquido', type: 'money' },
       { key: 'firma', label: 'Firma', type: 'text' },
       { key: 'tipo_acto_administrativo', label: 'Tipo de acto administrativo', type: 'text' },
+      ...COLS_EXTRA(),
     ],
   },
 ]
 
 // Claves de las columnas FIJAS (identidad del trabajador) que se mantienen
 // iguales todos los meses: DNI, Apellidos y Nombres, Fecha de Ingreso (su clave
-// varía: f_ingreso / fecha_ing), S.N.P. y Tipo de acto administrativo. Algunas
-// planillas no tienen todas (p.ej. cesantes no tiene fecha de ingreso ni snp).
+// varía: f_ingreso / fecha_ing), afiliacion y Tipo de acto administrativo. Algunas
+// planillas no tienen todas (p.ej. cesantes no tiene fecha de ingreso ni afiliacion).
 const IDENTIDAD_KEYS = new Set([
   'dni',
   'apellidos_y_nombres',
   'f_ingreso',
   'fecha_ing',
-  'snp',
+  'afiliacion',
   'area',
   'tipo_acto_administrativo',
 ])
@@ -748,6 +773,62 @@ export function getColumnasIdentidad(planilla) {
 /** ¿La columna es de identidad (fija mes a mes)? */
 export function esColumnaIdentidad(key) {
   return IDENTIDAD_KEYS.has(key)
+}
+
+// Rótulos ANTIGUOS de columnas que se renombraron, por clave de columna. Los
+// Excel se emparejan por rótulo (no por clave), así que una plantilla que el
+// usuario descargó antes del cambio dejaría de reconocer esa columna. Al
+// listarlos aquí, la importación sigue aceptando el encabezado viejo.
+// Al renombrar el rótulo de una columna, agrega aquí el anterior.
+const ROTULOS_ANTIGUOS = {
+  afiliacion: ['S.N.P.'], // renombrada a 'AFIL. A :'
+}
+
+/**
+ * Todos los rótulos aceptables para una columna al leer un Excel:
+ * el actual primero, luego los históricos.
+ */
+export function rotulosAceptados(col) {
+  return [col.label, ...(ROTULOS_ANTIGUOS[col.key] ?? [])]
+}
+
+const normRotulo = (s) => String(s ?? '').trim().toLowerCase()
+
+/**
+ * Empareja las columnas de una planilla con los encabezados de un Excel.
+ * Devuelve un Map clave-de-columna → encabezado encontrado.
+ *
+ * Se hace en DOS pasadas para que un rótulo histórico nunca le robe el
+ * encabezado a una columna que hoy usa ese mismo texto como rótulo actual:
+ * primero se resuelven todas las coincidencias exactas con el rótulo vigente,
+ * y solo después se intentan los alias sobre los encabezados que sobraron.
+ */
+export function emparejarEncabezados(columnas, headers) {
+  const mapa = new Map()
+  const usados = new Set()
+
+  for (const col of columnas) {
+    const h = headers.find((hh) => !usados.has(hh) && normRotulo(hh) === normRotulo(col.label))
+    if (h) {
+      mapa.set(col.key, h)
+      usados.add(h)
+    }
+  }
+
+  for (const col of columnas) {
+    if (mapa.has(col.key)) continue
+    const alias = ROTULOS_ANTIGUOS[col.key]
+    if (!alias?.length) continue
+    const h = headers.find(
+      (hh) => !usados.has(hh) && alias.some((a) => normRotulo(hh) === normRotulo(a))
+    )
+    if (h) {
+      mapa.set(col.key, h)
+      usados.add(h)
+    }
+  }
+
+  return mapa
 }
 
 export function getPlanillaBySlug(slug) {

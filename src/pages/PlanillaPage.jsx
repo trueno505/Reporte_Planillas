@@ -14,7 +14,7 @@ import { usePlanillaPaginada } from '../hooks/usePlanillaPaginada'
 import { useRealtime } from '../hooks/useRealtime'
 import { useAuth } from '../context/auth-context'
 import { supabase } from '../lib/supabaseClient'
-import { periodoActual, siguientePeriodo, formatPeriodo } from '../lib/periodo'
+import { periodoActual, siguientePeriodo, formatPeriodo, cargarPeriodos, invalidarPeriodos } from '../lib/periodo'
 import toast from 'react-hot-toast'
 
 export default function PlanillaPage() {
@@ -37,12 +37,12 @@ export default function PlanillaPage() {
     setPeriodosReales([])
     setArea('')
     if (!planilla?.tabla) return
-    supabase.rpc('periodos_planilla', { p_tabla: planilla.tabla }).then(({ data, error }) => {
-      if (error) { toast.error(`No se pudieron cargar los meses: ${error.message}`); return }
-      const lista = (data ?? []).map((r) => String(r.periodo).slice(0, 10))
-      setPeriodosReales(lista)
-      setPeriodo(lista[0] ?? periodoActual())
-    })
+    cargarPeriodos(planilla.tabla)
+      .then((lista) => {
+        setPeriodosReales(lista)
+        setPeriodo(lista[0] ?? periodoActual())
+      })
+      .catch((e) => toast.error(`No se pudieron cargar los meses: ${e.message}`))
   }, [planilla?.tabla])
 
   const periodoAbierto = periodosReales[0] ?? periodoActual()
@@ -128,6 +128,9 @@ export default function PlanillaPage() {
     }
     toast.success(`Mes ${formatPeriodo(nuevoMes)} generado con ${data ?? 0} trabajadores.`)
     // Recarga la lista de meses y selecciona el nuevo (ahora abierto).
+    // La lista cacheada ya no incluye este mes: hay que invalidarla o al
+    // volver a entrar a la planilla faltaria el mes recien generado.
+    invalidarPeriodos(planilla.tabla)
     setPeriodosReales((prev) => [nuevoMes, ...prev])
     setPeriodo(nuevoMes)
   }

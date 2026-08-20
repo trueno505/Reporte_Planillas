@@ -3,13 +3,11 @@ import { Upload, X, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { fetchAllRows } from '../lib/db'
 import { castValor } from '../lib/casteo'
-import { getSeccionesCalculo } from '../config/planillas'
+import { getSeccionesCalculo, emparejarEncabezados } from '../config/planillas'
 import toast from 'react-hot-toast'
 
-const norm = (s) => String(s).trim().toLowerCase()
-
 // `xlsx` (~1.35 MB) se carga solo al usar la importación, no en el arranque.
-const cargarXLSX = () => import('xlsx')
+const cargarXLSX = () => import('xlsx-js-style')
 
 export default function ExcelImportarMasivo({ planilla, periodo, onDone, onBusy }) {
   const { tabla, columnas, label } = planilla
@@ -94,11 +92,9 @@ export default function ExcelImportarMasivo({ planilla, periodo, onDone, onBusy 
       }
 
       const headers = Object.keys(rawRows[0])
-      const headerPorColumna = new Map()
-      for (const col of columnasImportables) {
-        const h = headers.find((hh) => norm(hh) === norm(col.label))
-        if (h) headerPorColumna.set(col.key, h)
-      }
+      // Acepta el rótulo actual y los históricos (p.ej. "S.N.P." → "AFIL. A :"),
+      // para que una plantilla descargada antes de un rename siga sirviendo.
+      const headerPorColumna = emparejarEncabezados(columnasImportables, headers)
       if (!headerPorColumna.has('dni')) {
         toast.error('El Excel debe tener una columna DNI (usa la plantilla para respetar los encabezados).')
         return

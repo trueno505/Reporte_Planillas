@@ -48,12 +48,18 @@ export async function fetchAllRows(tabla, { order = 'apellidos_y_nombres', perio
  */
 export async function fetchPagina(
   tabla,
-  { page = 1, pageSize = 50, search = '', orderBy = 'apellidos_y_nombres', ascending = true, periodo = null, area = '' } = {}
+  { page = 1, pageSize = 50, search = '', orderBy = 'apellidos_y_nombres', ascending = true, periodo = null, area = '', withCount = true } = {}
 ) {
   const desde = (page - 1) * pageSize
   const hasta = desde + pageSize - 1
 
-  let query = supabase.from(tabla).select('*', { count: 'exact' })
+  // `count: 'exact'` obliga a PostgREST a recorrer TODAS las filas que casan con
+  // el filtro, aparte de traer las 50 de la página. Cambiar de página o de
+  // orden no altera ese total, así que quien llama puede pedir `withCount:false`
+  // y reutilizar el que ya tenía: se ahorra un recorrido completo por clic.
+  let query = withCount
+    ? supabase.from(tabla).select('*', { count: 'exact' })
+    : supabase.from(tabla).select('*')
   if (periodo) query = query.eq('periodo', periodo)
   if (area) query = query.eq('area', area)
 
@@ -75,5 +81,6 @@ export async function fetchPagina(
     .range(desde, hasta)
 
   if (error) throw error
-  return { filas: data ?? [], total: count ?? 0 }
+  // `total: null` significa "no se pidió el conteo"; quien llama conserva el suyo.
+  return { filas: data ?? [], total: withCount ? (count ?? 0) : null }
 }

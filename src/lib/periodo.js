@@ -50,3 +50,28 @@ export function ultimosPeriodos(p, n) {
 export function aPrimerDiaMes(p) {
   return `${String(p).slice(0, 7)}-01`
 }
+
+// ---------------------------------------------------------------------------
+// Lista de meses de una planilla (RPC `periodos_planilla`).
+//
+// Se consultaba en CADA montaje de PlanillaPage: entrar, salir y volver a una
+// planilla, o alternar entre dos, repetía la misma llamada. La lista solo
+// cambia cuando se genera un mes nuevo, así que se cachea y se invalida ahí.
+// ---------------------------------------------------------------------------
+import { supabase } from './supabaseClient'
+import { crearCache } from './cache'
+
+const cachePeriodos = crearCache({ nombre: 'periodos_planilla', ttlMs: 10 * 60 * 1000 })
+
+export function cargarPeriodos(tabla) {
+  return cachePeriodos.get(tabla, async () => {
+    const { data, error } = await supabase.rpc('periodos_planilla', { p_tabla: tabla })
+    if (error) throw error
+    return (data ?? []).map((r) => String(r.periodo).slice(0, 10))
+  })
+}
+
+/** Llamar tras `abrir_periodo`: la lista cacheada quedó corta. */
+export function invalidarPeriodos(tabla) {
+  cachePeriodos.invalidar(tabla)
+}

@@ -101,11 +101,11 @@ function dibujarPaginaBoleta(doc, planilla, fila) {
     doc.text(String(fila.fecha_ing ?? fila.f_ingreso ?? ''), 42, 50)
   }
 
-  if (fila.snp) {
+  if (fila.afiliacion) {
     doc.setFont('helvetica', 'bold')
-    doc.text('S.N.P.:', 80, 50)
+    doc.text('AFIL. A :', 80, 50)
     doc.setFont('helvetica', 'normal')
-    doc.text(String(fila.snp), 98, 50)
+    doc.text(String(fila.afiliacion), 98, 50)
   }
 
   let cursor = 58
@@ -236,11 +236,11 @@ function dibujarPaginaComparativa(doc, planilla, filas) {
   doc.setFont('helvetica', 'normal')
   doc.text(String(ultima.dni ?? ''), 30, 44)
 
-  if (ultima.snp) {
+  if (ultima.afiliacion) {
     doc.setFont('helvetica', 'bold')
-    doc.text('S.N.P.:', 80, 44)
+    doc.text('AFIL. A :', 80, 44)
     doc.setFont('helvetica', 'normal')
-    doc.text(String(ultima.snp), 98, 44)
+    doc.text(String(ultima.afiliacion), 98, 44)
   }
 
   if (ultima.cargo) {

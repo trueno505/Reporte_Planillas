@@ -380,9 +380,14 @@ function escribirBloqueArea(ws, planilla, rows, r0, merges, area, siaf, periodo)
 export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorArea = {}) {
   // Las filas ya salen agrupadas bajo su banda "ÁREA: …", así que la columna
   // 'area' por trabajador es redundante y se excluye de la hoja.
-  const columnas = planilla.areas?.length
-    ? planilla.columnas.filter((c) => c.key !== 'area')
-    : planilla.columnas
+  //
+  // `excluirExcel` marca las columnas que existen y se editan en la web pero
+  // NO deben aparecer en la planilla descargada (Fecha de Nacimiento y Tipo de
+  // Comisión AFP): son datos internos, ajenos al formato oficial impreso. Sí
+  // siguen saliendo en las plantillas de importación / actualizar columna.
+  const columnas = planilla.columnas.filter(
+    (c) => !c.excluirExcel && !(planilla.areas?.length && c.key === 'area')
+  )
 
   // Cada trabajador ocupa varias filas: IDENTIDAD (DNI, nombre, fecha, cargo…
   // — todo lo que no sea columna money y esté antes de T. Ingreso), INGRES.
@@ -420,7 +425,7 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
   // —siempre el último concepto de cada lista— terminan en la misma columna.
   // Cuando Descuentos es la lista larga (el caso normal), el hueco que sobra
   // a la izquierda de Ingresos se cubre "prestando" las últimas columnas de
-  // identidad (Cargo, Niv. Rem., S.N.P., …): su rótulo no necesita repetirse
+  // identidad (Cargo, Niv. Rem., AFIL. A :, …): su rótulo no necesita repetirse
   // en las 2 filas del encabezado, así que la fila de abajo (DSCTOS) se
   // reutiliza ahí para los primeros conceptos de descuento, angostando la
   // hoja en vez de dejar celdas vacías. Si en cambio Ingresos es la lista

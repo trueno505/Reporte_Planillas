@@ -32,15 +32,23 @@ export function usePlanillaPaginada(tabla, { pageSize = PAGE_SIZE, periodo = nul
   // Descarta respuestas obsoletas (Realtime puede disparar varias seguidas).
   const reqRef = useRef(0)
 
+  // Firma de los filtros que SÍ afectan al total de filas. Cambiar de página o
+  // de columna de orden no lo altera, así que solo se pide el conteo exacto
+  // cuando esta firma cambia (o cuando Realtime avisa de altas/bajas).
+  const firmaRef = useRef(null)
+
   // `fetch` cierra sobre page/search/sort; su identidad cambia con ellos, de modo
   // que el efecto de abajo recarga automáticamente al cambiar cualquiera.
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async ({ forzarConteo = false } = {}) => {
     if (!tabla) {
       setFilas([])
       setTotal(0)
+      firmaRef.current = null
       setLoading(false)
       return
     }
+    const firma = `${tabla}|${periodo ?? ''}|${search}|${area}`
+    const conConteo = forzarConteo || firmaRef.current !== firma
     const id = ++reqRef.current
     setLoading(true)
     setError(null)
@@ -53,21 +61,28 @@ export function usePlanillaPaginada(tabla, { pageSize = PAGE_SIZE, periodo = nul
         ascending: sort.ascending,
         periodo,
         area,
+        withCount: conConteo,
       })
       if (id !== reqRef.current) return // llegó una respuesta más nueva
       setFilas(res.filas)
-      setTotal(res.total)
+      if (res.total !== null) setTotal(res.total)
+      firmaRef.current = firma
     } catch (err) {
       if (id !== reqRef.current) return
       setError(err.message)
       setFilas([])
       setTotal(0)
+      firmaRef.current = null
     }
     if (id === reqRef.current) setLoading(false)
   }, [tabla, pageSize, page, search, sort, periodo, area])
 
   // Recarga al cambiar de planilla, página, búsqueda, orden o periodo.
   useEffect(() => { fetch() }, [fetch])
+
+  // Realtime y las operaciones masivas sí pueden cambiar el número de filas,
+  // así que su recarga fuerza el conteo exacto.
+  const refetch = useCallback(() => fetch({ forzarConteo: true }), [fetch])
 
   // Al cambiar de planilla, vuelve al estado inicial.
   useEffect(() => {
@@ -110,6 +125,6 @@ export function usePlanillaPaginada(tabla, { pageSize = PAGE_SIZE, periodo = nul
     setSort,
     loading,
     error,
-    refetch: fetch,
+    refetch: refetch,
   }
 }

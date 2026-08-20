@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { crearNombradorHojas } from './hojaExcel'
 import { PLANILLAS } from '../config/planillas'
+import { construirHojaPlanilla } from './excelEncabezado'
 
 describe('crearNombradorHojas', () => {
   it('deja intactos los nombres cortos y válidos', () => {
@@ -79,4 +80,44 @@ describe('crearNombradorHojas', () => {
       expect(n).not.toMatch(/[:\\/?*[\]]/)
     }
   })
+})
+
+// ---------------------------------------------------------------------------
+// Las columnas marcadas `excluirExcel` (Fecha de Nacimiento, Tipo de Comisión
+// AFP) se editan en la web pero NO deben aparecer en la planilla descargada.
+// Se comprueba sobre la hoja realmente generada, no sobre la config.
+// ---------------------------------------------------------------------------
+describe('construirHojaPlanilla: columnas excluidas del Excel', () => {
+  const textoDeLaHoja = (ws) =>
+    Object.entries(ws)
+      .filter(([k]) => !k.startsWith('!'))
+      .map(([, v]) => (typeof v?.v === 'string' ? v.v : ''))
+      .join('\u0000')
+
+  const filaDemo = (planilla) => {
+    const f = { periodo: '2026-08-01' }
+    for (const c of planilla.columnas) {
+      if (c.type === 'money') f[c.key] = 10
+      else if (c.type === 'int') f[c.key] = 1
+      else if (c.type === 'dni') f[c.key] = 12345678
+      else if (c.type === 'date') f[c.key] = '1978-05-12'
+      else f[c.key] = `V_${c.key}`
+    }
+    if (planilla.areas?.length) f.area = planilla.areas[0]
+    return f
+  }
+
+  for (const planilla of PLANILLAS.filter((p) => p.columnas.some((c) => c.excluirExcel))) {
+    it(`${planilla.slug}: no imprime sus rótulos ni sus valores`, () => {
+      const ws = construirHojaPlanilla(planilla, [filaDemo(planilla)], '2026-08-01', {})
+      const texto = textoDeLaHoja(ws)
+
+      for (const col of planilla.columnas.filter((c) => c.excluirExcel)) {
+        expect(texto).not.toContain(col.label)
+        expect(texto).not.toContain(`V_${col.key}`)
+      }
+      // Y sigue imprimiendo lo que sí corresponde.
+      expect(texto).toContain('Apellidos y Nombres')
+    })
+  }
 })

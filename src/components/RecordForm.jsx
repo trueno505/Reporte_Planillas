@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { X, Calculator, ShieldAlert } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { calcularTotales, round2 } from '../lib/calculos'
+import { APORTE_KEYS, calcularAportes, planillaTieneAportes } from '../lib/aportes'
+import { useParametrosAportes } from '../hooks/useParametrosAportes'
 import { castValor } from '../lib/casteo'
 import { fmtMoneda } from '../lib/formato'
 import { getSeccionesCalculo, esColumnaIdentidad } from '../config/planillas'
@@ -13,7 +15,7 @@ function emptyRecord(columnas) {
   return Object.fromEntries(columnas.map((c) => [c.key, '']))
 }
 
-// Sistema de pensiones para el campo S.N.P. en el alta rápida (soloBasicos)
+// Sistema de pensiones para el campo de afiliacion en el alta rápida (soloBasicos)
 const AFP_OPCIONES = ['AFP Integra', 'Prima AFP', 'AFP Habitat', 'Profuturo AFP']
 
 // 'Vacaciones' (Empleados Permanentes) es texto libre a nivel de columna,
@@ -118,19 +120,27 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
   const secciones = getSeccionesCalculo(planilla)
   const totalKeys = new Set(['t_ingreso', 't_dsctos', 't_liquido'])
 
+  // Aportes previsionales: los calcula el trigger de la BD a partir de la
+  // afiliacion y el Total de Ingresos, asi que estas cuatro columnas se
+  // muestran en solo lectura. Los porcentajes solo sirven aqui para la vista
+  // previa en vivo; el valor definitivo lo fija la base de datos.
+  const parametrosAportes = useParametrosAportes()
+  const conAportes = planillaTieneAportes(planilla)
+  const aporteKeys = new Set(conAportes ? APORTE_KEYS : [])
+
   // Al editar un mes, las columnas FIJAS (identidad) van en solo lectura: solo
   // se corrigen con la acción aparte (que las cambia en todos los meses).
   const [corregirOpen, setCorregirOpen] = useState(false)
   const esFijaBloqueada = (key) => isEdit && !soloBasicos && esColumnaIdentidad(key)
 
   // En el alta rápida solo se piden DNI, Apellidos y Nombres, Fecha de Ingreso,
-  // S.N.P., Área (si la planilla tiene áreas) y Tipo de acto administrativo.
+  // afiliacion, Área (si la planilla tiene áreas) y Tipo de acto administrativo.
   const columnasVisibles = soloBasicos
     ? columnas.filter(
         (c) =>
           c.key === 'dni' ||
           c.key === 'apellidos_y_nombres' ||
-          c.key === 'snp' ||
+          c.key === 'afiliacion' ||
           c.key === 'area' ||
           c.key === 'tipo_acto_administrativo' ||
           c.type === 'date'
@@ -141,18 +151,18 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
     isEdit ? { ...record } : emptyRecord(columnas)
   )
   const [saving, setSaving] = useState(false)
-  // Estado del selector S.N.P.: '' | 'ONP' | 'AFP' (el AFP concreto se guarda en form.snp)
-  const [snpSistema, setSnpSistema] = useState(() => {
-    const v = isEdit ? record?.snp : ''
+  // Estado del selector de afiliacion: '' | 'ONP' | 'AFP' (el AFP concreto se guarda en form.afiliacion)
+  const [afilSistema, setAfilSistema] = useState(() => {
+    const v = isEdit ? record?.afiliacion : ''
     if (v === 'ONP') return 'ONP'
     if (AFP_OPCIONES.includes(v)) return 'AFP'
     return ''
   })
 
-  const handleSnpSistema = (val) => {
-    setSnpSistema(val)
+  const handleAfilSistema = (val) => {
+    setAfilSistema(val)
     // ONP se guarda tal cual; AFP queda vacío hasta elegir la AFP concreta
-    setForm((prev) => ({ ...prev, snp: val === 'ONP' ? 'ONP' : '' }))
+    setForm((prev) => ({ ...prev, afiliacion: val === 'ONP' ? 'ONP' : '' }))
   }
 
   // Firma de los campos observados (ingresos + descuentos) serializada en una
@@ -165,10 +175,10 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
   // Recalcula totales automáticamente cuando cambia cualquier ingreso/descuento
   useEffect(() => {
     if (!secciones) return
-    const totales = calcularTotales(planilla, form)
+    const totales = calcularTotales(planilla, form, parametrosAportes)
     setForm((prev) => ({ ...prev, ...totales }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [observados])
+  }, [observados, form.afiliacion, form.tipo_comision_afp, parametrosAportes])
 
   const handleChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
 
@@ -180,9 +190,14 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
   //  - Al crear normal: solo DNI y los marcados `required` en la config.
   const esRequerido = (col) => {
     if (secciones && totalKeys.has(col.key)) return false
+    if (aporteKeys.has(col.key)) return false // lo calcula el trigger de aportes
     if (col.formulaBase) return false // se calcula solo (ver CampoFormula)
     if (esFijaBloqueada(col.key)) return false // identidad en solo lectura al editar
     if (col.key === 'vacaciones') return false
+    // Columnas marcadas como opcionales en la config: quedan fuera de la regla
+    // «al editar, todo es obligatorio». Sin esto, añadir una columna nueva
+    // bloquearía la edición de todos los registros que aún no la tienen.
+    if (col.opcional) return false
     if (soloBasicos) return true
     if (isEdit) return true
     return col.type === 'dni' || col.required
@@ -203,7 +218,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
       if (has('apellidos_y_nombres') && !String(form.apellidos_y_nombres ?? '').trim())
         faltan.push('Apellidos y Nombres')
       if (dateCol && !form[dateCol.key]) faltan.push('Fecha de Ingreso')
-      if (has('snp') && !form.snp) faltan.push('S.N.P.')
+      if (has('afiliacion') && !form.afiliacion) faltan.push('AFIL. A :')
       if (has('area') && planilla.areas?.length && !String(form.area ?? '').trim())
         faltan.push('Área')
       if (has('tipo_acto_administrativo') && !String(form.tipo_acto_administrativo ?? '').trim())
@@ -262,6 +277,11 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
 
   const isAutoTotal = (key) => secciones && totalKeys.has(key)
 
+  // Un aporte solo se muestra calculado si la afiliacion es reconocible; con
+  // 'SI'/'NO' o vacio la BD no lo toca, asi que se deja editable a mano.
+  const aportesVivos = conAportes ? calcularAportes(form, parametrosAportes) : { aplica: false }
+  const isAporteCalculado = (key) => aporteKeys.has(key) && aportesVivos.aplica
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 overflow-y-auto py-8">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4">
@@ -289,9 +309,11 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
           className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto"
         >
           {columnasVisibles.map((col) => {
-            const autoTotal = isAutoTotal(col.key)
+            // Los aportes calculados se muestran igual que los totales:
+            // solo lectura, con el icono de calculadora.
+            const autoTotal = isAutoTotal(col.key) || isAporteCalculado(col.key)
             const requerido = esRequerido(col)
-            const esSnpBasico = soloBasicos && col.key === 'snp'
+            const esAfilBasico = soloBasicos && col.key === 'afiliacion'
             const esAreaSelect = col.key === 'area' && (planilla.areas?.length ?? 0) > 0
             const esVacacionesSelect = col.key === 'vacaciones'
             const fijaBloqueada = esFijaBloqueada(col.key)
@@ -318,21 +340,21 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
                     className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-1.5 text-sm text-gray-500 cursor-not-allowed"
                     tabIndex={-1}
                   />
-                ) : esSnpBasico ? (
+                ) : esAfilBasico ? (
                   <div className="space-y-2">
                     <select
-                      value={snpSistema}
-                      onChange={(e) => handleSnpSistema(e.target.value)}
+                      value={afilSistema}
+                      onChange={(e) => handleAfilSistema(e.target.value)}
                       className={inputClass}
                     >
                       <option value="">Seleccione…</option>
                       <option value="ONP">ONP</option>
                       <option value="AFP">AFP</option>
                     </select>
-                    {snpSistema === 'AFP' && (
+                    {afilSistema === 'AFP' && (
                       <select
-                        value={form.snp ?? ''}
-                        onChange={(e) => handleChange('snp', e.target.value)}
+                        value={form.afiliacion ?? ''}
+                        onChange={(e) => handleChange('afiliacion', e.target.value)}
                         className={inputClass}
                       >
                         <option value="">Seleccione AFP…</option>
@@ -371,6 +393,22 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
                     {MESES_VACACIONES.map((m) => (
                       <option key={m} value={m}>
                         {m}
+                      </option>
+                    ))}
+                  </select>
+                ) : col.opciones?.length ? (
+                  // Columna con lista cerrada de valores (p.ej. Tipo de
+                  // Comisión AFP). Evita erratas y mantiene el dato agrupable.
+                  <select
+                    value={form[col.key] ?? ''}
+                    onChange={(e) => handleChange(col.key, e.target.value)}
+                    required={requerido}
+                    className={inputClass}
+                  >
+                    <option value="">Seleccione…</option>
+                    {col.opciones.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
                       </option>
                     ))}
                   </select>
@@ -419,7 +457,7 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             <button
               onClick={() => setCorregirOpen(true)}
               className="mr-auto flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-amber-700 border border-amber-300 hover:bg-amber-50 transition"
-              title="Cambia nombres/fecha/S.N.P./área/tipo de acto en todos los meses"
+              title="Cambia nombres/fecha/afiliación/área/tipo de acto en todos los meses"
             >
               <ShieldAlert size={14} /> Corregir datos fijos
             </button>

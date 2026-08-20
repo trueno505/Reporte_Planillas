@@ -3,11 +3,11 @@ import { PencilLine, X, CheckCircle, AlertTriangle, Download } from 'lucide-reac
 import { supabase } from '../lib/supabaseClient'
 import { fetchAllRows } from '../lib/db'
 import { castValor } from '../lib/casteo'
-import { getSeccionesCalculo } from '../config/planillas'
+import { getSeccionesCalculo, rotulosAceptados } from '../config/planillas'
 import toast from 'react-hot-toast'
 
 // `xlsx` (~1.35 MB) se carga solo al usar esta función, no en el arranque.
-const cargarXLSX = () => import('xlsx')
+const cargarXLSX = () => import('xlsx-js-style')
 
 export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy, periodo = null }) {
   const { tabla, columnas, label } = planilla
@@ -115,8 +115,12 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
       // El valor: cabecera que coincida con la etiqueta de la columna elegida,
       // o "VALOR" / "MONTO" / "NUEVO", o la primera columna distinta del DNI.
       const norm = (s) => String(s).trim().toLowerCase()
+      // `rotulosAceptados` incluye el rótulo actual y los históricos (p.ej.
+      // "S.N.P." antes de pasar a "AFIL. A :"), para que una plantilla
+      // descargada antes de un rename siga emparejando.
+      const rotulos = rotulosAceptados(colMeta).map(norm)
       const valHeader =
-        headers.find((h) => norm(h) === norm(colMeta.label)) ??
+        headers.find((h) => rotulos.includes(norm(h))) ??
         headers.find((h) => ['valor', 'monto', 'nuevo', 'valor nuevo'].includes(norm(h))) ??
         headers.find((h) => h !== dniHeader)
 

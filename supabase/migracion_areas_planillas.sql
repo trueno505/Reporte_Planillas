@@ -1,3 +1,11 @@
+--
+-- NOTA (rename snp -> afiliacion): las listas de columnas de identidad de este
+-- archivo nombran AMBAS, 'afiliacion' y 'snp'. La columna se renombro en
+-- migracion_rename_snp_afiliacion.sql; listar las dos hace que re-ejecutar este
+-- parche viejo sea inofensivo, porque tanto el filtro sobre information_schema
+-- como la lista blanca de corregir_identidad ignoran los nombres que no existen
+-- como columna real. No borres 'afiliacion' de esas listas.
+--
 -- ================================================================
 -- migracion_areas_planillas.sql
 -- Parche idempotente para BD viva.
@@ -39,7 +47,7 @@ BEGIN
   SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position) INTO v_cols
     FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = p_tabla
-     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo');
+     AND column_name IN ('dni','apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','snp','area','tipo_acto_administrativo');
   EXECUTE format('INSERT INTO public.%I (periodo, %s) SELECT $1, %s FROM public.%I WHERE periodo = $2', p_tabla, v_cols, v_cols, p_tabla) USING p_periodo, v_src;
   GET DIAGNOSTICS n = ROW_COUNT;
   RETURN n;
@@ -50,7 +58,7 @@ $function$;
 CREATE OR REPLACE FUNCTION public.corregir_identidad(p_tabla text, p_dni integer, p_datos jsonb)
 RETURNS INTEGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $cor$
 DECLARE
-  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','snp','area','tipo_acto_administrativo'];
+  v_allowed TEXT[] := ARRAY['apellidos_y_nombres','f_ingreso','fecha_ing','afiliacion','snp','area','tipo_acto_administrativo'];
   v_cols TEXT[]; v_key TEXT; v_set TEXT := ''; n INTEGER;
 BEGIN
   IF (SELECT public.get_my_rol()) NOT IN ('editor', 'administrador') THEN RAISE EXCEPTION 'No autorizado'; END IF;
