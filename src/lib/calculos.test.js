@@ -42,7 +42,7 @@ describe('round2', () => {
 
 describe('calcularTotales', () => {
   it('suma ingresos, descuentos y calcula el líquido', () => {
-    const fila = { r_basica: 1000, r_reunif: 500, fdo_pens: 100, p_seg: 50 }
+    const fila = { r_basica: 1000, r_reunif: 500, f_pens: 100, p_seg: 50 }
     const { t_ingreso, t_dsctos, t_liquido } = calcularTotales(planilla, fila)
     expect(t_ingreso).toBe(1500)
     expect(t_dsctos).toBe(150)
@@ -64,7 +64,7 @@ describe('calcularTotales', () => {
   })
 
   it('permite un líquido negativo (lo detecta alertas.js, no se recorta aquí)', () => {
-    const { t_liquido } = calcularTotales(planilla, { r_basica: 100, fdo_pens: 300 })
+    const { t_liquido } = calcularTotales(planilla, { r_basica: 100, f_pens: 300 })
     expect(t_liquido).toBe(-200)
   })
 
@@ -83,7 +83,7 @@ describe('recalcularFilas', () => {
   it('fusiona los totales conservando el resto de campos', () => {
     const filas = [
       { dni: 1, apellidos_y_nombres: 'A', r_basica: 100 },
-      { dni: 2, apellidos_y_nombres: 'B', r_basica: 200, fdo_pens: 50 },
+      { dni: 2, apellidos_y_nombres: 'B', r_basica: 200, f_pens: 50 },
     ]
     const out = recalcularFilas(planilla, filas)
     expect(out[0]).toMatchObject({ dni: 1, apellidos_y_nombres: 'A', t_ingreso: 100, t_liquido: 100 })
