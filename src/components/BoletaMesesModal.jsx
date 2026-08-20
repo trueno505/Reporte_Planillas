@@ -1,12 +1,22 @@
 import { Printer, Loader2 } from 'lucide-react'
+import { ultimosPeriodos, formatPeriodo } from '../lib/periodo'
 
 const OPCIONES = [
-  { n: 1, label: '1 mes', detalle: 'Solo el mes actual' },
-  { n: 2, label: '2 meses', detalle: 'Actual y el mes anterior' },
-  { n: 4, label: '4 meses', detalle: 'Actual y los 3 meses anteriores' },
+  { n: 1, label: '1 mes' },
+  { n: 2, label: '2 meses' },
+  { n: 4, label: '4 meses' },
 ]
 
-export default function BoletaMesesModal({ onSeleccionar, onCancel, loading = false }) {
+// "Julio 2026" para un mes; "Mayo 2026 — Agosto 2026" para un rango.
+function rangoLegible(periodoBase, n) {
+  if (!periodoBase) return null
+  const periodos = ultimosPeriodos(periodoBase, n)
+  const primero = formatPeriodo(periodos[0])
+  const ultimo = formatPeriodo(periodos[periodos.length - 1])
+  return n === 1 ? ultimo : `${primero} — ${ultimo}`
+}
+
+export default function BoletaMesesModal({ periodoBase, onSeleccionar, onCancel, loading = false }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
@@ -19,21 +29,29 @@ export default function BoletaMesesModal({ onSeleccionar, onCancel, loading = fa
         </div>
 
         <div className="flex flex-col gap-2 mb-4">
-          {OPCIONES.map((o) => (
-            <button
-              key={o.n}
-              onClick={() => onSeleccionar(o.n)}
-              disabled={loading}
-              className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-gray-200 hover:border-primary hover:bg-primary/5 transition text-left disabled:opacity-60"
-            >
-              <span>
-                <span className="block font-medium text-gray-900 text-sm">{o.label}</span>
-                <span className="block text-xs text-gray-500">{o.detalle}</span>
-              </span>
-              {loading && <Loader2 size={16} className="animate-spin text-primary shrink-0" />}
-            </button>
-          ))}
+          {OPCIONES.map((o) => {
+            const rango = rangoLegible(periodoBase, o.n)
+            return (
+              <button
+                key={o.n}
+                onClick={() => onSeleccionar(o.n)}
+                disabled={loading}
+                className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-gray-200 hover:border-primary hover:bg-primary/5 transition text-left disabled:opacity-60"
+              >
+                <span>
+                  <span className="block font-medium text-gray-900 text-sm">{o.label}</span>
+                  {rango && <span className="block text-xs text-gray-500">{rango}</span>}
+                </span>
+                {loading && <Loader2 size={16} className="animate-spin text-primary shrink-0" />}
+              </button>
+            )
+          })}
         </div>
+
+        <p className="text-xs text-gray-500 mb-4">
+          Solo se incluyen los meses en los que este trabajador tiene registro; si tiene menos,
+          la boleta saldrá con los que existan.
+        </p>
 
         <div className="flex justify-end">
           <button

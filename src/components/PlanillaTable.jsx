@@ -7,7 +7,7 @@ import {
 import { ChevronUp, ChevronDown, ChevronsUpDown, Printer, AlertTriangle, Search } from 'lucide-react'
 import { mapAlertasPlanilla } from '../lib/alertas'
 import { fmtMoneda } from '../lib/formato'
-import { imprimirBoletaMeses } from '../lib/imprimirBoleta'
+import { imprimirBoletaMeses, mensajeMesesFaltantes } from '../lib/imprimirBoleta'
 import { supabase } from '../lib/supabaseClient'
 import Paginacion from './Paginacion'
 import BoletaMesesModal from './BoletaMesesModal'
@@ -137,10 +137,9 @@ export default function PlanillaTable({
   const seleccionarMeses = async (nMeses) => {
     setBoletaCargando(true)
     try {
-      const { encontrados } = await imprimirBoletaMeses(planilla, boletaFila.dni, boletaFila.periodo, nMeses)
-      if (encontrados < nMeses) {
-        toast(`Solo se encontraron ${encontrados} de ${nMeses} mes(es) solicitados.`, { icon: '⚠️' })
-      }
+      const resultado = await imprimirBoletaMeses(planilla, boletaFila.dni, boletaFila.periodo, nMeses)
+      const aviso = mensajeMesesFaltantes(resultado)
+      if (aviso) toast(aviso, { icon: '⚠️', duration: 7000 })
       setBoletaFila(null)
     } catch (err) {
       toast.error(err.message)
@@ -335,6 +334,7 @@ export default function PlanillaTable({
 
       {boletaFila && (
         <BoletaMesesModal
+          periodoBase={boletaFila.periodo}
           loading={boletaCargando}
           onSeleccionar={seleccionarMeses}
           onCancel={() => setBoletaFila(null)}

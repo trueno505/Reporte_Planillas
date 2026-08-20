@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabaseClient'
 import { PLANILLAS, getPlanillaByTabla } from '../config/planillas'
-import { imprimirBoletaMeses } from '../lib/imprimirBoleta'
+import { imprimirBoletaMeses, mensajeMesesFaltantes } from '../lib/imprimirBoleta'
 import BoletaMesesModal from '../components/BoletaMesesModal'
 import { periodoActual, formatPeriodo } from '../lib/periodo'
 import { fmtMoneda } from '../lib/formato'
@@ -30,10 +30,9 @@ export default function BusquedaGlobal() {
     const clave = `${tabla}-${dni}`
     setBoletaCargando(clave)
     try {
-      const { encontrados } = await imprimirBoletaMeses(planilla, dni, periodo, nMeses)
-      if (encontrados < nMeses) {
-        toast(`Solo se encontraron ${encontrados} de ${nMeses} mes(es) solicitados.`, { icon: '⚠️' })
-      }
+      const resultado = await imprimirBoletaMeses(planilla, dni, periodo, nMeses)
+      const aviso = mensajeMesesFaltantes(resultado)
+      if (aviso) toast(aviso, { icon: '⚠️', duration: 7000 })
       setBoletaObjetivo(null)
     } catch (err) {
       toast.error(err.message)
@@ -184,6 +183,7 @@ export default function BusquedaGlobal() {
 
       {boletaObjetivo && (
         <BoletaMesesModal
+          periodoBase={periodo}
           loading={boletaCargando === `${boletaObjetivo.tabla}-${boletaObjetivo.dni}`}
           onSeleccionar={seleccionarMeses}
           onCancel={() => setBoletaObjetivo(null)}
