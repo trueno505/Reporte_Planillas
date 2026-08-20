@@ -12,7 +12,7 @@ rápida** global (solo datos básicos + afiliación + Área; las planillas no ti
 **cuadro presupuestal por área** con Nº Siaf —solo números— pedido al descargar, y una
 **hoja aparte por cada concepto de descuento** con al menos un afectado ese mes),
 **importar trabajadores nuevos de forma masiva** y **actualizar columnas** por **Excel**,
-generar **boletas PDF** y un **reporte consolidado**, buscar a un trabajador por DNI o
+generar **boletas PDF** (de un mes, o comparativas de 2 o 4 meses en una sola hoja) y un **reporte consolidado**, buscar a un trabajador por DNI o
 nombre en las 13 planillas a la vez, un **dashboard** con KPIs y gráficos, **auditoría**
 de cambios, **gestión de usuarios/roles**, **histórico mensual permanente** (cada mes se
 conserva; ver abajo) y actualizaciones en **tiempo real** (Supabase Realtime).
@@ -72,7 +72,7 @@ Cuatro roles, almacenados en `public.perfiles.rol` (la seguridad real la impone 
 
 | Rol | Permite |
 |---|---|
-| **consultor** | Consultar, exportar a Excel y descargar boletas PDF (solo lectura). |
+| **consultor** | Consultar, exportar a Excel y descargar boletas PDF —de uno o varios meses— (solo lectura). |
 | **editor** | Lo del consultor **+ editar datos** de las planillas (CRUD, alta rápida, importar registros y actualizar columnas por Excel, recálculo). **No** gestiona usuarios ni ve la auditoría. |
 | **administrador** | Control total: datos + **gestión de usuarios** + **auditoría**. |
 | **superadmin** | Igual que administrador en todo, **más**: su cuenta y su rol son **permanentes** (nadie puede desactivarla, eliminarla ni reasignarle otro rol — ni siquiera otro superadmin), solo un superadmin puede (des)activar la cuenta de un administrador, ve un registro de auditoría de **cambios de rol** que un administrador normal no ve, **nadie puede ascender a alguien a superadmin desde la app** (solo se crea a mano en la BD) y **un administrador no puede saber quién es el superadmin** (su fila queda oculta en `/usuarios` y `/auditoria`). |
@@ -121,7 +121,9 @@ Cada planilla guarda una fila por **(trabajador, mes)** mediante una columna `pe
 - El selector de mes (en la planilla, el dashboard y la búsqueda global) permite consultar
   meses y años anteriores. Para corregir un dato fijo, **«Corregir datos fijos»** lo cambia
   en todos los meses del trabajador.
-- El histórico arranca en **junio 2026** con los datos ya cargados.
+- El histórico arrancó en **junio 2026**, pero las planillas se **vaciaron por completo el
+  19-08-2026** (borrado solicitado de todos los trabajadores). El histórico se reinicia con el
+  primer registro que se cree: entra en el mes en curso y desde ahí se encadenan los siguientes.
 
 ## Aportes previsionales automáticos
 

@@ -43,7 +43,7 @@ Provincial de Ica**. A continuación, todas las tecnologías utilizadas.
 |---|---|---|
 | **@tanstack/react-table** | ^8.21.3 | Renderizado de tablas (orden, filtros, edición en línea, alertas) |
 | **xlsx-js-style** | ^1.2.0 | **Toda** la manipulación de Excel: lectura de archivos subidos (importación masiva, actualizar columna por DNI, plantillas) y exportes **estilizados** (encabezado institucional, agrupación por área, resúmenes RESÚMEN / ESSALUD 9% / COMPROBACIÓN, cuadros presupuestales y reporte consolidado) |
-| **jspdf** | ^4.2.1 | Generación de PDF (boletas de pago individuales) |
+| **jspdf** | ^4.2.1 | Generación de PDF (boletas de pago: individuales de un mes y comparativas de varios). Se importa de forma diferida en `imprimirBoleta.js`, así que no entra en el bundle inicial |
 | **jspdf-autotable** | ^5.0.8 | Tablas dentro de los PDF |
 | **recharts** | ^3.8.1 | Gráficos del Dashboard (barras de líquido total por grupo) |
 

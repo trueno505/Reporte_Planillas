@@ -36,3 +36,6 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Respaldos de datos de trabajadores (contienen DNI, nombres y montos: NO versionar)
+/backups/

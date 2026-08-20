@@ -246,7 +246,8 @@ Reporte_Planillas/
 │   │   ├── redondeo.js        round2() — única implementación (evita el ciclo calculos↔aportes)
 │   │   ├── cache.js           Caché con TTL + deduplicación de peticiones en vuelo
 │   │   ├── alertas.js         Detección de alertas por fila
-│   │   ├── boletaPdf.js       Boleta de pago individual en PDF
+│   │   ├── boletaPdf.js       Boleta de pago en PDF: individual (1 mes) y comparativa (varios)
+│   │   ├── imprimirBoleta.js  ★ Resuelve los meses del trabajador y elige qué boleta generar
 │   │   ├── periodo.js         Helpers de periodo + cargarPeriodos()/invalidarPeriodos() (cacheado)
 │   │   ├── db.js              Consultas paginadas/masivas (filtran por periodo)
 │   │   ├── excelEncabezado.js Hojas Excel estilizadas: encabezado institucional, filas por
@@ -266,6 +267,7 @@ Reporte_Planillas/
 │   │   ├── ExcelActualizarColumna.jsx  Actualizar una columna por DNI desde Excel + plantilla (trae todas las filas)
 │   │   ├── ExcelExport.jsx          Exportar TODAS las filas a .xlsx estilizado (pide Nº Siaf por área)
 │   │   ├── SiafModal.jsx            Modal reutilizable que pide un Nº Siaf por planilla (solo números; se aplica a todas sus áreas)
+│   │   ├── BoletaMesesModal.jsx     ★ Pregunta cuántos meses incluir en la boleta (1 / 2 / 4) y muestra el rango real
 │   │   ├── ConfirmDialog.jsx        Modal de confirmación reutilizable
 │   │   ├── PeriodoSelector.jsx      Selector de mes/periodo (para históricos mensuales)
 │   │   └── CorregirIdentidad.jsx    Modal para corregir datos fijos en todos los meses
@@ -393,7 +395,8 @@ operaciones masivas de Excel / recálculo.
   Al guardar una celda se **recalculan los totales** de toda la fila (trigger de la BD).
 - Las columnas de total (`t_ingreso`, `t_dsctos`, `t_liquido`) son de solo lectura.
 - **Panel de alertas** y resaltado de filas con problemas.
-- Acciones por fila: descargar **boleta PDF**, **Editar**, **Eliminar** (las dos
+- Acciones por fila: descargar **boleta PDF** (abre `BoletaMesesModal` para elegir de
+  cuántos meses, ver 8.5), **Editar**, **Eliminar** (las dos
   últimas, admin/editor — se reciben vía el prop `puedeEditar`). **No hay botón de alta** en
   la planilla; los registros se crean solo desde *Nuevo registro* (global).
 
@@ -486,12 +489,38 @@ Se detectan tres tipos por fila:
   **filas inválidas** (falta el DNI o un campo obligatorio). Al confirmar, inserta por lotes
   de 300 filas en el mes abierto.
 
-### 8.5 Boleta PDF (`boletaPdf.js`)
-Genera una boleta A4 por trabajador con encabezado institucional, datos del trabajador,
-dos tablas (Ingresos / Descuentos, solo conceptos con monto ≠ 0), el **Total Líquido a
-pagar** destacado y un pie. Se descarga como `Boleta_<tabla>_<nombre>.pdf`.
-Se invoca desde el botón de la columna **Acciones** de `PlanillaTable.jsx` y
-desde el botón **Imprimir** de cada resultado de `BusquedaGlobal.jsx` (ver 8.7).
+### 8.5 Boleta PDF (`boletaPdf.js` + `imprimirBoleta.js` + `BoletaMesesModal.jsx`)
+
+Se invoca desde el botón de la columna **Acciones** de `PlanillaTable.jsx` y desde el
+botón **Imprimir** de cada resultado de `BusquedaGlobal.jsx` (ver 8.7). Ambos abren primero
+`BoletaMesesModal`, que pregunta **cuántos meses consecutivos incluir** (1, 2 o 4) y muestra
+junto a cada opción el rango real que resolverá (p. ej. *4 meses → Mayo 2026 — Agosto 2026*),
+calculado desde el `periodoBase`: el `periodo` de la fila en la planilla, o el mes elegido en
+el `<input type="month">` en la búsqueda global.
+
+**`imprimirBoleta.js`** es el punto de entrada común:
+`imprimirBoletaMeses(planilla, dni, periodoBase, nMeses)` calcula los `nMeses` periodos que
+terminan en `periodoBase` (`ultimosPeriodos`), trae las filas de **ese trabajador** para esos
+meses, importa `boletaPdf` de forma diferida (jsPDF ~657 kB no entra en el bundle inicial:
+quien nunca imprime, nunca lo descarga) y elige el formato según cuántas filas encontró.
+Devuelve `{ encontrados, solicitados, periodosIncluidos, periodosFaltantes }`.
+
+Dos formatos:
+
+- **Individual** (`generarBoletaPdf`, 1 mes) — hoja A4 con encabezado institucional, datos
+  del trabajador, dos tablas (Ingresos / Descuentos, solo conceptos con monto ≠ 0), el
+  **Total Líquido a pagar** destacado y un pie. Se descarga como
+  `Boleta_<tabla>_<nombre>_<AAAA-MM>.pdf`.
+- **Comparativa** (`generarBoletaPdfMultiple`, 2+ meses) — **una sola hoja**, no una página
+  por mes: conceptos en filas y **una columna por mes**, con los totales al pie y la identidad
+  tomada del mes más reciente. El tamaño de letra se ajusta solo para que todo entre en la
+  hoja. Se descarga como `Boleta_<tabla>_<nombre>_<AAAA-MM>_a_<AAAA-MM>.pdf`.
+
+> **Los meses se cuentan por TRABAJADOR, no por planilla.** Alguien dado de alta el mes
+> pasado tiene un solo mes aunque su planilla tenga cuatro, y entonces sale la boleta
+> individual. Para que eso no parezca un fallo, cuando faltan meses
+> `mensajeMesesFaltantes(resultado)` arma un aviso que **nombra** los meses incluidos y los
+> que no tienen registro, en vez de solo contarlos. Cubierto por `src/lib/imprimirBoleta.test.js`.
 
 ### 8.6 Dashboard (`Dashboard.jsx`)
 - KPIs: nº de planillas, total de trabajadores, total a pagar.
@@ -511,13 +540,13 @@ Busca por DNI (exacto) o nombre (ILIKE) en las 13 tablas vía el RPC
 `<input type="month">`, agrupando resultados por planilla.
 
 Cada fila de resultado incluye un botón **Imprimir** que descarga la boleta PDF
-del trabajador **sin ir a la planilla**. Como el RPC solo devuelve DNI, nombre y
-`t_liquido`, el botón primero trae la **fila completa** desde la tabla del
-trabajador (`getPlanillaByTabla(tabla)` →
-`supabase.from(tabla).select('*').eq('dni', …).eq('periodo', …).single()`) y luego
-llama a `generarBoletaPdf(planilla, fila)`. Un spinner por fila
-(`boletaCargando`, con clave `tabla-dni`) deshabilita el botón mientras carga;
-los errores se muestran con `react-hot-toast`.
+del trabajador **sin ir a la planilla**. Abre `BoletaMesesModal` (con el mes del
+`<input type="month">` como base) y delega en
+`imprimirBoletaMeses(planilla, dni, periodo, nMeses)`; como el RPC solo devuelve DNI,
+nombre y `t_liquido`, es ese helper el que trae las **filas completas** desde la tabla
+del trabajador (ver 8.5). Un spinner por fila (`boletaCargando`, con clave `tabla-dni`)
+deshabilita el botón mientras carga; los errores y el aviso de meses faltantes se
+muestran con `react-hot-toast`.
 
 ### 8.8 Recálculo global (`PlanillaPage.jsx`)
 Botón "Recalcular totales" (admin/editor) que recalcula todas las filas de la planilla
