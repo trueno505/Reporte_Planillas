@@ -9,7 +9,9 @@ vivo** (Realtime), búsqueda/orden y edición en línea, editar/eliminar registr
 **cálculo automático de totales y de los aportes previsionales ONP/AFP**, un **alta
 rápida** global (solo datos básicos + afiliación + Área; las planillas no tienen alta propia), **exportar Excel estilizado** (agrupado por
 área, con recuadro por trabajador, resumen de conceptos, ESSALUD 9%, comprobación,
-**cuadro presupuestal por área** con Nº Siaf —solo números— pedido al descargar, y una
+**cuadro presupuestal por área** con Nº Siaf —solo números— pedido al descargar, un
+**cierre TOTAL GENERAL** con la suma de todas las columnas + su resumen global y las
+**tres firmas** al pie, y una
 **hoja aparte por cada concepto de descuento** con al menos un afectado ese mes),
 **importar trabajadores nuevos de forma masiva** y **actualizar columnas** por **Excel**,
 generar **boletas PDF** (de un mes, o comparativas de 2 o 4 meses en una sola hoja) y un **reporte consolidado**, buscar a un trabajador por DNI o

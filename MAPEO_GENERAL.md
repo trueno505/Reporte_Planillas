@@ -252,7 +252,8 @@ Reporte_Planillas/
 │   │   ├── db.js              Consultas paginadas/masivas (filtran por periodo)
 │   │   ├── excelEncabezado.js Hojas Excel estilizadas: encabezado institucional, filas por
 │   │   │                      área con subtotal, RESÚMEN + ESSALUD 9% + COMPROBACIÓN,
-│   │   │                      cuadro presupuestal (Siaf + fecha) y hoja "Resumen por áreas"
+│   │   │                      cuadro presupuestal (Siaf + fecha), cierre TOTAL GENERAL +
+│   │   │                      firmas (constante FIRMAS) y hoja "Resumen por áreas"
 │   │   └── reporteConsolidado.js  Excel consolidado (cargar datos → pedir Siaf → generar)
 │   │
 │   ├── components/
@@ -464,6 +465,15 @@ Se detectan tres tipos por fila:
   Cada trabajador queda encerrado en un **borde grueso** que lo separa visualmente del
   siguiente (además del borde fino que llevan todas las celdas de su bloque, incluidas
   las que no tienen valor — sin eso quedaban huecos sin línea entre columnas).
+
+  **Cierre de la hoja** (todas las planillas, con o sin áreas): cuando termina la última
+  área se imprime el **reporte general** — título `TOTAL GENERAL :` combinado a lo ancho,
+  las 2 filas `TOTAL GENERAL - INGRESOS` / `- DSCTOS` con la suma de **todas las columnas
+  de montos** de la planilla entera, y el bloque **RESÚMEN / COMPROBACIÓN global** (sin
+  repetir el cuadro presupuestal, que es por área). Debajo de todo eso, `escribirFirmas`
+  imprime las **tres firmas** repartidas izquierda / centro / derecha (línea punteada,
+  nombre en negrita y cargo en rojo). Los nombres y cargos están en la constante
+  exportada `FIRMAS` de `lib/excelEncabezado.js`: si cambia una jefatura, se edita ahí.
 
   Además agrega la hoja **"Resumen por áreas"**: una fila por área con **todas** las
   columnas de montos de la planilla y una fila TOTAL GENERAL que suma cada columna.

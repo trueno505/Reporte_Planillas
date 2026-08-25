@@ -110,6 +110,10 @@ const stSubtotal = {
   border: borde,
 }
 const stFilaLbl = { font: { bold: true, sz: 9 }, border: borde }
+const stTotGenTit = {
+  font: { bold: true, color: { rgb: AZUL }, sz: 12 },
+  alignment: { horizontal: 'center', vertical: 'center' },
+}
 const stResTit = { font: { bold: true, color: { rgb: AZUL_OSC }, sz: 10 } }
 const stResHead = {
   font: { bold: true, color: { rgb: BLANCO }, sz: 9 },
@@ -367,6 +371,65 @@ function escribirBloqueArea(ws, planilla, rows, r0, merges, area, siaf, periodo)
   return Math.max(rIzq, rDer, rCua)
 }
 
+// ─── Firmas al pie del reporte ────────────────────────────────────────────────
+// Los tres cargos que visan la planilla, impresos al final de todo (después
+// del TOTAL GENERAL y su resumen). Si cambia alguna jefatura, se edita aquí.
+export const FIRMAS = [
+  ['CPC. ORLANDO V. SANTIAGO QUISPE', 'Jefe de la Oficina de Gerente de Administración-MPI'],
+  ['LIC.ADM. MANUEL A. CHACALTANA GARCIA', 'Jefe de la Oficina de los Recursos Humanos MPI'],
+  ['Lic. Adm. Yuri D. Olaechea Carlos', '(e) A. Remuneraciones y Liquidaciones- MPI'],
+]
+
+const ROJO = 'C00000'
+const stFirmaLinea = {
+  font: { sz: 9, color: { rgb: NEGRO } },
+  alignment: { horizontal: 'center', vertical: 'bottom' },
+}
+const stFirmaNombre = {
+  font: { bold: true, sz: 10, color: { rgb: NEGRO } },
+  alignment: { horizontal: 'center' },
+}
+const stFirmaCargo = {
+  font: { bold: true, sz: 8, color: { rgb: ROJO } },
+  alignment: { horizontal: 'center', wrapText: true },
+}
+
+/**
+ * Escribe las tres firmas repartidas a lo ancho de la hoja (izquierda, centro,
+ * derecha): línea punteada, nombre y cargo. Devuelve la fila siguiente libre.
+ */
+function escribirFirmas(ws, r0, ultima, merges) {
+  const nCols = ultima + 1
+  // Cada firma ocupa hasta 5 columnas combinadas; en hojas angostas se reparte
+  // el ancho disponible en tres para que no se solapen.
+  const span = Math.max(1, Math.min(5, Math.floor(nCols / 3)))
+  const inicios = [0, 0, 0]
+  inicios[1] = Math.max(span, Math.floor((nCols - span) / 2))
+  inicios[2] = Math.max(inicios[1] + span, nCols - span)
+  if (inicios[2] + span - 1 > ultima) inicios[2] = Math.max(inicios[1] + span, ultima - span + 1)
+
+  const rLinea = r0
+  const rNombre = r0 + 1
+  const rCargo = r0 + 2
+
+  FIRMAS.forEach(([nombre, cargo], i) => {
+    const c = inicios[i]
+    if (c > ultima) return
+    const cFin = Math.min(c + span - 1, ultima)
+    set(ws, rLinea, c, { t: 's', v: '—'.repeat(24) }, stFirmaLinea)
+    set(ws, rNombre, c, { t: 's', v: nombre }, stFirmaNombre)
+    set(ws, rCargo, c, { t: 's', v: cargo }, stFirmaCargo)
+    if (cFin > c) {
+      merges.push(
+        { s: { r: rLinea, c }, e: { r: rLinea, c: cFin } },
+        { s: { r: rNombre, c }, e: { r: rNombre, c: cFin } },
+        { s: { r: rCargo, c }, e: { r: rCargo, c: cFin } },
+      )
+    }
+  })
+  return rCargo + 1
+}
+
 /**
  * Construye una hoja estilizada con el encabezado institucional, y los datos
  * agrupados por área (subtítulo + filas + subtotal + resumen por concepto) para
@@ -547,10 +610,19 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
 
   const grupos = agruparPorArea(planilla, filas)
 
+  // Título "TOTAL GENERAL :" que encabeza el cierre del reporte (la suma de
+  // TODAS las columnas, ya sin separar por área).
+  const escribirTituloTotalGeneral = () => {
+    set(ws, r, 0, { t: 's', v: 'TOTAL GENERAL :' }, stTotGenTit)
+    if (ultima > 0) merges.push({ s: { r, c: 0 }, e: { r, c: ultima } })
+    r += 1
+  }
+
   if (!grupos) {
     // Planilla sin áreas: tabla simple + resumen/cuadro general al final.
     escribirFilas(filas)
     if (filas.length) {
+      escribirTituloTotalGeneral()
       escribirSubtotal(filas, 'TOTAL GENERAL')
       r += 1 // separador
       r = escribirBloqueArea(ws, planilla, filas, r, merges, null, siafPorArea['*'] ?? '', periodo)
@@ -566,7 +638,20 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
       r = escribirBloqueArea(ws, planilla, rows, r, merges, area, siafPorArea[area] ?? '', periodo)
       r += 2 // separación entre áreas
     }
+    // Cierre de la planilla: TOTAL GENERAL de todas las áreas juntas (suma de
+    // cada columna) + su RESÚMEN / COMPROBACIÓN global. El cuadro presupuestal
+    // no se repite aquí: es por área y ya salió en cada bloque.
+    if (filas.length) {
+      escribirTituloTotalGeneral()
+      escribirSubtotal(filas, 'TOTAL GENERAL')
+      r += 1 // separador
+      r = escribirBloqueArea(ws, planilla, filas, r, merges, null, '', periodo)
+    }
   }
+
+  // Firmas: siempre lo último de la hoja, ya terminado todo el reporte.
+  r += 3
+  r = escribirFirmas(ws, r, ultima, merges)
 
   // Rango y anchos (el cuadro presupuestal puede sobresalir a la derecha en
   // planillas con pocas columnas).
