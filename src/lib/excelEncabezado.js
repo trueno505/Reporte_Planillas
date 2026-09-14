@@ -3,6 +3,7 @@ import { formatPeriodo } from './periodo'
 import { getSeccionesCalculo } from '../config/planillas'
 import { getCuadroArea } from '../config/cuadrosPresupuestales'
 import { round2 } from './calculos'
+import { configurarImpresion } from './impresionExcel'
 
 // Cuota patronal ESSALUD: 9% del total de ingresos.
 const TASA_ESSALUD = 0.09
@@ -99,13 +100,16 @@ const stColLbl = {
   alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
   border: borde,
 }
+// Los datos van en 10 puntos (y el nombre en negrita), como la planilla impresa
+// de referencia: con 9 y la hoja ajustada a 1 página de ancho, los nombres
+// salían ilegibles en papel.
 const stArea = {
-  font: { bold: true, color: { rgb: BLANCO }, sz: 10 },
+  font: { bold: true, color: { rgb: BLANCO }, sz: 11 },
   fill: { fgColor: { rgb: AZUL_OSC } },
   alignment: { horizontal: 'left', vertical: 'center' },
 }
 const stSubtotal = {
-  font: { bold: true, color: { rgb: NEGRO }, sz: 9 },
+  font: { bold: true, color: { rgb: NEGRO }, sz: 10 },
   fill: { fgColor: { rgb: GRIS } },
   border: borde,
 }
@@ -121,15 +125,16 @@ const stResHead = {
   alignment: { horizontal: 'center' },
   border: borde,
 }
-const stResLbl = { font: { sz: 9 }, border: borde }
-const stResVal = { font: { sz: 9 }, alignment: { horizontal: 'right' }, border: borde, z: NUMFMT }
+const stResLbl = { font: { sz: 10 }, border: borde }
+const stNombre = { font: { bold: true, sz: 10 }, border: borde }
+const stResVal = { font: { sz: 10 }, alignment: { horizontal: 'right' }, border: borde, z: NUMFMT }
 const stResTot = {
-  font: { bold: true, sz: 9 },
+  font: { bold: true, sz: 10 },
   fill: { fgColor: { rgb: GRIS } },
   border: borde,
 }
 const stResTotVal = {
-  font: { bold: true, sz: 9 },
+  font: { bold: true, sz: 10 },
   fill: { fgColor: { rgb: GRIS } },
   alignment: { horizontal: 'right' },
   border: borde,
@@ -533,12 +538,13 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
     })
     r += 2
   }
+  const filaDatos = r
 
   const escribirFilas = (rows) => {
     for (const fila of rows) {
       if (idxIngreso === -1) {
         // Planilla sin T. Ingreso (totales manuales): sin split, como antes.
-        columnas.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), stResLbl))
+        columnas.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), c.key === 'apellidos_y_nombres' ? stNombre : stResLbl))
         encuadrarBloque(ws, r, r, ultima)
         r += 1
         continue
@@ -547,7 +553,7 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
       const rInicio = r
 
       // Fila IDENTIDAD
-      identidadCols.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), stResLbl))
+      identidadCols.forEach((c, i) => set(ws, r, i, valorCelda(c, fila), c.key === 'apellidos_y_nombres' ? stNombre : stResLbl))
       completarFila(ws, r, ultima, stResLbl)
       r += 1
 
@@ -659,12 +665,49 @@ export function construirHojaPlanilla(planilla, filas, periodo = null, siafPorAr
   const maxCol = Math.max(ultima, COL_CUADRO + 6)
   ws['!ref'] = `A1:${ref(maxRow, maxCol)}`
   ws['!merges'] = merges
-  ws['!cols'] = idxIngreso === -1
-    ? columnas.map((c) => (c.key === 'apellidos_y_nombres' ? { wch: 32 } : { wch: 14 }))
-    : Array.from({ length: nCols }, (_, i) =>
-        identidadCols[i]?.key === 'apellidos_y_nombres' ? { wch: 32 } : { wch: 14 },
-      )
+  // Anchos según el contenido real de cada columna (antes: 14 fijo y 32 el
+  // nombre). Una hoja más angosta se imprime a mayor escala al ajustarla a 1
+  // página de ancho, y ahí está la diferencia de tamaño de letra en papel.
+  const idxNombre = identidadCols.findIndex((c) => c.key === 'apellidos_y_nombres')
+  ws['!cols'] = anchosPorContenido(ws, merges, {
+    desdeFila: filaDatos,
+    nCols: maxCol + 1,
+    anchas: idxNombre === -1 ? {} : { [idxNombre]: 34 },
+  })
+  // Los rótulos de columna se parten en 2 líneas (wrapText): se les da alto.
+  ws['!rows'] = []
+  for (let f = filaDatos - (idxIngreso === -1 ? 1 : 2); f < filaDatos; f++) ws['!rows'][f] = { hpt: 26 }
+  // Horizontal, A4, 1 página de ancho, repitiendo encabezado + rótulos en cada hoja.
+  configurarImpresion(ws, { filasTitulo: filaDatos })
   return ws
+}
+
+const fmtImporte = (v) =>
+  Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/**
+ * Ancho (wch) de cada columna según las celdas desde `desdeFila`. Se ignoran
+ * las celdas que inician una combinación horizontal (bandas de área,
+ * observaciones, firmas…) porque su texto se reparte entre varias columnas.
+ * Los textos se limitan a `maximoTexto` (o a `anchas[col]`); los importes
+ * nunca, para que no salgan como ####.
+ */
+function anchosPorContenido(ws, merges, { desdeFila, nCols, minimo = 9, maximoTexto = 16, anchas = {} }) {
+  const combinadas = new Set(merges.filter((m) => m.e.c > m.s.c).map((m) => `${m.s.r}:${m.s.c}`))
+  const anchos = new Array(nCols).fill(minimo)
+  for (const [clave, celda] of Object.entries(ws)) {
+    if (clave.startsWith('!')) continue
+    const { r, c } = XLSX.utils.decode_cell(clave)
+    if (r < desdeFila || c >= nCols || combinadas.has(`${r}:${c}`)) continue
+    if (celda.t === 'n') {
+      const texto = celda.z === NUMFMT ? fmtImporte(celda.v) : String(celda.v)
+      anchos[c] = Math.max(anchos[c], texto.length + 2)
+    } else {
+      const largo = String(celda.v ?? '').length
+      if (largo) anchos[c] = Math.max(anchos[c], Math.min(largo + 2, anchas[c] ?? maximoTexto))
+    }
+  }
+  return anchos.map((wch) => ({ wch }))
 }
 
 // ─── Hojas "por descuento" ────────────────────────────────────────────────────
@@ -720,6 +763,7 @@ function construirHojaDescuentoConcepto(planilla, filas, periodo, col) {
   set(ws, r, 1, { t: 's', v: '' }, stPlanillaNVal)
   r += 2
 
+  const filaRotulos = r
   set(ws, r, 0, { t: 's', v: 'N°' }, stColLbl)
   set(ws, r, 1, { t: 's', v: 'APELLIDOS y NOMBRES' }, stColLbl)
   set(ws, r, 2, { t: 's', v: `Dscto.\n${col.label}` }, stColLbl)
@@ -748,6 +792,8 @@ function construirHojaDescuentoConcepto(planilla, filas, periodo, col) {
   ws['!ref'] = `A1:${ref(Math.max(r, 1), NCOLS - 1)}`
   ws['!merges'] = merges
   ws['!cols'] = [{ wch: 6 }, { wch: 38 }, { wch: 16 }]
+  // Solo 3 columnas: cabe en vertical, repitiendo el título y los rótulos.
+  configurarImpresion(ws, { horizontal: false, filasTitulo: filaRotulos + 1 })
   return ws
 }
 
@@ -823,5 +869,7 @@ export function construirHojaResumenAreas(planilla, filas, periodo = null) {
   ws['!ref'] = `A1:${ref(r, NCOLS - 1)}`
   ws['!merges'] = merges
   ws['!cols'] = [{ wch: 45 }, ...moneyCols.map(() => ({ wch: 14 })), { wch: 10 }]
+  // Encabezado institucional (7 filas) + fila de rótulos, repetidos en cada hoja.
+  configurarImpresion(ws, { filasTitulo: 8 })
   return ws
 }

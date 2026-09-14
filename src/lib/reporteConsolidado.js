@@ -4,6 +4,7 @@ import { PLANILLAS } from '../config/planillas'
 import { formatPeriodo } from './periodo'
 import { construirHojaPlanilla } from './excelEncabezado'
 import { crearNombradorHojas } from './hojaExcel'
+import { descargarLibroImprimible } from './impresionExcel'
 import { getCuadroArea } from '../config/cuadrosPresupuestales'
 
 /**
@@ -91,7 +92,8 @@ export function generarReporteConsolidado(resumenData, periodo, datos, siafPorPl
   }
 
   const sufijo = periodo ? formatPeriodo(periodo).replace(' ', '_') : hoy()
-  XLSX.writeFile(wb, `Planillas_Consolidado_${sufijo}.xlsx`)
+  // Con configuración de impresión en cada hoja de planilla.
+  descargarLibroImprimible(wb, `Planillas_Consolidado_${sufijo}.xlsx`)
 }
 
 function hoy() {

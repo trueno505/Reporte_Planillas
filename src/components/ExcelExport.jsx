@@ -17,8 +17,11 @@ export default function ExcelExport({ planilla, periodo = null }) {
     const { label } = planilla
     // xlsx-js-style (~1.35 MB) y los constructores de hoja se cargan solo al
     // exportar, no en el bundle inicial.
-    const [{ default: XLSX }, { construirHojaPlanilla, construirHojaResumenAreas, construirHojasDescuentos }] =
-      await Promise.all([import('xlsx-js-style'), import('../lib/excelEncabezado')])
+    const [
+      { default: XLSX },
+      { construirHojaPlanilla, construirHojaResumenAreas, construirHojasDescuentos },
+      { descargarLibroImprimible },
+    ] = await Promise.all([import('xlsx-js-style'), import('../lib/excelEncabezado'), import('../lib/impresionExcel')])
 
     // Todos los nombres de hoja pasan por el mismo asignador: recorta a 31,
     // quita los caracteres que Excel prohíbe y evita duplicados.
@@ -38,7 +41,8 @@ export default function ExcelExport({ planilla, periodo = null }) {
     }
 
     const sufijo = periodo ? `_${formatPeriodo(periodo).replace(' ', '_')}` : ''
-    XLSX.writeFile(wb, `${label}${sufijo}.xlsx`)
+    // Con configuración de impresión: horizontal, A4, 1 página de ancho.
+    descargarLibroImprimible(wb, `${label}${sufijo}.xlsx`)
   }
 
   // La tabla en pantalla está paginada (50 filas), pero la exportación debe
