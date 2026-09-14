@@ -18,7 +18,7 @@ export async function cargarParametrosAportes() {
   return cache.get(CLAVE, async () => {
     const { data, error } = await supabase
       .from('parametros_aportes')
-      .select('sistema, afp, concepto, porcentaje')
+      .select('sistema, afp, concepto, porcentaje, tope')
     if (error) throw error
     return data ?? []
   })

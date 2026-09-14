@@ -3092,10 +3092,16 @@ CREATE TABLE IF NOT EXISTS public.parametros_aportes (
   porcentaje      NUMERIC(7,4) NOT NULL CHECK (porcentaje >= 0 AND porcentaje <= 100),
   actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT now(),
   actualizado_por UUID REFERENCES public.perfiles(id) ON DELETE SET NULL,
+  -- Tope de la base de la Pri. Seg. (Remuneración Máxima Asegurable) por AFP.
+  -- NULL = sin tope. Parche suelto: migracion_tope_prima_seguro.sql
+  tope            NUMERIC(12,2),
   -- ONP no tiene AFP ni comisiones; AFP no usa descuento_snp.
   CONSTRAINT parametros_aportes_coherencia CHECK (
     (sistema = 'ONP' AND afp IS     NULL AND concepto =  'descuento_snp') OR
     (sistema = 'AFP' AND afp IS NOT NULL AND concepto IN ('f_pens', 'p_seg', 'c_var'))
+  ),
+  CONSTRAINT parametros_aportes_tope CHECK (
+    tope IS NULL OR (tope > 0 AND sistema = 'AFP' AND concepto = 'p_seg')
   )
 );
 
@@ -3107,12 +3113,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS parametros_aportes_afp_uk
   ON public.parametros_aportes (sistema, afp, concepto) WHERE afp IS NOT NULL;
 
 -- Valores iniciales (los vigentes según el cuadro de la MPI).
-INSERT INTO public.parametros_aportes (sistema, afp, concepto, porcentaje) VALUES
-  ('ONP', NULL, 'descuento_snp', 13.00),
-  ('AFP', 'Integra',   'f_pens', 10.00), ('AFP', 'Integra',   'p_seg', 1.37), ('AFP', 'Integra',   'c_var', 1.55),
-  ('AFP', 'Profuturo', 'f_pens', 10.00), ('AFP', 'Profuturo', 'p_seg', 1.37), ('AFP', 'Profuturo', 'c_var', 1.69),
-  ('AFP', 'Habitat',   'f_pens', 10.00), ('AFP', 'Habitat',   'p_seg', 1.37), ('AFP', 'Habitat',   'c_var', 1.47),
-  ('AFP', 'Prima',     'f_pens', 10.00), ('AFP', 'Prima',     'p_seg', 1.37), ('AFP', 'Prima',     'c_var', 1.60)
+INSERT INTO public.parametros_aportes (sistema, afp, concepto, porcentaje, tope) VALUES
+  ('ONP', NULL, 'descuento_snp', 13.00, NULL),
+  ('AFP', 'Integra',   'f_pens', 10.00, NULL), ('AFP', 'Integra',   'p_seg', 1.37, 12672.65), ('AFP', 'Integra',   'c_var', 1.55, NULL),
+  ('AFP', 'Profuturo', 'f_pens', 10.00, NULL), ('AFP', 'Profuturo', 'p_seg', 1.37, NULL),     ('AFP', 'Profuturo', 'c_var', 1.69, NULL),
+  ('AFP', 'Habitat',   'f_pens', 10.00, NULL), ('AFP', 'Habitat',   'p_seg', 1.37, NULL),     ('AFP', 'Habitat',   'c_var', 1.47, NULL),
+  ('AFP', 'Prima',     'f_pens', 10.00, NULL), ('AFP', 'Prima',     'p_seg', 1.37, NULL),     ('AFP', 'Prima',     'c_var', 1.60, NULL)
 ON CONFLICT DO NOTHING;
 
 -- RLS: todos leen (el formulario necesita los % para la vista previa en vivo),
@@ -3221,7 +3227,8 @@ BEGIN
 
   SELECT ROUND(v_base * porcentaje / 100, 2) INTO f_pens
     FROM public.parametros_aportes WHERE sistema='AFP' AND afp=v_afp AND concepto='f_pens';
-  SELECT ROUND(v_base * porcentaje / 100, 2) INTO p_seg
+  -- Pri. Seg.: la base no pasa del tope de la AFP (NULL = sin tope).
+  SELECT ROUND(LEAST(v_base, COALESCE(tope, v_base)) * porcentaje / 100, 2) INTO p_seg
     FROM public.parametros_aportes WHERE sistema='AFP' AND afp=v_afp AND concepto='p_seg';
 
   IF v_com = 'flujo' THEN

@@ -41,11 +41,15 @@ export function esONP(afiliacion) {
   return String(afiliacion ?? '').trim().toUpperCase() === 'ONP'
 }
 
-/** Busca el % en la lista de parámetros. `parametros` = filas de parametros_aportes. */
-function pct(parametros, sistema, afp, concepto) {
-  const p = parametros?.find(
+/** Busca la fila en la lista de parámetros. `parametros` = filas de parametros_aportes. */
+function param(parametros, sistema, afp, concepto) {
+  return parametros?.find(
     (x) => x.sistema === sistema && (x.afp ?? null) === (afp ?? null) && x.concepto === concepto
   )
+}
+
+function pct(parametros, sistema, afp, concepto) {
+  const p = param(parametros, sistema, afp, concepto)
   return p ? Number(p.porcentaje) : null
 }
 
@@ -82,16 +86,20 @@ export function calcularAportes(fila, parametros) {
 
   // Sin tipo de comisión registrado se asume FLUJO, igual que el SQL.
   const comision = comisionCanonica(fila?.tipo_comision_afp) ?? 'flujo'
-  const monto = (concepto) => {
+  const monto = (concepto, b = base) => {
     const p = pct(parametros, 'AFP', afp, concepto)
-    return p == null ? 0 : round2((base * p) / 100)
+    return p == null ? 0 : round2((b * p) / 100)
   }
+
+  // Pri. Seg.: la base no pasa del tope de la AFP (null = sin tope).
+  const tope = param(parametros, 'AFP', afp, 'p_seg')?.tope
+  const baseSeguro = tope == null ? base : Math.min(base, Number(tope))
 
   return {
     aplica: true,
     descuento_snp: 0,
     f_pens: monto('f_pens'),
-    p_seg: monto('p_seg'),
+    p_seg: monto('p_seg', baseSeguro),
     // Comisión sobre el saldo: no se descuenta de la remuneración.
     c_var: comision === 'flujo' ? monto('c_var') : 0,
   }
