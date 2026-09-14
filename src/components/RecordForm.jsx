@@ -18,14 +18,6 @@ function emptyRecord(columnas) {
 // Sistema de pensiones para el campo de afiliacion en el alta rápida (soloBasicos)
 const AFP_OPCIONES = ['AFP Integra', 'Prima AFP', 'AFP Habitat', 'Profuturo AFP']
 
-// 'Vacaciones' (Empleados Permanentes) es texto libre a nivel de columna,
-// pero solo admite el nombre de un mes (o vacío): se restringe con un
-// <select> aquí y con un CHECK en la BD (ver migracion_vacaciones_texto.sql).
-const MESES_VACACIONES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-]
-
 const MAX_RETENCIONES = 10
 
 // Campo especial para columnas con `formulaBase` (p.ej. Ret. Jud. en
@@ -315,7 +307,6 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
             const requerido = esRequerido(col)
             const esAfilBasico = soloBasicos && col.key === 'afiliacion'
             const esAreaSelect = col.key === 'area' && (planilla.areas?.length ?? 0) > 0
-            const esVacacionesSelect = col.key === 'vacaciones'
             const fijaBloqueada = esFijaBloqueada(col.key)
             return (
               <div
@@ -381,20 +372,6 @@ export default function RecordForm({ planilla, record, onClose, onSaved, soloBas
                           {a}
                         </option>
                       ))}
-                  </select>
-                ) : esVacacionesSelect ? (
-                  <select
-                    value={form.vacaciones ?? ''}
-                    onChange={(e) => handleChange('vacaciones', e.target.value)}
-                    required={requerido}
-                    className={inputClass}
-                  >
-                    <option value="">Seleccione mes…</option>
-                    {MESES_VACACIONES.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
                   </select>
                 ) : col.opciones?.length ? (
                   // Columna con lista cerrada de valores (p.ej. Tipo de

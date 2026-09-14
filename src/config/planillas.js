@@ -10,6 +10,15 @@
 // Opciones del selector «Tipo de Comisión AFP» (las dos modalidades de ley).
 const COMISION_AFP = ['Comisión sobre el flujo', 'Comisión sobre el saldo']
 
+// Meses válidos de «Vacaciones» (Empleados Permanentes). La BD tiene un CHECK
+// con EXACTAMENTE estas cadenas (ver migracion_vacaciones_texto.sql), así que
+// un Excel con "ENERO" en mayúsculas hacía fallar la importación entera; por
+// eso la columna declara `opciones` y la importación normaliza contra ellas.
+export const MESES_VACACIONES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
+
 // Columnas añadidas al final de las 12 planillas (todas menos cesantes):
 //  · excluirExcel → no salen en el Excel de descarga de la planilla, pero sí
 //    en las plantillas de importación / actualizar columna.
@@ -449,7 +458,7 @@ export const PLANILLAS = [
       { key: 'apellidos_y_nombres', label: 'Apellidos y Nombres', type: 'text', required: true },
       { key: 'fecha_ing', label: 'Fecha de Ingreso', type: 'date' },
       { key: 'cargo', label: 'Cargo', type: 'text' },
-      { key: 'vacaciones', label: 'Vacaciones', type: 'text' }, // solo nombre de mes (o vacío); ver MESES_VACACIONES en RecordForm.jsx
+      { key: 'vacaciones', label: 'Vacaciones', type: 'text', opciones: MESES_VACACIONES }, // solo nombre de mes (o vacío)
       { key: 'niv_rem', label: 'Niv. Rem.', type: 'text' },
       { key: 'afiliacion', label: 'AFIL. A :', type: 'text' },
       { key: 'area', label: 'ÁREA', type: 'text' },

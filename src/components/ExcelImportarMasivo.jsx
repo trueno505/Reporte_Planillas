@@ -2,7 +2,7 @@ import { useRef, useState, useMemo, useEffect } from 'react'
 import { Upload, X, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { fetchAllRows } from '../lib/db'
-import { castValor } from '../lib/casteo'
+import { castCelda } from '../lib/casteo'
 import { getSeccionesCalculo, emparejarEncabezados } from '../config/planillas'
 import toast from 'react-hot-toast'
 
@@ -109,7 +109,7 @@ export default function ExcelImportarMasivo({ planilla, periodo, onDone, onBusy 
         const obj = {}
         for (const col of columnasImportables) {
           const h = headerPorColumna.get(col.key)
-          obj[col.key] = h ? castValor(row[h], col.type) : null
+          obj[col.key] = h ? castCelda(row[h], col) : null
         }
         const faltan = requeridas.filter((c) => obj[c.key] === null)
         if (faltan.length) {

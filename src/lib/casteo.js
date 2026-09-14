@@ -84,3 +84,26 @@ export function castValor(val, type) {
 
   return String(val).trim()
 }
+
+/**
+ * Encaja un valor con la lista cerrada `opciones` de una columna ignorando
+ * mayúsculas, tildes y espacios sobrantes: un Excel con "ENERO" o " enero "
+ * se guarda como 'Enero', que es la única forma que acepta el CHECK de la BD.
+ * Si no reconoce el valor lo devuelve tal cual, para que la BD lo rechace en
+ * vez de guardar un mes inventado.
+ */
+export function normalizarOpcion(val, opciones) {
+  if (val === null || val === undefined || val === '' || !opciones?.length) return val
+  const plano = (s) =>
+    String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const objetivo = plano(val)
+  return opciones.find((o) => plano(o) === objetivo) ?? val
+}
+
+/**
+ * castValor + normalizarOpcion en un solo paso, a partir de la definición de
+ * la columna. Es lo que deben usar las importaciones de Excel.
+ */
+export function castCelda(val, col) {
+  return normalizarOpcion(castValor(val, col.type), col.opciones)
+}

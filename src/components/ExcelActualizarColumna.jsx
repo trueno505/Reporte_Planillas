@@ -2,7 +2,7 @@ import { useRef, useState, useMemo, useEffect } from 'react'
 import { PencilLine, X, CheckCircle, AlertTriangle, Download } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { fetchAllRows } from '../lib/db'
-import { castValor } from '../lib/casteo'
+import { castCelda } from '../lib/casteo'
 import { getSeccionesCalculo, rotulosAceptados } from '../config/planillas'
 import toast from 'react-hot-toast'
 
@@ -139,7 +139,7 @@ export default function ExcelActualizarColumna({ planilla, filas, onDone, onBusy
         if (isNaN(dni)) { invalidos++; continue }
         if (vistos.has(dni)) continue // ignora DNIs repetidos en el archivo
         vistos.add(dni)
-        const valor = castValor(row[valHeader], colMeta.type)
+        const valor = castCelda(row[valHeader], colMeta)
         if (!dniIndex.has(dni)) {
           noEncontrados.push(dni)
           continue
