@@ -254,7 +254,9 @@ Reporte_Planillas/
 │   │   │                      área con subtotal, RESÚMEN + ESSALUD 9% + COMPROBACIÓN,
 │   │   │                      cuadro presupuestal (Siaf + fecha), cierre TOTAL GENERAL +
 │   │   │                      firmas (constante FIRMAS) y hoja "Resumen por áreas"
-│   │   └── reporteConsolidado.js  Excel consolidado (cargar datos → pedir Siaf → generar)
+│   │   ├── reporteConsolidado.js  Excel consolidado (cargar datos → pedir Siaf → generar)
+│   │   └── impresionExcel.js  Configuración de impresión (A4, 1 página de ancho, títulos
+│   │                          repetidos) inyectada en el zip + descarga del libro
 │   │
 │   ├── components/
 │   │   ├── Layout.jsx         Shell: Sidebar + Header + contenido
@@ -475,6 +477,16 @@ Se detectan tres tipos por fila:
   nombre en negrita y cargo en rojo). Los nombres y cargos están en la constante
   exportada `FIRMAS` de `lib/excelEncabezado.js`: si cambia una jefatura, se edita ahí.
 
+  **Impresión**: la hoja sale lista para imprimir — A4 **horizontal, ajustada a 1 página
+  de ancho**, centrada y repitiendo el encabezado + rótulos (filas 1–9) en cada página.
+  `xlsx-js-style` no escribe `<pageSetup>`, así que `lib/impresionExcel.js`
+  (`configurarImpresion` + `descargarLibroImprimible`) genera el libro en memoria y retoca
+  el XML de cada hoja dentro del zip con el `XLSX.CFB` de la propia librería. Para que en
+  papel no se encoja, los datos van en letra 10 (nombre en negrita) y cada columna toma el
+  **ancho de su contenido** (`anchosPorContenido`; los importes nunca se recortan) en vez
+  del ancho fijo de 14. Lo usan también el reporte consolidado, la hoja "Resumen por
+  áreas" (horizontal) y las hojas por descuento (vertical).
+
   Además agrega la hoja **"Resumen por áreas"**: una fila por área con **todas** las
   columnas de montos de la planilla y una fila TOTAL GENERAL que suma cada columna.
   Las planillas sin áreas (Cesantes) llevan una fila TOTAL GENERAL + un bloque único
@@ -581,6 +593,11 @@ ya suma los montos recién calculados):
 - `afp_canonica()` reconoce la AFP **por palabra clave**, no por cadena exacta: los datos
   traían `"AFP Prima"` y `"Prima AFP"`, e `"integra"` en minúscula.
 - Sin `tipo_comision_afp` registrado se asume **flujo**.
+- **Tope de la Pri. Seg.** (Remuneración Máxima Asegurable): `p_seg` = % ×
+  `MIN(t_ingreso, tope)`. El tope vive en `parametros_aportes.tope` (solo en la fila
+  AFP/`p_seg` de cada AFP; NULL = sin tope) y se edita en la columna *Tope Pri. Seg.* de
+  `/parametros-aportes`. Integra arranca en 12 672.65; `f_pens` y `c_var` nunca se topan.
+  Parche: `supabase/migracion_tope_prima_seguro.sql` (aplicado; integrado al consolidado).
 - Porcentajes en la tabla **`parametros_aportes`** (nunca en el código), legibles por
   todos y editables **solo por superadmin** desde `/parametros-aportes`.
 - `src/lib/aportes.js` es el **espejo exacto** del SQL, usado solo para la vista previa en

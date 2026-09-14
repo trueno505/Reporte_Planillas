@@ -144,6 +144,19 @@ es reconocible, no se toca ningún monto.
 Los porcentajes **no están en el código**: viven en la tabla `parametros_aportes` y se
 editan desde **`/parametros-aportes`**, visible solo para el **superadmin**.
 
+**Tope de la Prima de Seguro** (Remuneración Máxima Asegurable): cada AFP puede tener un
+tope, editable en la columna *Tope Pri. Seg.* de esa misma página. Si el trabajador gana
+más, la **P. Seg.** se calcula solo sobre el tope (Integra: 12 672.65 → quien gana 20 000
+paga 1,37 % de 12 672.65). F. Pens. y C. Var. no tienen tope. Vacío = sin tope.
+
+## Impresión de los Excel
+
+Los Excel descargados ya vienen listos para imprimir: **A4, ajustados a 1 página de ancho,
+centrados y con el encabezado repetido en cada hoja** (horizontal la planilla y el resumen
+por áreas; vertical las hojas por descuento). Los datos van en letra 10, el nombre en
+negrita y cada columna con el ancho justo de su contenido, para que en papel se lean igual
+que la planilla oficial de referencia.
+
 Al **generar el mes siguiente**, quien ya cumplió **65 años** al primer día de ese mes
 pasa automáticamente a *Comisión sobre el saldo* (cumplir el 20 de agosto surte efecto
 en setiembre).
